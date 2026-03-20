@@ -1,0 +1,185 @@
+{
+  "name": "ConvNeXt",
+  "description": "ConvNeXt (Meta, 2022) — A pure ConvNet that rivals Vision Transformers. Key innovations: large 7×7 kernels, fewer activation functions, BatchNorm, and inverted bottleneck design. Demonstrates that modernized CNNs remain competitive with Transformers on ImageNet-scale tasks.",
+  "nodes": [
+    {
+      "id": "dataset-1",
+      "type": "Dataset",
+      "position": { "x": 50, "y": 50 },
+      "data": { "params": { "name": "CIFAR10", "split": "train", "data_dir": "./data" } }
+    },
+    {
+      "id": "transform-1",
+      "type": "Transform",
+      "position": { "x": 350, "y": 50 },
+      "data": { "params": { "resize": 224, "normalize": true, "to_tensor": true } }
+    },
+    {
+      "id": "dataloader-1",
+      "type": "DataLoader",
+      "position": { "x": 650, "y": 50 },
+      "data": { "params": { "batch_size": 128, "shuffle": true, "num_workers": 4 } }
+    },
+    {
+      "id": "stem-conv",
+      "type": "Conv2d",
+      "position": { "x": 50, "y": 280 },
+      "data": { "params": { "in_channels": 3, "out_channels": 96, "kernel_size": 4, "stride": 4, "padding": 0 } }
+    },
+    {
+      "id": "stem-bn",
+      "type": "BatchNorm2d",
+      "position": { "x": 350, "y": 280 },
+      "data": { "params": { "num_features": 96 } }
+    },
+    {
+      "id": "stage1-dw",
+      "type": "Conv2d",
+      "position": { "x": 50, "y": 460 },
+      "data": { "params": { "in_channels": 96, "out_channels": 96, "kernel_size": 7, "stride": 1, "padding": 3 } }
+    },
+    {
+      "id": "stage1-bn",
+      "type": "BatchNorm2d",
+      "position": { "x": 350, "y": 460 },
+      "data": { "params": { "num_features": 96 } }
+    },
+    {
+      "id": "stage1-pw",
+      "type": "Conv2d",
+      "position": { "x": 650, "y": 460 },
+      "data": { "params": { "in_channels": 96, "out_channels": 384, "kernel_size": 1, "stride": 1, "padding": 0 } }
+    },
+    {
+      "id": "stage1-act",
+      "type": "Activation",
+      "position": { "x": 950, "y": 460 },
+      "data": { "params": { "function": "relu" } }
+    },
+    {
+      "id": "stage1-proj",
+      "type": "Conv2d",
+      "position": { "x": 1250, "y": 460 },
+      "data": { "params": { "in_channels": 384, "out_channels": 96, "kernel_size": 1, "stride": 1, "padding": 0 } }
+    },
+    {
+      "id": "ds2-conv",
+      "type": "Conv2d",
+      "position": { "x": 50, "y": 640 },
+      "data": { "params": { "in_channels": 96, "out_channels": 192, "kernel_size": 2, "stride": 2, "padding": 0 } }
+    },
+    {
+      "id": "ds2-bn",
+      "type": "BatchNorm2d",
+      "position": { "x": 350, "y": 640 },
+      "data": { "params": { "num_features": 192 } }
+    },
+    {
+      "id": "stage2-dw",
+      "type": "Conv2d",
+      "position": { "x": 650, "y": 640 },
+      "data": { "params": { "in_channels": 192, "out_channels": 192, "kernel_size": 7, "stride": 1, "padding": 3 } }
+    },
+    {
+      "id": "stage2-bn",
+      "type": "BatchNorm2d",
+      "position": { "x": 950, "y": 640 },
+      "data": { "params": { "num_features": 192 } }
+    },
+    {
+      "id": "stage2-pw",
+      "type": "Conv2d",
+      "position": { "x": 1250, "y": 640 },
+      "data": { "params": { "in_channels": 192, "out_channels": 768, "kernel_size": 1, "stride": 1, "padding": 0 } }
+    },
+    {
+      "id": "stage2-act",
+      "type": "Activation",
+      "position": { "x": 50, "y": 820 },
+      "data": { "params": { "function": "relu" } }
+    },
+    {
+      "id": "stage2-proj",
+      "type": "Conv2d",
+      "position": { "x": 350, "y": 820 },
+      "data": { "params": { "in_channels": 768, "out_channels": 192, "kernel_size": 1, "stride": 1, "padding": 0 } }
+    },
+    {
+      "id": "ds3-conv",
+      "type": "Conv2d",
+      "position": { "x": 650, "y": 820 },
+      "data": { "params": { "in_channels": 192, "out_channels": 384, "kernel_size": 2, "stride": 2, "padding": 0 } }
+    },
+    {
+      "id": "ds3-bn",
+      "type": "BatchNorm2d",
+      "position": { "x": 950, "y": 820 },
+      "data": { "params": { "num_features": 384 } }
+    },
+    {
+      "id": "stage3-dw",
+      "type": "Conv2d",
+      "position": { "x": 1250, "y": 820 },
+      "data": { "params": { "in_channels": 384, "out_channels": 384, "kernel_size": 7, "stride": 1, "padding": 3 } }
+    },
+    {
+      "id": "stage3-act",
+      "type": "Activation",
+      "position": { "x": 50, "y": 1000 },
+      "data": { "params": { "function": "relu" } }
+    },
+    {
+      "id": "dropout-1",
+      "type": "Dropout",
+      "position": { "x": 350, "y": 1000 },
+      "data": { "params": { "p": 0.2 } }
+    },
+    {
+      "id": "reshape-1",
+      "type": "Reshape",
+      "position": { "x": 650, "y": 1000 },
+      "data": { "params": { "shape": "-1,384" } }
+    },
+    {
+      "id": "loss-1",
+      "type": "Loss",
+      "position": { "x": 50, "y": 1200 },
+      "data": { "params": { "type": "CrossEntropyLoss" } }
+    },
+    {
+      "id": "optimizer-1",
+      "type": "Optimizer",
+      "position": { "x": 350, "y": 1200 },
+      "data": { "params": { "type": "AdamW", "lr": 0.001, "weight_decay": 0.05 } }
+    },
+    {
+      "id": "visualize-1",
+      "type": "Visualize",
+      "position": { "x": 650, "y": 1200 },
+      "data": { "params": { "title": "ConvNeXt Training Loss", "plot_type": "line" } }
+    }
+  ],
+  "edges": [
+    { "id": "e-1", "source": "dataset-1", "target": "transform-1", "sourceHandle": "dataset", "targetHandle": "dataset" },
+    { "id": "e-2", "source": "transform-1", "target": "dataloader-1", "sourceHandle": "dataset", "targetHandle": "dataset" },
+    { "id": "e-3", "source": "stem-conv", "target": "stem-bn", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-4", "source": "stem-bn", "target": "stage1-dw", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-5", "source": "stage1-dw", "target": "stage1-bn", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-6", "source": "stage1-bn", "target": "stage1-pw", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-7", "source": "stage1-pw", "target": "stage1-act", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-8", "source": "stage1-act", "target": "stage1-proj", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-9", "source": "stage1-proj", "target": "ds2-conv", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-10", "source": "ds2-conv", "target": "ds2-bn", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-11", "source": "ds2-bn", "target": "stage2-dw", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-12", "source": "stage2-dw", "target": "stage2-bn", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-13", "source": "stage2-bn", "target": "stage2-pw", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-14", "source": "stage2-pw", "target": "stage2-act", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-15", "source": "stage2-act", "target": "stage2-proj", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-16", "source": "stage2-proj", "target": "ds3-conv", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-17", "source": "ds3-conv", "target": "ds3-bn", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-18", "source": "ds3-bn", "target": "stage3-dw", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-19", "source": "stage3-dw", "target": "stage3-act", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-20", "source": "stage3-act", "target": "dropout-1", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-21", "source": "dropout-1", "target": "reshape-1", "sourceHandle": "tensor", "targetHandle": "tensor" }
+  ]
+}

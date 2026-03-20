@@ -1,0 +1,49 @@
+{
+  "name": "Train CNN on MNIST",
+  "description": "Complete end-to-end CNN training on MNIST. SequentialModel builds an nn.Module from JSON layer config, then connects to the Training Pipeline preset (Dataset → DataLoader → Optimizer → Loss → TrainingLoop). This is a fully executable graph.",
+  "nodes": [
+    {
+      "id": "model-builder",
+      "type": "SequentialModel",
+      "position": { "x": 50, "y": 200 },
+      "data": {
+        "params": {
+          "layers": "[{\"type\":\"Conv2d\",\"in_channels\":1,\"out_channels\":32,\"kernel_size\":3,\"padding\":1},{\"type\":\"ReLU\"},{\"type\":\"MaxPool2d\",\"kernel_size\":2,\"stride\":2},{\"type\":\"Conv2d\",\"in_channels\":32,\"out_channels\":64,\"kernel_size\":3,\"padding\":1},{\"type\":\"ReLU\"},{\"type\":\"MaxPool2d\",\"kernel_size\":2,\"stride\":2},{\"type\":\"Flatten\"},{\"type\":\"Linear\",\"in_features\":3136,\"out_features\":128},{\"type\":\"ReLU\"},{\"type\":\"Linear\",\"in_features\":128,\"out_features\":10}]"
+        }
+      }
+    },
+    {
+      "id": "train-pipeline",
+      "type": "preset:Training Pipeline",
+      "position": { "x": 500, "y": 200 },
+      "data": {
+        "params": {},
+        "internalParams": {
+          "dataset": { "name": "MNIST", "split": "train", "data_dir": "./data" },
+          "dataloader": { "batch_size": 64, "shuffle": true, "num_workers": 0 },
+          "loss": { "type": "CrossEntropyLoss" },
+          "optimizer": { "type": "Adam", "lr": 0.001, "weight_decay": 0.0 },
+          "train_loop": { "epochs": 5, "device": "cpu" }
+        }
+      }
+    },
+    {
+      "id": "visualize-loss",
+      "type": "Visualize",
+      "position": { "x": 950, "y": 200 },
+      "data": { "params": { "title": "MNIST Training Loss Curve", "plot_type": "line" } }
+    },
+    {
+      "id": "print-model",
+      "type": "Print",
+      "position": { "x": 950, "y": 370 },
+      "data": { "params": { "label": "Trained CNN Model" } }
+    }
+  ],
+  "edges": [
+    { "id": "e-1", "source": "model-builder", "target": "train-pipeline", "sourceHandle": "model", "targetHandle": "model" },
+    { "id": "e-2", "source": "model-builder", "target": "train-pipeline", "sourceHandle": "model", "targetHandle": "model_for_opt" },
+    { "id": "e-3", "source": "train-pipeline", "target": "visualize-loss", "sourceHandle": "losses", "targetHandle": "data" },
+    { "id": "e-4", "source": "train-pipeline", "target": "print-model", "sourceHandle": "model", "targetHandle": "value" }
+  ]
+}

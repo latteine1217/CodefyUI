@@ -1,0 +1,471 @@
+import { create } from 'zustand';
+import { applyNodeChanges, applyEdgeChanges } from '@xyflow/react';
+import type { Node, Edge, NodeChange, EdgeChange, Connection } from '@xyflow/react';
+import { generateId } from '../utils';
+import type { NodeData, NodeDefinition, PresetDefinition, ExecutionStatus } from '../types';
+import { ExecutionWebSocket } from '../api/ws';
+
+// ── Per-tab state ──
+
+export interface LogEntry {
+  timestamp: number;
+  nodeId?: string;
+  message: string;
+  type: 'info' | 'error' | 'success';
+}
+
+export interface TabState {
+  id: string;
+  name: string;
+  // flow
+  nodes: Node<NodeData>[];
+  edges: Edge[];
+  selectedNodeId: string | null;
+  presetModalNodeId: string | null;
+  // execution
+  status: ExecutionStatus;
+  logs: LogEntry[];
+  ws: ExecutionWebSocket;
+}
+
+function createTabState(id: string, name: string): TabState {
+  return {
+    id,
+    name,
+    nodes: [],
+    edges: [],
+    selectedNodeId: null,
+    presetModalNodeId: null,
+    status: 'idle',
+    logs: [],
+    ws: new ExecutionWebSocket(),
+  };
+}
+
+// ── Store ──
+
+interface TabStoreState {
+  tabs: TabState[];
+  activeTabId: string;
+
+  // tab management
+  addTab: (name?: string) => void;
+  removeTab: (id: string) => void;
+  setActiveTab: (id: string) => void;
+  renameTab: (id: string, name: string) => void;
+
+  // flow actions (operate on active tab)
+  setNodes: (nodes: Node<NodeData>[]) => void;
+  setEdges: (edges: Edge[]) => void;
+  onNodesChange: (changes: NodeChange[]) => void;
+  onEdgesChange: (changes: EdgeChange[]) => void;
+  onConnect: (connection: Connection) => void;
+  addNode: (definition: NodeDefinition, position: { x: number; y: number }) => void;
+  addPresetNode: (preset: PresetDefinition, position: { x: number; y: number }) => void;
+  updateNodeParams: (nodeId: string, params: Record<string, any>) => void;
+  updatePresetInternalParam: (nodeId: string, internalNodeId: string, paramName: string, value: any) => void;
+  setSelectedNodeId: (id: string | null) => void;
+  openPresetModal: (id: string) => void;
+  closePresetModal: () => void;
+  setNodeExecutionStatus: (nodeId: string, status: NodeData['executionStatus'], error?: string) => void;
+  clearExecutionStatus: () => void;
+  clear: () => void;
+  getSerializedGraph: () => { nodes: any[]; edges: any[] };
+  deleteNode: (nodeId: string) => void;
+  duplicateNode: (nodeId: string) => void;
+  renameNode: (nodeId: string, newLabel: string) => void;
+
+  // execution actions (operate on active tab)
+  setStatus: (s: ExecutionStatus) => void;
+  addLog: (entry: Omit<LogEntry, 'timestamp'>) => void;
+  clearLogs: () => void;
+
+  // helpers
+  getActiveTab: () => TabState;
+  getTab: (id: string) => TabState | undefined;
+
+  // execution actions for specific tab (used by WS handlers)
+  setTabNodeExecutionStatus: (tabId: string, nodeId: string, status: NodeData['executionStatus'], error?: string) => void;
+  setTabStatus: (tabId: string, s: ExecutionStatus) => void;
+  addTabLog: (tabId: string, entry: Omit<LogEntry, 'timestamp'>) => void;
+}
+
+function updateTab(tabs: TabState[], tabId: string, updater: (tab: TabState) => Partial<TabState>): TabState[] {
+  return tabs.map((tab) => (tab.id === tabId ? { ...tab, ...updater(tab) } : tab));
+}
+
+// ── LocalStorage persistence ──
+
+const STORAGE_KEY = 'codefyui-tabs';
+
+interface PersistedTab {
+  id: string;
+  name: string;
+  nodes: Node<NodeData>[];
+  edges: Edge[];
+}
+
+function saveTabs(tabs: TabState[], activeTabId: string) {
+  try {
+    const data: { tabs: PersistedTab[]; activeTabId: string } = {
+      activeTabId,
+      tabs: tabs.map((t) => ({ id: t.id, name: t.name, nodes: t.nodes, edges: t.edges })),
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {
+    // Storage full or unavailable — silently ignore
+  }
+}
+
+function loadTabs(): { tabs: TabState[]; activeTabId: string } {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) {
+      const data = JSON.parse(raw);
+      if (Array.isArray(data.tabs) && data.tabs.length > 0) {
+        const tabs: TabState[] = data.tabs.map((t: PersistedTab) => ({
+          ...createTabState(t.id, t.name),
+          nodes: t.nodes ?? [],
+          edges: t.edges ?? [],
+        }));
+        const activeTabId = tabs.some((t) => t.id === data.activeTabId)
+          ? data.activeTabId
+          : tabs[0].id;
+        return { tabs, activeTabId };
+      }
+    }
+  } catch {
+    // Corrupted data — fall through to default
+  }
+  const id = generateId();
+  return { tabs: [createTabState(id, 'Tab 1')], activeTabId: id };
+}
+
+const initialState = loadTabs();
+
+export const useTabStore = create<TabStoreState>((set, get) => ({
+  tabs: initialState.tabs,
+  activeTabId: initialState.activeTabId,
+
+  // ── Tab management ──
+
+  addTab: (name) => {
+    const id = generateId();
+    const tabCount = get().tabs.length;
+    set({
+      tabs: [...get().tabs, createTabState(id, name ?? `Tab ${tabCount + 1}`)],
+      activeTabId: id,
+    });
+  },
+
+  removeTab: (id) => {
+    const { tabs, activeTabId } = get();
+    if (tabs.length <= 1) return;
+
+    const tab = tabs.find((t) => t.id === id);
+    if (tab) tab.ws.disconnect();
+
+    const remaining = tabs.filter((t) => t.id !== id);
+    const newActive = activeTabId === id
+      ? remaining[Math.min(tabs.findIndex((t) => t.id === id), remaining.length - 1)].id
+      : activeTabId;
+    set({ tabs: remaining, activeTabId: newActive });
+  },
+
+  setActiveTab: (id) => set({ activeTabId: id }),
+
+  renameTab: (id, name) =>
+    set({ tabs: updateTab(get().tabs, id, () => ({ name })) }),
+
+  // ── Helpers ──
+
+  getActiveTab: () => {
+    const { tabs, activeTabId } = get();
+    return tabs.find((t) => t.id === activeTabId)!;
+  },
+
+  getTab: (id) => get().tabs.find((t) => t.id === id),
+
+  // ── Flow actions (active tab) ──
+
+  setNodes: (nodes) =>
+    set({ tabs: updateTab(get().tabs, get().activeTabId, () => ({ nodes })) }),
+
+  setEdges: (edges) =>
+    set({ tabs: updateTab(get().tabs, get().activeTabId, () => ({ edges })) }),
+
+  onNodesChange: (changes) =>
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
+        nodes: applyNodeChanges(changes, tab.nodes) as Node<NodeData>[],
+      })),
+    }),
+
+  onEdgesChange: (changes) =>
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
+        edges: applyEdgeChanges(changes, tab.edges),
+      })),
+    }),
+
+  onConnect: (connection) => {
+    const edge: Edge = {
+      id: generateId(),
+      source: connection.source,
+      target: connection.target,
+      sourceHandle: connection.sourceHandle ?? undefined,
+      targetHandle: connection.targetHandle ?? undefined,
+      animated: false,
+      style: { stroke: '#555', strokeWidth: 2 },
+    };
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
+        edges: [...tab.edges, edge],
+      })),
+    });
+  },
+
+  addNode: (definition, position) => {
+    const defaultParams: Record<string, any> = {};
+    for (const p of definition.params) {
+      defaultParams[p.name] = p.default;
+    }
+    const node: Node<NodeData> = {
+      id: generateId(),
+      type: 'baseNode',
+      position,
+      data: {
+        label: definition.node_name,
+        type: definition.node_name,
+        params: defaultParams,
+        definition,
+        executionStatus: 'idle',
+      },
+    };
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
+        nodes: [...tab.nodes, node],
+      })),
+    });
+  },
+
+  addPresetNode: (preset, position) => {
+    const internalParams: Record<string, Record<string, any>> = {};
+    for (const n of preset.nodes) {
+      internalParams[n.id] = { ...n.params };
+    }
+    const definition: NodeDefinition = {
+      node_name: preset.preset_name,
+      category: preset.category,
+      description: preset.description,
+      inputs: preset.exposed_inputs.map((p) => ({
+        name: p.name,
+        data_type: p.data_type,
+        description: p.description,
+        optional: false,
+      })),
+      outputs: preset.exposed_outputs.map((p) => ({
+        name: p.name,
+        data_type: p.data_type,
+        description: p.description,
+        optional: false,
+      })),
+      params: [],
+    };
+    const node: Node<NodeData> = {
+      id: generateId(),
+      type: 'presetNode',
+      position,
+      data: {
+        label: preset.preset_name,
+        type: `preset:${preset.preset_name}`,
+        params: {},
+        definition,
+        isPreset: true,
+        presetDefinition: preset,
+        internalParams,
+        executionStatus: 'idle',
+      },
+    };
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
+        nodes: [...tab.nodes, node],
+      })),
+    });
+  },
+
+  updateNodeParams: (nodeId, params) =>
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
+        nodes: tab.nodes.map((n) =>
+          n.id === nodeId
+            ? { ...n, data: { ...n.data, params: { ...n.data.params, ...params } } }
+            : n
+        ),
+      })),
+    }),
+
+  updatePresetInternalParam: (nodeId, internalNodeId, paramName, value) =>
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
+        nodes: tab.nodes.map((n) => {
+          if (n.id !== nodeId) return n;
+          const prev = n.data.internalParams ?? {};
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              internalParams: {
+                ...prev,
+                [internalNodeId]: {
+                  ...prev[internalNodeId],
+                  [paramName]: value,
+                },
+              },
+            },
+          };
+        }),
+      })),
+    }),
+
+  setSelectedNodeId: (id) =>
+    set({ tabs: updateTab(get().tabs, get().activeTabId, () => ({ selectedNodeId: id })) }),
+
+  openPresetModal: (id) =>
+    set({ tabs: updateTab(get().tabs, get().activeTabId, () => ({ presetModalNodeId: id })) }),
+
+  closePresetModal: () =>
+    set({ tabs: updateTab(get().tabs, get().activeTabId, () => ({ presetModalNodeId: null })) }),
+
+  setNodeExecutionStatus: (nodeId, status, error) =>
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
+        nodes: tab.nodes.map((n) =>
+          n.id === nodeId
+            ? { ...n, data: { ...n.data, executionStatus: status, error } }
+            : n
+        ),
+      })),
+    }),
+
+  clearExecutionStatus: () =>
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
+        nodes: tab.nodes.map((n) => ({
+          ...n,
+          data: { ...n.data, executionStatus: 'idle' as const, error: undefined },
+        })),
+      })),
+    }),
+
+  clear: () =>
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, () => ({
+        nodes: [],
+        edges: [],
+        selectedNodeId: null,
+        presetModalNodeId: null,
+      })),
+    }),
+
+  getSerializedGraph: () => {
+    const tab = get().getActiveTab();
+    return {
+      nodes: tab.nodes.map((n) => ({
+        id: n.id,
+        type: n.data.type,
+        position: n.position,
+        data: {
+          params: n.data.params,
+          ...(n.data.isPreset ? { internalParams: n.data.internalParams } : {}),
+        },
+      })),
+      edges: tab.edges.map((e) => ({
+        id: e.id,
+        source: e.source,
+        target: e.target,
+        sourceHandle: e.sourceHandle ?? '',
+        targetHandle: e.targetHandle ?? '',
+      })),
+    };
+  },
+
+  deleteNode: (nodeId) =>
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
+        nodes: tab.nodes.filter((n) => n.id !== nodeId),
+        edges: tab.edges.filter((e) => e.source !== nodeId && e.target !== nodeId),
+        selectedNodeId: tab.selectedNodeId === nodeId ? null : tab.selectedNodeId,
+      })),
+    }),
+
+  duplicateNode: (nodeId) => {
+    const tab = get().getActiveTab();
+    const original = tab.nodes.find((n) => n.id === nodeId);
+    if (!original) return;
+    const newNode: Node<NodeData> = {
+      ...original,
+      id: generateId(),
+      position: { x: original.position.x + 40, y: original.position.y + 40 },
+      selected: false,
+      data: { ...original.data, executionStatus: 'idle', error: undefined },
+    };
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (t) => ({
+        nodes: [...t.nodes, newNode],
+      })),
+    });
+  },
+
+  renameNode: (nodeId, newLabel) =>
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
+        nodes: tab.nodes.map((n) =>
+          n.id === nodeId ? { ...n, data: { ...n.data, label: newLabel } } : n
+        ),
+      })),
+    }),
+
+  // ── Execution actions (active tab) ──
+
+  setStatus: (s) =>
+    set({ tabs: updateTab(get().tabs, get().activeTabId, () => ({ status: s })) }),
+
+  addLog: (entry) =>
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
+        logs: [...tab.logs, { ...entry, timestamp: Date.now() }],
+      })),
+    }),
+
+  clearLogs: () =>
+    set({ tabs: updateTab(get().tabs, get().activeTabId, () => ({ logs: [] })) }),
+
+  // ── Tab-specific execution actions (WS handlers target a specific tab) ──
+
+  setTabNodeExecutionStatus: (tabId, nodeId, status, error) =>
+    set({
+      tabs: updateTab(get().tabs, tabId, (tab) => ({
+        nodes: tab.nodes.map((n) =>
+          n.id === nodeId
+            ? { ...n, data: { ...n.data, executionStatus: status, error } }
+            : n
+        ),
+      })),
+    }),
+
+  setTabStatus: (tabId, s) =>
+    set({ tabs: updateTab(get().tabs, tabId, () => ({ status: s })) }),
+
+  addTabLog: (tabId, entry) =>
+    set({
+      tabs: updateTab(get().tabs, tabId, (tab) => ({
+        logs: [...tab.logs, { ...entry, timestamp: Date.now() }],
+      })),
+    }),
+}));
+
+// ── Auto-save to localStorage ──
+useTabStore.subscribe((state) => {
+  saveTabs(state.tabs, state.activeTabId);
+});

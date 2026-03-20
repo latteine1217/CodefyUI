@@ -1,0 +1,109 @@
+{
+  "name": "DQN with CNN Feature Extractor (Atari)",
+  "description": "Deep Q-Network with CNN backbone for Atari game playing — The landmark DeepMind architecture (2015) that demonstrated superhuman performance on Atari games. Uses CNN layers to extract visual features from game frames, fed into a DQN for action-value estimation. Features experience replay and target network for stable training.",
+  "nodes": [
+    {
+      "id": "env-1",
+      "type": "EnvWrapper",
+      "position": { "x": 50, "y": 50 },
+      "data": { "params": { "env_name": "ALE/Breakout-v5" } }
+    },
+    {
+      "id": "print-env",
+      "type": "Print",
+      "position": { "x": 50, "y": 220 },
+      "data": { "params": { "label": "Atari Frame: 84×84 grayscale" } }
+    },
+    {
+      "id": "conv-1",
+      "type": "Conv2d",
+      "position": { "x": 400, "y": 50 },
+      "data": { "params": { "in_channels": 4, "out_channels": 32, "kernel_size": 8, "stride": 4, "padding": 0 } }
+    },
+    {
+      "id": "act-1",
+      "type": "Activation",
+      "position": { "x": 700, "y": 50 },
+      "data": { "params": { "function": "relu" } }
+    },
+    {
+      "id": "conv-2",
+      "type": "Conv2d",
+      "position": { "x": 1000, "y": 50 },
+      "data": { "params": { "in_channels": 32, "out_channels": 64, "kernel_size": 4, "stride": 2, "padding": 0 } }
+    },
+    {
+      "id": "act-2",
+      "type": "Activation",
+      "position": { "x": 1300, "y": 50 },
+      "data": { "params": { "function": "relu" } }
+    },
+    {
+      "id": "conv-3",
+      "type": "Conv2d",
+      "position": { "x": 400, "y": 250 },
+      "data": { "params": { "in_channels": 64, "out_channels": 64, "kernel_size": 3, "stride": 1, "padding": 0 } }
+    },
+    {
+      "id": "act-3",
+      "type": "Activation",
+      "position": { "x": 700, "y": 250 },
+      "data": { "params": { "function": "relu" } }
+    },
+    {
+      "id": "reshape-flat",
+      "type": "Reshape",
+      "position": { "x": 1000, "y": 250 },
+      "data": { "params": { "shape": "-1,3136" } }
+    },
+    {
+      "id": "dqn-1",
+      "type": "DQN",
+      "position": { "x": 1300, "y": 250 },
+      "data": { "params": { "state_dim": 3136, "action_dim": 4, "hidden_dim": 512 } }
+    },
+    {
+      "id": "optimizer-1",
+      "type": "Optimizer",
+      "position": { "x": 1300, "y": 430 },
+      "data": { "params": { "type": "Adam", "lr": 0.00025, "weight_decay": 0.0 } }
+    },
+    {
+      "id": "loss-1",
+      "type": "Loss",
+      "position": { "x": 50, "y": 450 },
+      "data": { "params": { "type": "MSELoss" } }
+    },
+    {
+      "id": "print-action",
+      "type": "Print",
+      "position": { "x": 400, "y": 450 },
+      "data": { "params": { "label": "Action: NOOP / FIRE / LEFT / RIGHT" } }
+    },
+    {
+      "id": "visualize-reward",
+      "type": "Visualize",
+      "position": { "x": 700, "y": 450 },
+      "data": { "params": { "title": "Episode Reward (target: 400+)", "plot_type": "line" } }
+    },
+    {
+      "id": "visualize-q",
+      "type": "Visualize",
+      "position": { "x": 1000, "y": 450 },
+      "data": { "params": { "title": "Q-Value Distribution", "plot_type": "histogram" } }
+    }
+  ],
+  "edges": [
+    { "id": "e-1", "source": "env-1", "target": "print-env", "sourceHandle": "observation", "targetHandle": "value" },
+    { "id": "e-2", "source": "env-1", "target": "conv-1", "sourceHandle": "observation", "targetHandle": "tensor" },
+    { "id": "e-3", "source": "conv-1", "target": "act-1", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-4", "source": "act-1", "target": "conv-2", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-5", "source": "conv-2", "target": "act-2", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-6", "source": "act-2", "target": "conv-3", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-7", "source": "conv-3", "target": "act-3", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-8", "source": "act-3", "target": "reshape-flat", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-9", "source": "reshape-flat", "target": "dqn-1", "sourceHandle": "tensor", "targetHandle": "state" },
+    { "id": "e-10", "source": "dqn-1", "target": "optimizer-1", "sourceHandle": "model", "targetHandle": "model" },
+    { "id": "e-11", "source": "dqn-1", "target": "print-action", "sourceHandle": "action", "targetHandle": "value" }
+  ]
+}

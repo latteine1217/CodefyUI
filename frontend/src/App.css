@@ -1,0 +1,225 @@
+/* ============================================================
+   CodefyUI Global Styles - Dark Theme
+   ============================================================ */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  /* Responsive root font-size: scales with viewport, clamped for readability */
+  font-size: clamp(13.5px, 0.35vw + 11px, 18px);
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
+  background-color: #121212;
+  color: #eeeeee;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    Roboto, sans-serif;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ============================================================
+   Scrollbar Styling
+   ============================================================ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #444;
+}
+
+/* ============================================================
+   React Flow Dark Theme Overrides
+   ============================================================ */
+
+.react-flow {
+  background: #0a0a0a;
+}
+
+.react-flow__background {
+  background: #0a0a0a;
+}
+
+.react-flow__edge-path {
+  stroke: #555;
+  stroke-width: 2;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke: #888;
+  stroke-width: 2.5;
+}
+
+.react-flow__edge:hover .react-flow__edge-path {
+  stroke: #777;
+}
+
+.react-flow__connection-path {
+  stroke: #888;
+  stroke-width: 2;
+}
+
+/* Controls — covers both v11 and v12 class names */
+.react-flow__controls,
+.react-flow__panel.react-flow__controls {
+  background: #1e1e1e !important;
+  border: 1px solid #333 !important;
+  border-radius: 6px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
+  overflow: hidden;
+}
+
+.react-flow__controls button,
+.react-flow__controls-button {
+  background: #1e1e1e !important;
+  border: none !important;
+  border-bottom: 1px solid #2a2a2a !important;
+  color: #aaa !important;
+  width: 30px !important;
+  height: 30px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  transition: background 0.15s, color 0.15s;
+}
+
+.react-flow__controls button:hover,
+.react-flow__controls-button:hover {
+  background: #333 !important;
+  color: #fff !important;
+}
+
+.react-flow__controls button:last-child,
+.react-flow__controls-button:last-child {
+  border-bottom: none !important;
+}
+
+.react-flow__controls button svg,
+.react-flow__controls-button svg {
+  fill: currentColor !important;
+  width: 14px;
+  height: 14px;
+}
+
+.react-flow__controls button svg path,
+.react-flow__controls-button svg path {
+  fill: currentColor !important;
+}
+
+/* MiniMap */
+.react-flow__minimap {
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.react-flow__minimap-mask {
+  fill: rgba(0, 0, 0, 0.6);
+}
+
+/* Selection box */
+.react-flow__selection {
+  background: rgba(33, 150, 243, 0.05);
+  border: 1px solid rgba(33, 150, 243, 0.4);
+}
+
+/* Node selection wrapper */
+.react-flow__node.selected > div {
+  outline: none;
+}
+
+/* Connection line */
+.react-flow__connectionline {
+  z-index: 1000;
+}
+
+/* ============================================================
+   Node Pulse Animation
+   ============================================================ */
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.4;
+    transform: scale(1.4);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ============================================================
+   Focus Styles
+   ============================================================ */
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #2196F3 !important;
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.2);
+  outline: none;
+}
+
+button:focus-visible {
+  outline: 2px solid #2196F3;
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   Form elements global reset
+   ============================================================ */
+
+input,
+select,
+button,
+textarea {
+  font-family: inherit;
+}
+
+input[type='number'] {
+  -moz-appearance: textfield;
+}
+
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  opacity: 0.5;
+}
+
+select option {
+  background: #1e1e1e;
+  color: #ddd;
+}

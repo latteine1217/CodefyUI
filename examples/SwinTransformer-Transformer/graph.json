@@ -1,0 +1,163 @@
+{
+  "name": "Swin Transformer",
+  "description": "Swin Transformer (Microsoft, 2021) — Hierarchical Vision Transformer using Shifted Windows. Computes self-attention within local windows then shifts windows for cross-window connections. Achieves linear complexity vs. quadratic in ViT. State-of-the-art backbone for detection (COCO) and segmentation (ADE20K). CVPR 2022 Best Paper Honorable Mention.",
+  "nodes": [
+    {
+      "id": "dataset-1",
+      "type": "Dataset",
+      "position": { "x": 50, "y": 50 },
+      "data": { "params": { "name": "CIFAR10", "split": "train", "data_dir": "./data" } }
+    },
+    {
+      "id": "transform-1",
+      "type": "Transform",
+      "position": { "x": 350, "y": 50 },
+      "data": { "params": { "resize": 224, "normalize": true, "to_tensor": true } }
+    },
+    {
+      "id": "dataloader-1",
+      "type": "DataLoader",
+      "position": { "x": 650, "y": 50 },
+      "data": { "params": { "batch_size": 64, "shuffle": true, "num_workers": 4 } }
+    },
+    {
+      "id": "patch-embed",
+      "type": "Conv2d",
+      "position": { "x": 50, "y": 300 },
+      "data": { "params": { "in_channels": 3, "out_channels": 96, "kernel_size": 4, "stride": 4, "padding": 0 } }
+    },
+    {
+      "id": "reshape-s1",
+      "type": "Reshape",
+      "position": { "x": 350, "y": 300 },
+      "data": { "params": { "shape": "-1,3136,96" } }
+    },
+    {
+      "id": "stage1-encoder",
+      "type": "TransformerEncoder",
+      "position": { "x": 650, "y": 300 },
+      "data": { "params": { "d_model": 96, "nhead": 3, "num_layers": 2, "dim_feedforward": 384 } }
+    },
+    {
+      "id": "print-s1",
+      "type": "Print",
+      "position": { "x": 650, "y": 460 },
+      "data": { "params": { "label": "Stage 1: 56×56 windows, 96 dim (W-MSA + SW-MSA)" } }
+    },
+    {
+      "id": "merge-1",
+      "type": "Conv2d",
+      "position": { "x": 50, "y": 540 },
+      "data": { "params": { "in_channels": 96, "out_channels": 192, "kernel_size": 2, "stride": 2, "padding": 0 } }
+    },
+    {
+      "id": "reshape-s2",
+      "type": "Reshape",
+      "position": { "x": 350, "y": 540 },
+      "data": { "params": { "shape": "-1,784,192" } }
+    },
+    {
+      "id": "stage2-encoder",
+      "type": "TransformerEncoder",
+      "position": { "x": 650, "y": 540 },
+      "data": { "params": { "d_model": 192, "nhead": 6, "num_layers": 2, "dim_feedforward": 768 } }
+    },
+    {
+      "id": "print-s2",
+      "type": "Print",
+      "position": { "x": 650, "y": 700 },
+      "data": { "params": { "label": "Stage 2: 28×28 windows, 192 dim (patch merging)" } }
+    },
+    {
+      "id": "merge-2",
+      "type": "Conv2d",
+      "position": { "x": 50, "y": 780 },
+      "data": { "params": { "in_channels": 192, "out_channels": 384, "kernel_size": 2, "stride": 2, "padding": 0 } }
+    },
+    {
+      "id": "reshape-s3",
+      "type": "Reshape",
+      "position": { "x": 350, "y": 780 },
+      "data": { "params": { "shape": "-1,196,384" } }
+    },
+    {
+      "id": "stage3-encoder",
+      "type": "TransformerEncoder",
+      "position": { "x": 650, "y": 780 },
+      "data": { "params": { "d_model": 384, "nhead": 12, "num_layers": 6, "dim_feedforward": 1536 } }
+    },
+    {
+      "id": "merge-3",
+      "type": "Conv2d",
+      "position": { "x": 50, "y": 960 },
+      "data": { "params": { "in_channels": 384, "out_channels": 768, "kernel_size": 2, "stride": 2, "padding": 0 } }
+    },
+    {
+      "id": "reshape-s4",
+      "type": "Reshape",
+      "position": { "x": 350, "y": 960 },
+      "data": { "params": { "shape": "-1,49,768" } }
+    },
+    {
+      "id": "stage4-encoder",
+      "type": "TransformerEncoder",
+      "position": { "x": 650, "y": 960 },
+      "data": { "params": { "d_model": 768, "nhead": 24, "num_layers": 2, "dim_feedforward": 3072 } }
+    },
+    {
+      "id": "dropout-1",
+      "type": "Dropout",
+      "position": { "x": 950, "y": 960 },
+      "data": { "params": { "p": 0.1 } }
+    },
+    {
+      "id": "reshape-out",
+      "type": "Reshape",
+      "position": { "x": 1250, "y": 960 },
+      "data": { "params": { "shape": "-1,768" } }
+    },
+    {
+      "id": "loss-1",
+      "type": "Loss",
+      "position": { "x": 50, "y": 1150 },
+      "data": { "params": { "type": "CrossEntropyLoss" } }
+    },
+    {
+      "id": "optimizer-1",
+      "type": "Optimizer",
+      "position": { "x": 350, "y": 1150 },
+      "data": { "params": { "type": "AdamW", "lr": 0.001, "weight_decay": 0.05 } }
+    },
+    {
+      "id": "visualize-loss",
+      "type": "Visualize",
+      "position": { "x": 650, "y": 1150 },
+      "data": { "params": { "title": "Swin Transformer Loss", "plot_type": "line" } }
+    },
+    {
+      "id": "visualize-attn",
+      "type": "Visualize",
+      "position": { "x": 950, "y": 1150 },
+      "data": { "params": { "title": "Window Attention Patterns", "plot_type": "heatmap" } }
+    }
+  ],
+  "edges": [
+    { "id": "e-1", "source": "dataset-1", "target": "transform-1", "sourceHandle": "dataset", "targetHandle": "dataset" },
+    { "id": "e-2", "source": "transform-1", "target": "dataloader-1", "sourceHandle": "dataset", "targetHandle": "dataset" },
+    { "id": "e-3", "source": "patch-embed", "target": "reshape-s1", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-4", "source": "reshape-s1", "target": "stage1-encoder", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-5", "source": "stage1-encoder", "target": "print-s1", "sourceHandle": "tensor", "targetHandle": "value" },
+    { "id": "e-6", "source": "stage1-encoder", "target": "merge-1", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-7", "source": "merge-1", "target": "reshape-s2", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-8", "source": "reshape-s2", "target": "stage2-encoder", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-9", "source": "stage2-encoder", "target": "print-s2", "sourceHandle": "tensor", "targetHandle": "value" },
+    { "id": "e-10", "source": "stage2-encoder", "target": "merge-2", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-11", "source": "merge-2", "target": "reshape-s3", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-12", "source": "reshape-s3", "target": "stage3-encoder", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-13", "source": "stage3-encoder", "target": "merge-3", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-14", "source": "merge-3", "target": "reshape-s4", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-15", "source": "reshape-s4", "target": "stage4-encoder", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-16", "source": "stage4-encoder", "target": "dropout-1", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-17", "source": "dropout-1", "target": "reshape-out", "sourceHandle": "tensor", "targetHandle": "tensor" }
+  ]
+}

@@ -1,0 +1,78 @@
+{
+  "name": "PPO Robotics Controller",
+  "description": "Proximal Policy Optimization for Robotics Control — PPO (OpenAI, 2017) is the default algorithm behind most modern RL deployments: OpenAI Five (Dota 2), ChatGPT RLHF fine-tuning, robotic manipulation, and autonomous driving. Uses a clipped surrogate objective for stable policy gradient updates with an Actor-Critic architecture.",
+  "nodes": [
+    {
+      "id": "env-1",
+      "type": "EnvWrapper",
+      "position": { "x": 50, "y": 50 },
+      "data": { "params": { "env_name": "Humanoid-v4" } }
+    },
+    {
+      "id": "print-obs",
+      "type": "Print",
+      "position": { "x": 50, "y": 230 },
+      "data": { "params": { "label": "Observation: 376-dim (joints + velocities + contacts)" } }
+    },
+    {
+      "id": "ppo-1",
+      "type": "PPO",
+      "position": { "x": 400, "y": 50 },
+      "data": { "params": { "state_dim": 376, "action_dim": 17, "hidden_dim": 256 } }
+    },
+    {
+      "id": "optimizer-1",
+      "type": "Optimizer",
+      "position": { "x": 750, "y": 50 },
+      "data": { "params": { "type": "AdamW", "lr": 0.0003, "weight_decay": 0.0 } }
+    },
+    {
+      "id": "loss-policy",
+      "type": "Loss",
+      "position": { "x": 50, "y": 430 },
+      "data": { "params": { "type": "MSELoss" } }
+    },
+    {
+      "id": "print-action",
+      "type": "Print",
+      "position": { "x": 400, "y": 230 },
+      "data": { "params": { "label": "Action: 17-dim continuous torques (Actor output)" } }
+    },
+    {
+      "id": "print-value",
+      "type": "Print",
+      "position": { "x": 750, "y": 230 },
+      "data": { "params": { "label": "Value estimate V(s) (Critic output)" } }
+    },
+    {
+      "id": "visualize-reward",
+      "type": "Visualize",
+      "position": { "x": 400, "y": 430 },
+      "data": { "params": { "title": "Humanoid Walking Reward", "plot_type": "line" } }
+    },
+    {
+      "id": "visualize-policy-loss",
+      "type": "Visualize",
+      "position": { "x": 750, "y": 430 },
+      "data": { "params": { "title": "PPO Clipped Policy Loss", "plot_type": "line" } }
+    },
+    {
+      "id": "visualize-value-loss",
+      "type": "Visualize",
+      "position": { "x": 1100, "y": 430 },
+      "data": { "params": { "title": "Value Function Loss", "plot_type": "line" } }
+    },
+    {
+      "id": "visualize-entropy",
+      "type": "Visualize",
+      "position": { "x": 1100, "y": 230 },
+      "data": { "params": { "title": "Policy Entropy (exploration)", "plot_type": "line" } }
+    }
+  ],
+  "edges": [
+    { "id": "e-1", "source": "env-1", "target": "ppo-1", "sourceHandle": "observation", "targetHandle": "state" },
+    { "id": "e-2", "source": "env-1", "target": "print-obs", "sourceHandle": "observation", "targetHandle": "value" },
+    { "id": "e-3", "source": "ppo-1", "target": "optimizer-1", "sourceHandle": "model", "targetHandle": "model" },
+    { "id": "e-4", "source": "ppo-1", "target": "print-action", "sourceHandle": "action", "targetHandle": "value" }
+  ]
+}

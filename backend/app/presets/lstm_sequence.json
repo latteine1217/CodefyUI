@@ -1,0 +1,27 @@
+{
+  "preset_name": "LSTM Sequence",
+  "category": "RNN",
+  "description": "LSTM layer followed by an activation function. Suitable for sequence modeling tasks like text classification or time series.",
+  "tags": ["intermediate", "rnn", "lstm", "sequence"],
+  "nodes": [
+    { "id": "lstm", "type": "LSTM", "params": { "input_size": 128, "hidden_size": 256, "num_layers": 1, "batch_first": true, "bidirectional": false } },
+    { "id": "act", "type": "Activation", "params": { "function": "tanh" } }
+  ],
+  "edges": [
+    { "source": "lstm", "sourceHandle": "output", "target": "act", "targetHandle": "tensor" }
+  ],
+  "exposed_inputs": [
+    { "name": "tensor", "internal_node": "lstm", "internal_port": "tensor", "description": "Input sequence tensor (batch, seq_len, features)" }
+  ],
+  "exposed_outputs": [
+    { "name": "output", "internal_node": "act", "internal_port": "tensor", "description": "Activated LSTM output" },
+    { "name": "hidden", "internal_node": "lstm", "internal_port": "hidden", "description": "Final hidden state" }
+  ],
+  "exposed_params": [
+    { "internal_node": "lstm", "param_name": "input_size", "display_name": "Input Size", "group": "LSTM" },
+    { "internal_node": "lstm", "param_name": "hidden_size", "display_name": "Hidden Size", "group": "LSTM" },
+    { "internal_node": "lstm", "param_name": "num_layers", "display_name": "Num Layers", "group": "LSTM" },
+    { "internal_node": "lstm", "param_name": "bidirectional", "display_name": "Bidirectional", "group": "LSTM" },
+    { "internal_node": "act", "param_name": "function", "display_name": "Activation", "group": "Output" }
+  ]
+}

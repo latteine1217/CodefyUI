@@ -1,0 +1,38 @@
+{
+  "preset_name": "Training Pipeline",
+  "category": "Training",
+  "description": "Complete training pipeline: Dataset -> DataLoader -> Loss -> Optimizer -> TrainingLoop. Connect a model to start training.",
+  "tags": ["beginner", "training", "pipeline"],
+  "nodes": [
+    { "id": "dataset", "type": "Dataset", "params": { "name": "MNIST", "split": "train", "data_dir": "./data" } },
+    { "id": "dataloader", "type": "DataLoader", "params": { "batch_size": 32, "shuffle": true, "num_workers": 0 } },
+    { "id": "loss", "type": "Loss", "params": { "type": "CrossEntropyLoss" } },
+    { "id": "optimizer", "type": "Optimizer", "params": { "type": "Adam", "lr": 0.001, "weight_decay": 0.0 } },
+    { "id": "train_loop", "type": "TrainingLoop", "params": { "epochs": 5, "device": "cpu" } }
+  ],
+  "edges": [
+    { "source": "dataset", "sourceHandle": "dataset", "target": "dataloader", "targetHandle": "dataset" },
+    { "source": "dataloader", "sourceHandle": "dataloader", "target": "train_loop", "targetHandle": "dataloader" },
+    { "source": "loss", "sourceHandle": "loss_fn", "target": "train_loop", "targetHandle": "loss_fn" },
+    { "source": "optimizer", "sourceHandle": "optimizer", "target": "train_loop", "targetHandle": "optimizer" }
+  ],
+  "exposed_inputs": [
+    { "name": "model", "internal_node": "train_loop", "internal_port": "model", "description": "Model to train" },
+    { "name": "model_for_opt", "internal_node": "optimizer", "internal_port": "model", "description": "Model for optimizer (connect same model)" }
+  ],
+  "exposed_outputs": [
+    { "name": "model", "internal_node": "train_loop", "internal_port": "model", "description": "Trained model" },
+    { "name": "losses", "internal_node": "train_loop", "internal_port": "losses", "description": "Loss history" }
+  ],
+  "exposed_params": [
+    { "internal_node": "dataset", "param_name": "name", "display_name": "Dataset", "group": "Data" },
+    { "internal_node": "dataset", "param_name": "split", "display_name": "Split", "group": "Data" },
+    { "internal_node": "dataloader", "param_name": "batch_size", "display_name": "Batch Size", "group": "Data" },
+    { "internal_node": "dataloader", "param_name": "shuffle", "display_name": "Shuffle", "group": "Data" },
+    { "internal_node": "loss", "param_name": "type", "display_name": "Loss Function", "group": "Training" },
+    { "internal_node": "optimizer", "param_name": "type", "display_name": "Optimizer", "group": "Training" },
+    { "internal_node": "optimizer", "param_name": "lr", "display_name": "Learning Rate", "group": "Training" },
+    { "internal_node": "train_loop", "param_name": "epochs", "display_name": "Epochs", "group": "Training" },
+    { "internal_node": "train_loop", "param_name": "device", "display_name": "Device", "group": "Training" }
+  ]
+}

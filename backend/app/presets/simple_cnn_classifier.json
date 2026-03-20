@@ -1,0 +1,36 @@
+{
+  "preset_name": "Simple CNN Classifier",
+  "category": "CNN",
+  "description": "A basic CNN classifier: Conv2d -> ReLU -> MaxPool2d -> Conv2d -> ReLU -> MaxPool2d. Great for image classification tasks like MNIST.",
+  "tags": ["beginner", "cnn", "classification", "image"],
+  "nodes": [
+    { "id": "conv1", "type": "Conv2d", "params": { "in_channels": 1, "out_channels": 32, "kernel_size": 3, "stride": 1, "padding": 1 } },
+    { "id": "act1", "type": "Activation", "params": { "function": "relu" } },
+    { "id": "pool1", "type": "MaxPool2d", "params": { "kernel_size": 2, "stride": 2 } },
+    { "id": "conv2", "type": "Conv2d", "params": { "in_channels": 32, "out_channels": 64, "kernel_size": 3, "stride": 1, "padding": 1 } },
+    { "id": "act2", "type": "Activation", "params": { "function": "relu" } },
+    { "id": "pool2", "type": "MaxPool2d", "params": { "kernel_size": 2, "stride": 2 } }
+  ],
+  "edges": [
+    { "source": "conv1", "sourceHandle": "tensor", "target": "act1", "targetHandle": "tensor" },
+    { "source": "act1", "sourceHandle": "tensor", "target": "pool1", "targetHandle": "tensor" },
+    { "source": "pool1", "sourceHandle": "tensor", "target": "conv2", "targetHandle": "tensor" },
+    { "source": "conv2", "sourceHandle": "tensor", "target": "act2", "targetHandle": "tensor" },
+    { "source": "act2", "sourceHandle": "tensor", "target": "pool2", "targetHandle": "tensor" }
+  ],
+  "exposed_inputs": [
+    { "name": "tensor", "internal_node": "conv1", "internal_port": "tensor", "description": "Input image tensor (N, C, H, W)" }
+  ],
+  "exposed_outputs": [
+    { "name": "tensor", "internal_node": "pool2", "internal_port": "tensor", "description": "Feature map output" }
+  ],
+  "exposed_params": [
+    { "internal_node": "conv1", "param_name": "in_channels", "display_name": "Input Channels", "group": "Layer 1" },
+    { "internal_node": "conv1", "param_name": "out_channels", "display_name": "Conv1 Output Channels", "group": "Layer 1" },
+    { "internal_node": "act1", "param_name": "function", "display_name": "Activation 1", "group": "Layer 1" },
+    { "internal_node": "conv2", "param_name": "out_channels", "display_name": "Conv2 Output Channels", "group": "Layer 2" },
+    { "internal_node": "act2", "param_name": "function", "display_name": "Activation 2", "group": "Layer 2" },
+    { "internal_node": "pool1", "param_name": "kernel_size", "display_name": "Pool1 Kernel Size", "group": "Pooling" },
+    { "internal_node": "pool2", "param_name": "kernel_size", "display_name": "Pool2 Kernel Size", "group": "Pooling" }
+  ]
+}
