@@ -51,6 +51,7 @@ class GraphData(BaseModel):
     edges: list[EdgeData]
     name: str = "Untitled"
     description: str = ""
+    presets: list[PresetDefinition] = []
 
 
 class GraphValidationResponse(BaseModel):
@@ -114,3 +115,7 @@ class CreatePresetRequest(BaseModel):
     tags: list[str] = []
     nodes: list[dict[str, Any]]
     edges: list[dict[str, Any]]
+
+
+# Rebuild models that use forward references
+GraphData.model_rebuild()

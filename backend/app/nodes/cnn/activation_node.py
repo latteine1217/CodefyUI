@@ -6,7 +6,7 @@ from ...core.node_base import BaseNode, DataType, ParamDefinition, ParamType, Po
 class ActivationNode(BaseNode):
     NODE_NAME = "Activation"
     CATEGORY = "CNN"
-    DESCRIPTION = "Apply activation function (ReLU, Sigmoid, or Tanh) to input tensor"
+    DESCRIPTION = "Apply activation function to input tensor"
 
     @classmethod
     def define_inputs(cls) -> list[PortDefinition]:
@@ -28,24 +28,35 @@ class ActivationNode(BaseNode):
                 param_type=ParamType.SELECT,
                 default="relu",
                 description="Activation function to apply",
-                options=["relu", "sigmoid", "tanh"],
+                options=["relu", "sigmoid", "tanh", "leaky_relu", "elu", "gelu", "silu", "mish", "selu", "softmax", "hardswish", "prelu"],
             ),
         ]
 
     def execute(self, inputs: dict[str, Any], params: dict[str, Any]) -> dict[str, Any]:
         import torch
+        import torch.nn as nn
         import torch.nn.functional as F
 
         tensor = inputs["tensor"]
         function = params.get("function", "relu")
 
-        if function == "relu":
-            output = F.relu(tensor)
-        elif function == "sigmoid":
-            output = torch.sigmoid(tensor)
-        elif function == "tanh":
-            output = torch.tanh(tensor)
-        else:
+        activations = {
+            "relu": lambda x: F.relu(x),
+            "sigmoid": lambda x: torch.sigmoid(x),
+            "tanh": lambda x: torch.tanh(x),
+            "leaky_relu": lambda x: F.leaky_relu(x, negative_slope=0.01),
+            "elu": lambda x: F.elu(x),
+            "gelu": lambda x: F.gelu(x),
+            "silu": lambda x: F.silu(x),
+            "mish": lambda x: F.mish(x),
+            "selu": lambda x: F.selu(x),
+            "softmax": lambda x: F.softmax(x, dim=-1),
+            "hardswish": lambda x: F.hardswish(x),
+            "prelu": lambda x: nn.PReLU()(x),
+        }
+        act_fn = activations.get(function)
+        if act_fn is None:
             raise ValueError(f"Unsupported activation function: {function}")
+        output = act_fn(tensor)
 
         return {"tensor": output}

@@ -22,6 +22,7 @@ export interface TabState {
   edges: Edge[];
   selectedNodeId: string | null;
   presetModalNodeId: string | null;
+  subgraphModalNodeId: string | null;
   // execution
   status: ExecutionStatus;
   logs: LogEntry[];
@@ -36,6 +37,7 @@ function createTabState(id: string, name: string): TabState {
     edges: [],
     selectedNodeId: null,
     presetModalNodeId: null,
+    subgraphModalNodeId: null,
     status: 'idle',
     logs: [],
     ws: new ExecutionWebSocket(),
@@ -67,10 +69,13 @@ interface TabStoreState {
   setSelectedNodeId: (id: string | null) => void;
   openPresetModal: (id: string) => void;
   closePresetModal: () => void;
+  openSubgraphModal: (id: string) => void;
+  closeSubgraphModal: () => void;
+  updateSubgraphLayers: (nodeId: string, layersJson: string) => void;
   setNodeExecutionStatus: (nodeId: string, status: NodeData['executionStatus'], error?: string) => void;
   clearExecutionStatus: () => void;
   clear: () => void;
-  getSerializedGraph: () => { nodes: any[]; edges: any[] };
+  getSerializedGraph: () => { nodes: any[]; edges: any[]; presets?: import('../types').PresetDefinition[] };
   deleteNode: (nodeId: string) => void;
   duplicateNode: (nodeId: string) => void;
   renameNode: (nodeId: string, newLabel: string) => void;
@@ -337,6 +342,23 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
   closePresetModal: () =>
     set({ tabs: updateTab(get().tabs, get().activeTabId, () => ({ presetModalNodeId: null })) }),
 
+  openSubgraphModal: (id) =>
+    set({ tabs: updateTab(get().tabs, get().activeTabId, () => ({ subgraphModalNodeId: id })) }),
+
+  closeSubgraphModal: () =>
+    set({ tabs: updateTab(get().tabs, get().activeTabId, () => ({ subgraphModalNodeId: null })) }),
+
+  updateSubgraphLayers: (nodeId, layersJson) =>
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
+        nodes: tab.nodes.map((n) =>
+          n.id === nodeId
+            ? { ...n, data: { ...n.data, params: { ...n.data.params, layers: layersJson } } }
+            : n
+        ),
+      })),
+    }),
+
   setNodeExecutionStatus: (nodeId, status, error) =>
     set({
       tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
@@ -365,13 +387,24 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
         edges: [],
         selectedNodeId: null,
         presetModalNodeId: null,
+        subgraphModalNodeId: null,
       })),
     }),
 
   getSerializedGraph: () => {
     const tab = get().getActiveTab();
-    return {
-      nodes: tab.nodes.map((n) => ({
+    const presets: import('../types').PresetDefinition[] = [];
+    const seenPresets = new Set<string>();
+
+    const nodes = tab.nodes.map((n) => {
+      if (n.data.isPreset && n.data.presetDefinition) {
+        const name = n.data.presetDefinition.preset_name;
+        if (!seenPresets.has(name)) {
+          seenPresets.add(name);
+          presets.push(n.data.presetDefinition);
+        }
+      }
+      return {
         id: n.id,
         type: n.data.type,
         position: n.position,
@@ -379,7 +412,11 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
           params: n.data.params,
           ...(n.data.isPreset ? { internalParams: n.data.internalParams } : {}),
         },
-      })),
+      };
+    });
+
+    return {
+      nodes,
       edges: tab.edges.map((e) => ({
         id: e.id,
         source: e.source,
@@ -387,6 +424,7 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
         sourceHandle: e.sourceHandle ?? '',
         targetHandle: e.targetHandle ?? '',
       })),
+      presets,
     };
   },
 

@@ -1,0 +1,192 @@
+{
+  "preset_name": "Sub1",
+  "category": "Custom",
+  "description": "",
+  "tags": [],
+  "nodes": [
+    {
+      "id": "node_0",
+      "type": "SequentialModel",
+      "params": {
+        "layers": "[{\"type\":\"Conv2d\",\"in_channels\":1,\"out_channels\":32,\"kernel_size\":3,\"padding\":1},{\"type\":\"ReLU\"},{\"type\":\"MaxPool2d\",\"kernel_size\":2,\"stride\":2},{\"type\":\"Conv2d\",\"in_channels\":32,\"out_channels\":64,\"kernel_size\":3,\"padding\":1},{\"type\":\"ReLU\"},{\"type\":\"MaxPool2d\",\"kernel_size\":2,\"stride\":2},{\"type\":\"Flatten\"},{\"type\":\"Linear\",\"in_features\":3136,\"out_features\":128},{\"type\":\"ReLU\"},{\"type\":\"Linear\",\"in_features\":128,\"out_features\":10}]"
+      }
+    },
+    {
+      "id": "node_1",
+      "type": "TrainingLoop",
+      "params": {
+        "epochs": 5,
+        "device": "cpu"
+      }
+    },
+    {
+      "id": "node_2",
+      "type": "Optimizer",
+      "params": {
+        "type": "Adam",
+        "lr": 0.001,
+        "weight_decay": 0
+      }
+    },
+    {
+      "id": "node_3",
+      "type": "Loss",
+      "params": {
+        "type": "CrossEntropyLoss"
+      }
+    },
+    {
+      "id": "node_4",
+      "type": "DataLoader",
+      "params": {
+        "batch_size": 32,
+        "shuffle": true,
+        "num_workers": 0
+      }
+    },
+    {
+      "id": "node_5",
+      "type": "Dataset",
+      "params": {
+        "name": "MNIST",
+        "split": "train",
+        "data_dir": "./data"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "source": "node_0",
+      "target": "node_1",
+      "sourceHandle": "model",
+      "targetHandle": "model"
+    },
+    {
+      "source": "node_2",
+      "target": "node_1",
+      "sourceHandle": "optimizer",
+      "targetHandle": "optimizer"
+    },
+    {
+      "source": "node_3",
+      "target": "node_1",
+      "sourceHandle": "loss_fn",
+      "targetHandle": "loss_fn"
+    },
+    {
+      "source": "node_0",
+      "target": "node_2",
+      "sourceHandle": "model",
+      "targetHandle": "model"
+    },
+    {
+      "source": "node_4",
+      "target": "node_1",
+      "sourceHandle": "dataloader",
+      "targetHandle": "dataloader"
+    },
+    {
+      "source": "node_5",
+      "target": "node_4",
+      "sourceHandle": "dataset",
+      "targetHandle": "dataset"
+    }
+  ],
+  "exposed_inputs": [],
+  "exposed_outputs": [
+    {
+      "name": "node_1_model",
+      "internal_node": "node_1",
+      "internal_port": "model",
+      "data_type": "MODEL",
+      "description": "TrainingLoop: Trained model"
+    },
+    {
+      "name": "node_1_losses",
+      "internal_node": "node_1",
+      "internal_port": "losses",
+      "data_type": "TENSOR",
+      "description": "TrainingLoop: Loss history tensor (one value per epoch)"
+    }
+  ],
+  "exposed_params": [
+    {
+      "internal_node": "node_0",
+      "param_name": "layers",
+      "display_name": "SequentialModel - layers",
+      "group": "SequentialModel"
+    },
+    {
+      "internal_node": "node_1",
+      "param_name": "epochs",
+      "display_name": "TrainingLoop - epochs",
+      "group": "TrainingLoop"
+    },
+    {
+      "internal_node": "node_1",
+      "param_name": "device",
+      "display_name": "TrainingLoop - device",
+      "group": "TrainingLoop"
+    },
+    {
+      "internal_node": "node_2",
+      "param_name": "type",
+      "display_name": "Optimizer - type",
+      "group": "Optimizer"
+    },
+    {
+      "internal_node": "node_2",
+      "param_name": "lr",
+      "display_name": "Optimizer - lr",
+      "group": "Optimizer"
+    },
+    {
+      "internal_node": "node_2",
+      "param_name": "weight_decay",
+      "display_name": "Optimizer - weight_decay",
+      "group": "Optimizer"
+    },
+    {
+      "internal_node": "node_3",
+      "param_name": "type",
+      "display_name": "Loss - type",
+      "group": "Loss"
+    },
+    {
+      "internal_node": "node_4",
+      "param_name": "batch_size",
+      "display_name": "DataLoader - batch_size",
+      "group": "DataLoader"
+    },
+    {
+      "internal_node": "node_4",
+      "param_name": "shuffle",
+      "display_name": "DataLoader - shuffle",
+      "group": "DataLoader"
+    },
+    {
+      "internal_node": "node_4",
+      "param_name": "num_workers",
+      "display_name": "DataLoader - num_workers",
+      "group": "DataLoader"
+    },
+    {
+      "internal_node": "node_5",
+      "param_name": "name",
+      "display_name": "Dataset - name",
+      "group": "Dataset"
+    },
+    {
+      "internal_node": "node_5",
+      "param_name": "split",
+      "display_name": "Dataset - split",
+      "group": "Dataset"
+    },
+    {
+      "internal_node": "node_5",
+      "param_name": "data_dir",
+      "display_name": "Dataset - data_dir",
+      "group": "Dataset"
+    }
+  ]
+}

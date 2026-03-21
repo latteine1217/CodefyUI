@@ -32,9 +32,74 @@ const zhTW: NodeTranslations = {
     },
   },
   Activation: {
-    description: '對輸入張量套用激活函數（ReLU、Sigmoid 或 Tanh）',
+    description: '對輸入張量套用激活函數',
     params: {
       function: '要套用的激活函數',
+    },
+  },
+  Conv1d: {
+    description: '對輸入張量套用 1D 卷積（封裝 nn.Conv1d）',
+    params: {
+      in_channels: '輸入通道數',
+      out_channels: '輸出通道數',
+      kernel_size: '卷積核大小',
+      stride: '卷積步幅',
+      padding: '兩側的零填充',
+    },
+  },
+  ConvTranspose2d: {
+    description: '對輸入張量套用 2D 轉置卷積/反卷積（封裝 nn.ConvTranspose2d）',
+    params: {
+      in_channels: '輸入通道數',
+      out_channels: '輸出通道數',
+      kernel_size: '卷積核大小',
+      stride: '卷積步幅',
+      padding: '兩側的零填充',
+      output_padding: '輸出形狀的額外大小',
+    },
+  },
+  AvgPool2d: {
+    description: '對輸入張量套用 2D 平均池化（封裝 nn.AvgPool2d）',
+    params: {
+      kernel_size: '池化視窗大小',
+      stride: '池化視窗步幅',
+      padding: '兩側的零填充',
+    },
+  },
+  AdaptiveAvgPool2d: {
+    description: '對輸入張量套用 2D 自適應平均池化，產生固定輸出尺寸（封裝 nn.AdaptiveAvgPool2d）',
+    params: {
+      output_height: '目標輸出高度',
+      output_width: '目標輸出寬度',
+    },
+  },
+
+  // ── Normalization ──
+  LayerNorm: {
+    description: '套用層正規化（封裝 nn.LayerNorm）。Transformer 架構的必備組件。',
+    params: {
+      normalized_shape: '要正規化的維度形狀（逗號分隔整數）',
+      eps: '數值穩定性的 Epsilon',
+    },
+  },
+  GroupNorm: {
+    description: '套用群組正規化（封裝 nn.GroupNorm）。用於現代 CNN 架構。',
+    params: {
+      num_groups: '將通道分成的群組數',
+      num_channels: '通道數（必須能被 num_groups 整除）',
+    },
+  },
+  InstanceNorm2d: {
+    description: '套用 2D 實例正規化（封裝 nn.InstanceNorm2d）。用於風格轉換和影像生成。',
+    params: {
+      num_features: '特徵（通道）數',
+      affine: '是否使用可學習的仿射參數',
+    },
+  },
+  BatchNorm1d: {
+    description: '套用 1D 批次正規化（封裝 nn.BatchNorm1d）。用於 Linear 層之後。',
+    params: {
+      num_features: '要正規化的特徵數',
     },
   },
 
@@ -139,7 +204,7 @@ const zhTW: NodeTranslations = {
 
   // ── Training ──
   Optimizer: {
-    description: '建立優化器（Adam、SGD 或 AdamW）用於模型參數',
+    description: '建立優化器用於模型參數',
     params: {
       type: '優化器演算法',
       lr: '學習率',
@@ -147,7 +212,7 @@ const zhTW: NodeTranslations = {
     },
   },
   Loss: {
-    description: '建立損失函數（CrossEntropyLoss、MSELoss 或 BCEWithLogitsLoss）',
+    description: '建立損失函數',
     params: {
       type: '損失函數類型',
     },
@@ -157,6 +222,18 @@ const zhTW: NodeTranslations = {
     params: {
       epochs: '訓練 epoch 數量',
       device: '訓練裝置',
+    },
+  },
+
+  LRScheduler: {
+    description: '建立學習率排程器',
+    params: {
+      type: '排程器類型',
+      step_size: 'StepLR 的步長',
+      gamma: '衰減因子',
+      T_max: 'CosineAnnealingLR 的最大迭代數',
+      max_lr: 'OneCycleLR 的最大學習率',
+      total_steps: 'OneCycleLR 的總訓練步數',
     },
   },
 
@@ -196,6 +273,37 @@ const zhTW: NodeTranslations = {
     },
   },
 
+  ModelSaver: {
+    description: '將模型權重（state_dict）儲存為 .pt/.pth 檔案',
+    params: {
+      path: '輸出檔案路徑（.pt 或 .pth）',
+      save_mode: '儲存模式：state_dict（推薦）或完整模型',
+    },
+  },
+  ModelLoader: {
+    description: '從 .pt/.pth 檔案載入模型權重，或載入完整的已儲存模型',
+    params: {
+      path: '權重檔案路徑（.pt 或 .pth）',
+      load_mode: '載入模式：state_dict（需要模型輸入）或完整模型',
+      device: '載入權重的裝置',
+      strict: '是否嚴格要求 state_dict 中的鍵值匹配',
+    },
+  },
+  CheckpointSaver: {
+    description: '儲存完整訓練檢查點（模型 + 優化器 + epoch + 損失值），用於稍後恢復訓練',
+    params: {
+      path: '輸出檢查點檔案路徑',
+      epoch: '要儲存在檢查點中的當前 epoch 數',
+    },
+  },
+  CheckpointLoader: {
+    description: '載入訓練檢查點以恢復訓練（恢復模型 + 優化器 + epoch）',
+    params: {
+      path: '檢查點檔案路徑',
+      device: '載入的目標裝置',
+    },
+  },
+
   // ── Control ──
   Compare: {
     description: '比較兩個純量值，輸出 1.0（真）或 0.0（假）',
@@ -211,6 +319,73 @@ const zhTW: NodeTranslations = {
     params: {
       subgraph: '每次迭代要執行的子圖/預設模組名稱',
       iterations: '迭代次數',
+    },
+  },
+
+  // ── Tensor Operations ──
+  Permute: {
+    description: '排列（重新排序）張量的維度',
+    params: {
+      dims: '新的維度順序（逗號分隔整數）',
+    },
+  },
+  Squeeze: {
+    description: '移除大小為 1 的維度',
+    params: {
+      dim: '要壓縮的維度（-1 表示全部）',
+    },
+  },
+  Unsqueeze: {
+    description: '在指定位置新增大小為 1 的維度',
+    params: {
+      dim: '要插入的維度位置',
+    },
+  },
+  Add: {
+    description: '兩個張量的逐元素相加（支援廣播）',
+    params: {
+      alpha: 'tensor_b 的乘數：a + alpha * b',
+    },
+  },
+  Multiply: {
+    description: '兩個張量的逐元素相乘（支援廣播）',
+  },
+  MatMul: {
+    description: '兩個張量的矩陣乘法（torch.matmul）',
+  },
+  Mean: {
+    description: '沿指定維度計算張量的平均值',
+    params: {
+      dim: '要縮減的維度（逗號分隔整數）',
+      keepdim: '是否保留被縮減的維度',
+    },
+  },
+  Softmax: {
+    description: '沿指定維度套用 Softmax 函數',
+    params: {
+      dim: '要套用 Softmax 的維度',
+    },
+  },
+  Split: {
+    description: '沿指定維度將張量切分為多個區塊',
+    params: {
+      chunks: '要切分的區塊數',
+      dim: '要切分的維度',
+    },
+  },
+  Stack: {
+    description: '沿新維度堆疊兩個張量',
+    params: {
+      dim: '要堆疊的維度',
+    },
+  },
+  TensorCreate: {
+    description: '建立填充零、一、隨機值或常數的張量',
+    params: {
+      shape: '張量形狀（逗號分隔整數）',
+      fill: '填充方法',
+      value: '填充值（僅 full 模式）',
+      requires_grad: '張量是否需要梯度',
     },
   },
 
@@ -238,6 +413,34 @@ const zhTW: NodeTranslations = {
     params: {
       title: '圖表標題',
       plot_type: '要生成的圖表類型',
+    },
+  },
+
+  Flatten: {
+    description: '展平張量的維度：nn.Flatten(start_dim, end_dim)',
+    params: {
+      start_dim: '開始展平的維度',
+    },
+  },
+  Linear: {
+    description: '全連接（密集）層：nn.Linear(in_features, out_features)',
+    params: {
+      in_features: '輸入特徵大小',
+      out_features: '輸出特徵大小',
+    },
+  },
+  SequentialModel: {
+    description: '從 JSON 層列表建構 nn.Sequential 模型',
+    params: {
+      layers: '層定義的 JSON 陣列',
+    },
+  },
+  Embedding: {
+    description: '為整數索引查找嵌入向量（封裝 nn.Embedding）。用於 NLP 和序列模型。',
+    params: {
+      num_embeddings: '詞彙表大小',
+      embedding_dim: '每個嵌入向量的維度',
+      padding_idx: '填充 token 的索引（-1 表示無）',
     },
   },
 

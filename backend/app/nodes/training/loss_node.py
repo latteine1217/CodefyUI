@@ -6,7 +6,7 @@ from ...core.node_base import BaseNode, DataType, ParamDefinition, ParamType, Po
 class LossNode(BaseNode):
     NODE_NAME = "Loss"
     CATEGORY = "Training"
-    DESCRIPTION = "Create a loss function (CrossEntropyLoss, MSELoss, or BCEWithLogitsLoss)"
+    DESCRIPTION = "Create a loss function"
 
     @classmethod
     def define_inputs(cls) -> list[PortDefinition]:
@@ -26,7 +26,7 @@ class LossNode(BaseNode):
                 param_type=ParamType.SELECT,
                 default="CrossEntropyLoss",
                 description="Loss function type",
-                options=["CrossEntropyLoss", "MSELoss", "BCEWithLogitsLoss"],
+                options=["CrossEntropyLoss", "MSELoss", "BCEWithLogitsLoss", "L1Loss", "SmoothL1Loss", "NLLLoss", "KLDivLoss", "HuberLoss", "BCELoss", "MarginRankingLoss", "CosineEmbeddingLoss"],
             ),
         ]
 
@@ -39,6 +39,14 @@ class LossNode(BaseNode):
             "CrossEntropyLoss": nn.CrossEntropyLoss,
             "MSELoss": nn.MSELoss,
             "BCEWithLogitsLoss": nn.BCEWithLogitsLoss,
+            "L1Loss": nn.L1Loss,
+            "SmoothL1Loss": nn.SmoothL1Loss,
+            "NLLLoss": nn.NLLLoss,
+            "KLDivLoss": nn.KLDivLoss,
+            "HuberLoss": nn.HuberLoss,
+            "BCELoss": nn.BCELoss,
+            "MarginRankingLoss": nn.MarginRankingLoss,
+            "CosineEmbeddingLoss": nn.CosineEmbeddingLoss,
         }
 
         loss_cls = loss_map.get(loss_type)

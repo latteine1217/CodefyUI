@@ -6,7 +6,7 @@ from ...core.node_base import BaseNode, DataType, ParamDefinition, ParamType, Po
 class OptimizerNode(BaseNode):
     NODE_NAME = "Optimizer"
     CATEGORY = "Training"
-    DESCRIPTION = "Create an optimizer (Adam, SGD, or AdamW) for model parameters"
+    DESCRIPTION = "Create an optimizer for model parameters"
 
     @classmethod
     def define_inputs(cls) -> list[PortDefinition]:
@@ -28,7 +28,7 @@ class OptimizerNode(BaseNode):
                 param_type=ParamType.SELECT,
                 default="Adam",
                 description="Optimizer algorithm",
-                options=["Adam", "SGD", "AdamW"],
+                options=["Adam", "SGD", "AdamW", "RMSprop", "Adagrad", "RAdam", "NAdam", "Rprop", "ASGD"],
             ),
             ParamDefinition(name="lr", param_type=ParamType.FLOAT, default=0.001, description="Learning rate", min_value=0.0),
             ParamDefinition(name="weight_decay", param_type=ParamType.FLOAT, default=0.0, description="Weight decay (L2 penalty)", min_value=0.0),
@@ -46,6 +46,12 @@ class OptimizerNode(BaseNode):
             "Adam": optim.Adam,
             "SGD": optim.SGD,
             "AdamW": optim.AdamW,
+            "RMSprop": optim.RMSprop,
+            "Adagrad": optim.Adagrad,
+            "RAdam": optim.RAdam,
+            "NAdam": optim.NAdam,
+            "Rprop": optim.Rprop,
+            "ASGD": optim.ASGD,
         }
 
         optimizer_cls = optimizer_map.get(opt_type)
