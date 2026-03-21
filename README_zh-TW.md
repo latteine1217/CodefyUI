@@ -60,7 +60,7 @@ backend/    Python 3.10+ · FastAPI · PyTorch
 | **RL** | DQN、PPO、EnvWrapper |
 | **資料** | Dataset、DataLoader、Transform |
 | **訓練** | Optimizer、Loss、TrainingLoop |
-| **IO** | ImageReader、ImageWriter、ImageBatchReader、FileReader |
+| **IO** | ImageReader、ImageWriter、ImageBatchReader、FileReader、ModelSaver、ModelLoader、CheckpointSaver、CheckpointLoader、Inference |
 | **控制** | If、ForLoop、Compare |
 | **工具** | Print、Reshape、Concat、Flatten、Linear、SequentialModel、Visualize |
 
@@ -73,6 +73,57 @@ backend/    Python 3.10+ · FastAPI · PyTorch
 - **Training Pipeline** — 完整的 Dataset → DataLoader → Optimizer → Loss → TrainingLoop
 
 透過工具列的 **匯出子圖** 按鈕，可以將目前的畫布匯出為可重用的預設模組。
+
+## 使用已訓練的模型進行推論
+
+訓練完成後，可以將模型權重儲存下來，之後載入並用 **Inference** 節點進行推論。
+
+### 儲存模型權重
+
+訓練完成後，將 **TrainingLoop** 的 `model` 輸出連接到 **ModelSaver** 節點：
+
+```
+SequentialModel → Optimizer → TrainingLoop → ModelSaver
+                                   ↑
+                              DataLoader
+                              Loss
+```
+
+ModelSaver 會將權重存為 `.pt` 檔案，預設位置為 `backend/app/data/models/`。
+
+### 上傳已訓練的模型權重
+
+如果你有在外部訓練好的 `.pt` / `.pth` 權重檔，將檔案放入：
+
+```
+backend/app/data/models/
+```
+
+然後在 **ModelLoader** 節點的 `path` 參數填入檔名即可（例如 `my_weights.pt`）。
+
+> 也可以填入絕對路徑，指向系統上任意位置的權重檔。
+
+### 推論流程
+
+使用 **Inference** 節點對新資料進行預測：
+
+**方式一：state_dict 模式**（推薦 — 需要同樣的模型架構）
+
+```
+SequentialModel ──→ ModelLoader ──→ Inference ──→ output（預測結果）
+                        ↑               ↑
+                   my_weights.pt    輸入資料（Tensor）
+```
+
+**方式二：full_model 模式**（不需要 SequentialModel 節點）
+
+```
+ModelLoader（load_mode=full_model）──→ Inference ──→ output（預測結果）
+                  ↑                        ↑
+             my_model.pt              輸入資料（Tensor）
+```
+
+Inference 節點會自動將模型設為 `eval()` 模式並在 `torch.no_grad()` 下執行前向傳播。
 
 ## 自訂節點
 

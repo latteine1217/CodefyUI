@@ -303,6 +303,12 @@ const zhTW: NodeTranslations = {
       device: '載入的目標裝置',
     },
   },
+  Inference: {
+    description: '對已訓練的模型執行推論（前向傳播）。自動設為 eval 模式並停用梯度。',
+    params: {
+      device: '執行推論的裝置',
+    },
+  },
 
   // ── Control ──
   Compare: {
