@@ -1,6 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useNodeDefinitions } from '../../hooks/useNodeDefinitions';
 import { useNodeDefStore } from '../../store/nodeDefStore';
+import { useUIStore } from '../../store/uiStore';
 import { useI18n } from '../../i18n';
 import type { NodeDefinition, PresetDefinition } from '../../types';
 import { CATEGORY_COLORS, DIFFICULTY_COLORS } from '../../styles/theme';
@@ -16,22 +18,40 @@ interface NodeItemProps {
 
 function NodeItem({ definition }: NodeItemProps) {
   const [hovered, setHovered] = useState(false);
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  const itemRef = useRef<HTMLDivElement>(null);
+  const tooltipsEnabled = useUIStore((s) => s.tooltipsEnabled);
   const { tn } = useI18n();
 
   const desc = tn(definition.node_name, 'description', definition.description);
+
+  const handleMouseEnter = useCallback(() => {
+    setHovered(true);
+    if (itemRef.current) {
+      const rect = itemRef.current.getBoundingClientRect();
+      setTooltipPos({ x: rect.right + 8, y: rect.top });
+    }
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    setHovered(false);
+    setTooltipPos(null);
+  }, []);
 
   const handleDragStart = (event: React.DragEvent) => {
     event.dataTransfer.setData('application/codefyui-node', definition.node_name);
     event.dataTransfer.effectAllowed = 'move';
   };
 
+  const showTooltip = tooltipsEnabled && desc && hovered && tooltipPos;
+
   return (
     <div
+      ref={itemRef}
       draggable
       onDragStart={handleDragStart}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      title={desc}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       className={styles.nodeItem}
       style={{
         background: hovered ? '#2a2a2a' : 'transparent',
@@ -45,6 +65,16 @@ function NodeItem({ definition }: NodeItemProps) {
         <div className={styles.nodeItemDesc}>
           {desc}
         </div>
+      )}
+      {showTooltip && createPortal(
+        <div
+          className={styles.nodeTooltip}
+          style={{ left: tooltipPos.x, top: tooltipPos.y }}
+        >
+          <div className={styles.nodeTooltipTitle}>{definition.node_name}</div>
+          <div className={styles.nodeTooltipDesc}>{desc}</div>
+        </div>,
+        document.body,
       )}
     </div>
   );

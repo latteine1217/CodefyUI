@@ -1,19 +1,22 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { NodeData } from '../../types';
 import { getPortColor } from '../../utils';
 import { useTabStore } from '../../store/tabStore';
+import { useUIStore } from '../../store/uiStore';
 import { useI18n } from '../../i18n';
 import { CATEGORY_COLORS, STATUS_COLORS } from '../../styles/theme';
 import styles from './BaseNode.module.css';
 
 function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
   const openSubgraphModal = useTabStore((s) => s.openSubgraphModal);
+  const tooltipsEnabled = useUIStore((s) => s.tooltipsEnabled);
+  const [hovered, setHovered] = useState(false);
   const def = data.definition;
   const category = def?.category ?? 'Utility';
   const headerColor = CATEGORY_COLORS[category] ?? '#607D8B';
-  const { t } = useI18n();
+  const { t, tn } = useI18n();
 
   const isSequentialModel = data.type === 'SequentialModel';
 
@@ -41,9 +44,13 @@ function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
       ? statusBorderColor
       : '#444444';
 
+  const description = def ? tn(def.node_name, 'description', def.description) : '';
+
   return (
     <div
       onClick={handleClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       className={styles.node}
       style={{
         '--border-color': borderColor,
@@ -53,6 +60,14 @@ function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
         cursor: isSequentialModel ? 'pointer' : undefined,
       } as React.CSSProperties}
     >
+      {/* Tooltip */}
+      {tooltipsEnabled && hovered && description && (
+        <div className={styles.tooltip}>
+          <div className={styles.tooltipTitle}>{data.label}</div>
+          <div className={styles.tooltipDesc}>{description}</div>
+        </div>
+      )}
+
       {/* Header */}
       <div
         className={styles.header}
@@ -174,11 +189,28 @@ function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
         </div>
       )}
 
-      {/* Status footer — running */}
+      {/* Status footer — running (with optional progress) */}
       {data.executionStatus === 'running' && (
         <div className={`${styles.statusFooter} ${styles.statusRunning}`}>
-          <span className={styles.statusRunningDot} />
-          {t('node.running')}
+          {data.progress?.event === 'epoch' ? (
+            <div className={styles.progressContainer}>
+              <div className={styles.progressInfo}>
+                <span>Epoch {data.progress.epoch}/{data.progress.total_epochs}</span>
+                <span>Loss: {Number(data.progress.loss).toFixed(4)}</span>
+              </div>
+              <div className={styles.progressBarTrack}>
+                <div
+                  className={styles.progressBarFill}
+                  style={{ width: `${((data.progress.epoch ?? 0) / (data.progress.total_epochs ?? 1)) * 100}%` }}
+                />
+              </div>
+            </div>
+          ) : (
+            <>
+              <span className={styles.statusRunningDot} />
+              {t('node.running')}
+            </>
+          )}
         </div>
       )}
 
