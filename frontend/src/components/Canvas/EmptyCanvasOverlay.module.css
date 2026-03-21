@@ -1,0 +1,95 @@
+/* EmptyCanvasOverlay.module.css */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.inner {
+  text-align: center;
+  pointer-events: auto;
+}
+
+.title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #555;
+  margin-bottom: 6px;
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  color: #444;
+  margin-bottom: 24px;
+}
+
+/* Quick-start preset card grid */
+.quickStartGrid {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+/* Preset card base — hover effects (borderColor, boxShadow) applied via onMouseEnter/Leave inline */
+.presetCard {
+  background: #1e1e1e;
+  border: 1px solid #3a3a3a;
+  border-radius: 8px;
+  padding: 14px 18px;
+  cursor: pointer;
+  width: 180px;
+  text-align: left;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.presetCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.presetCardName {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #ddd;
+}
+
+.presetCardDesc {
+  font-size: 0.6875rem;
+  color: #777;
+  line-height: 1.4;
+  margin-bottom: 8px;
+}
+
+.presetCardFooter {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Difficulty badge — bg and color are dynamic (DIFFICULTY_COLORS) — set inline */
+.difficultyBadge {
+  font-size: 0.625rem;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.nodeCount {
+  font-size: 0.625rem;
+  color: #555;
+}
+
+.hint {
+  font-size: 0.75rem;
+  color: #444;
+}

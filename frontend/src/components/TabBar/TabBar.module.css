@@ -1,0 +1,98 @@
+/* TabBar.module.css */
+
+.bar {
+  height: 32px;
+  background: #151515;
+  border-bottom: 1px solid #2a2a2a;
+  display: flex;
+  align-items: stretch;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* Scrollable tabs area */
+.tabsScroll {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  overflow: auto hidden;
+}
+
+/* Tab item base — active/inactive variants handled inline (bg, color, border-bottom, font-weight) */
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 12px;
+  cursor: pointer;
+  border-right: 1px solid #222;
+  font-size: 0.8125rem;
+  min-width: 80px;
+  max-width: 180px;
+  flex-shrink: 0;
+  transition: background 0.15s, color 0.15s;
+  user-select: none;
+}
+
+.tabName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Edit input inside tab */
+.editInput {
+  background: #111;
+  border: 1px solid #444;
+  border-radius: 3px;
+  color: #eee;
+  font-size: 0.8125rem;
+  padding: 1px 4px;
+  width: 80px;
+  outline: none;
+}
+
+/* Close button */
+.closeBtn {
+  font-size: 0.9375rem;
+  color: #555;
+  cursor: pointer;
+  flex-shrink: 0;
+  line-height: 1;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px;
+}
+
+.closeBtn:hover {
+  color: #ccc;
+}
+
+/* Running indicator dot — bg + box-shadow applied inline when running */
+.runningDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* Add tab button */
+.addBtn {
+  padding: 0 12px;
+  background: transparent;
+  border: none;
+  border-left: 1px solid #222;
+  color: #555;
+  font-size: 1.0625rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.addBtn:hover {
+  color: #ccc;
+}

@@ -24,6 +24,8 @@ import { useTabStore } from '../../store/tabStore';
 import { useDragAndDrop } from '../../hooks/useDragAndDrop';
 import { isValidConnection } from '../../utils';
 import { useI18n } from '../../i18n';
+import { CATEGORY_COLORS } from '../../styles/theme';
+import styles from './FlowCanvas.module.css';
 
 const nodeTypes: NodeTypes = {
   baseNode: BaseNode,
@@ -124,7 +126,7 @@ export function FlowCanvas() {
   const isEmpty = activeTab.nodes.length === 0;
 
   return (
-    <div style={{ width: '100%', height: '100%', background: '#0a0a0a', position: 'relative' }}>
+    <div className={styles.canvas}>
       {isEmpty && <EmptyCanvasOverlay />}
       <ReactFlow
         nodes={activeTab.nodes}
@@ -168,18 +170,7 @@ export function FlowCanvas() {
             const data = node.data as any;
             if (data?.isPreset) return '#D4A017';
             const category = data?.definition?.category ?? 'Utility';
-            const colors: Record<string, string> = {
-              CNN: '#4CAF50',
-              RNN: '#2196F3',
-              Transformer: '#9C27B0',
-              RL: '#FF9800',
-              Data: '#00BCD4',
-              Training: '#F44336',
-              IO: '#795548',
-              Control: '#FF6F00',
-              Utility: '#607D8B',
-            };
-            return colors[category] ?? '#607D8B';
+            return CATEGORY_COLORS[category] ?? '#607D8B';
           }}
           maskColor="rgba(0,0,0,0.7)"
         />

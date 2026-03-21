@@ -1,4 +1,5 @@
 import { useI18n } from '../../i18n';
+import styles from './NodeContextMenu.module.css';
 
 export interface ContextMenuPosition {
   nodeId: string;
@@ -24,49 +25,25 @@ export function NodeContextMenu({ position, items, onClose }: NodeContextMenuPro
     <>
       {/* Backdrop */}
       <div
-        style={{ position: 'fixed', inset: 0, zIndex: 999 }}
+        className={styles.backdrop}
         onClick={onClose}
         onContextMenu={(e) => { e.preventDefault(); onClose(); }}
       />
-      {/* Menu */}
+      {/* Menu — left/top are dynamic from position */}
       <div
-        style={{
-          position: 'fixed',
-          left: position.x,
-          top: position.y,
-          zIndex: 1000,
-          background: '#222',
-          border: '1px solid #444',
-          borderRadius: 6,
-          minWidth: 160,
-          boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
-          overflow: 'hidden',
-          padding: '4px 0',
-        }}
+        className={styles.menu}
+        style={{ left: position.x, top: position.y }}
       >
         {items.map((item, i) => (
           <div key={i}>
             <button
               onClick={() => { item.action(); onClose(); }}
-              style={{
-                display: 'block',
-                width: '100%',
-                padding: '7px 14px',
-                textAlign: 'left',
-                background: 'transparent',
-                border: 'none',
-                color: item.color ?? '#ccc',
-                fontSize: '0.8125rem',
-                cursor: 'pointer',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = '#2a2a2a')}
-              onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              className={styles.menuItem}
+              style={{ color: item.color ?? '#ccc' }}
             >
               {item.label}
             </button>
-            {item.dividerAfter && (
-              <div style={{ height: 1, background: '#333', margin: '4px 0' }} />
-            )}
+            {item.dividerAfter && <div className={styles.divider} />}
           </div>
         ))}
       </div>

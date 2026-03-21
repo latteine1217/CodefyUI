@@ -1,0 +1,238 @@
+/* ── Sidebar container ── */
+.sidebar {
+  width: 250px;
+  height: 100%;
+  background: #161616;
+  border-right: 1px solid #2a2a2a;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+/* ── Header ── */
+.header {
+  padding: 12px 10px 8px;
+  border-bottom: 1px solid #2a2a2a;
+  flex-shrink: 0;
+}
+
+.headerTitle {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #888;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+/* ── Search input ── */
+.searchInput {
+  width: 100%;
+  padding: 5px 8px;
+  background: #222;
+  border: 1px solid #333;
+  border-radius: 4px;
+  color: #ddd;
+  font-size: 0.8125rem;
+  outline: none;
+  box-sizing: border-box;
+}
+
+/* ── Tab bar ── */
+.tabBar {
+  display: flex;
+  border-bottom: 1px solid #2a2a2a;
+  flex-shrink: 0;
+}
+
+.tabButton {
+  flex: 1;
+  padding: 7px 0;
+  background: transparent;
+  border: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+/* ── Content area ── */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding-top: 4px;
+}
+
+/* ── Category section ── */
+.categorySection {
+  margin-bottom: 4px;
+}
+
+.categoryButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #eee;
+  text-align: left;
+}
+
+.categoryDot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.categoryName {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  flex: 1;
+}
+
+.categoryCount {
+  font-size: 0.6875rem;
+  color: #666;
+}
+
+.categoryChevron {
+  font-size: 0.6875rem;
+  color: #555;
+  margin-left: 4px;
+}
+
+.categoryNodes {
+  padding-top: 2px;
+  padding-bottom: 4px;
+}
+
+/* ── Node item ── */
+.nodeItem {
+  padding: 6px 10px;
+  margin: 2px 6px;
+  border-radius: 5px;
+  cursor: grab;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.nodeItemName {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: #ddd;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.nodeItemDesc {
+  font-size: 0.6875rem;
+  color: #777;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 1px;
+}
+
+/* ── Preset item ── */
+.presetItem {
+  padding: 8px 10px;
+  margin: 3px 6px;
+  border-radius: 6px;
+  cursor: grab;
+  border: 1px solid transparent;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.presetHeader {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 3px;
+}
+
+.presetName {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #ddd;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.presetDifficultyBadge {
+  font-size: 0.5625rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.presetDesc {
+  font-size: 0.6875rem;
+  color: #777;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.presetNodeCount {
+  font-size: 0.625rem;
+  color: #555;
+  margin-top: 3px;
+}
+
+/* ── Footer hint ── */
+.footer {
+  padding: 6px 10px;
+  border-top: 1px solid #2a2a2a;
+  font-size: 0.6875rem;
+  color: #444;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+/* ── Loading / error / empty states ── */
+.stateMessage {
+  padding: 20px 10px;
+  text-align: center;
+  color: #666;
+  font-size: 0.8125rem;
+}
+
+.stateMessageMuted {
+  padding: 20px 10px;
+  text-align: center;
+  color: #555;
+  font-size: 0.8125rem;
+}
+
+.errorWrapper {
+  padding: 12px 10px;
+}
+
+.errorText {
+  font-size: 0.75rem;
+  color: #F44336;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.retryButton {
+  font-size: 0.75rem;
+  padding: 4px 8px;
+  background: #333;
+  border: 1px solid #444;
+  border-radius: 4px;
+  color: #ccc;
+  cursor: pointer;
+}

@@ -1,0 +1,197 @@
+/* NodeConfigPanel.module.css */
+
+.panel {
+  width: 300px;
+  height: 100%;
+  background: #161616;
+  border-left: 1px solid #2a2a2a;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+/* Empty state (no node selected) */
+.emptyPanel {
+  width: 300px;
+  height: 100%;
+  background: #161616;
+  border-left: 1px solid #2a2a2a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.emptyState {
+  text-align: center;
+  color: #444;
+  padding: 20px;
+}
+
+.emptyIcon {
+  font-size: 1.75rem;
+  margin-bottom: 8px;
+}
+
+.emptyText {
+  font-size: 0.8125rem;
+}
+
+/* Panel header */
+.header {
+  padding: 12px 14px;
+  flex-shrink: 0;
+  background: #1a1a1a;
+  /* border-bottom color is dynamic (accentColor) — set as inline style */
+}
+
+.headerMeta {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #888;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.presetBadge {
+  font-size: 0.625rem;
+  background: rgba(212, 160, 23, 0.2);
+  color: #D4A017;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-weight: 600;
+}
+
+.headerName {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #eee;
+}
+
+/* category label color is dynamic (accentColor) — set as inline style */
+.headerCategory {
+  font-size: 0.75rem;
+  margin-top: 2px;
+}
+
+.headerDescription {
+  font-size: 0.75rem;
+  color: #666;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+/* Scrollable content */
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 14px;
+}
+
+/* Section headers (PARAMETERS, PORTS, etc.) */
+.sectionHeader {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #666;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.sectionHeaderPorts {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #666;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.sectionHeaderExecution {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: #666;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+/* Port info rows */
+.portSubLabel {
+  font-size: 0.6875rem;
+  color: #555;
+  margin-bottom: 4px;
+}
+
+.portRow {
+  font-size: 0.75rem;
+  color: #888;
+  padding: 2px 0;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.portDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #555;
+  flex-shrink: 0;
+}
+
+.portName {
+  color: #aaa;
+}
+
+.portType {
+  color: #555;
+  font-size: 0.6875rem;
+}
+
+.portOptional {
+  color: #444;
+  font-size: 0.625rem;
+}
+
+/* Preset configure section */
+.presetHint {
+  font-size: 0.75rem;
+  color: #888;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.presetConfigureBtn {
+  width: 100%;
+  padding: 8px 12px;
+  background: rgba(212, 160, 23, 0.15);
+  border: 1px solid #D4A017;
+  border-radius: 6px;
+  color: #D4A017;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* No-params placeholder */
+.noParams {
+  text-align: center;
+  color: #444;
+  font-size: 0.8125rem;
+  padding-top: 20px;
+}
+
+/* Param description / range hints */
+.paramHint {
+  font-size: 0.6875rem;
+  color: #555;
+  margin-top: 2px;
+  line-height: 1.3;
+}

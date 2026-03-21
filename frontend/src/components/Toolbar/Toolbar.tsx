@@ -5,6 +5,8 @@ import { useNodeDefStore } from '../../store/nodeDefStore';
 import { saveGraph, loadGraph, listGraphs, createPreset } from '../../api/rest';
 import { useI18n, SUPPORTED_LOCALES } from '../../i18n';
 import { resolveSerializedNodes, resolveSerializedEdges } from '../../utils';
+import { SURFACE, TEXT, BRAND, STATUS_COLORS } from '../../styles/theme';
+import styles from './Toolbar.module.css';
 
 function ToolbarButton({
   onClick,
@@ -26,16 +28,10 @@ function ToolbarButton({
       onClick={onClick}
       disabled={disabled}
       title={title}
+      className={styles.button}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
-        padding: '6px 14px',
-        borderRadius: 5,
-        border: '1px solid',
-        cursor: disabled ? 'not-allowed' : 'pointer',
-        fontSize: '0.8125rem',
-        fontWeight: 600,
-        transition: 'all 0.15s',
         opacity: disabled ? 0.4 : 1,
         transform: hovered && !disabled ? 'translateY(-1px)' : 'none',
         ...style,
@@ -79,13 +75,30 @@ export function Toolbar() {
     const name = window.prompt(t('toolbar.save.prompt'));
     if (!name?.trim()) return;
     try {
-      const { nodes, edges } = getSerializedGraph();
-      await saveGraph({ nodes, edges, name: name.trim(), description: '' });
+      const { nodes, edges, presets } = getSerializedGraph();
+      await saveGraph({ nodes, edges, name: name.trim(), description: '', presets });
       window.alert(t('toolbar.save.success', { name: name.trim() }));
     } catch (e) {
       window.alert(t('toolbar.save.fail', { error: (e as Error).message }));
     }
   }, [getSerializedGraph, t]);
+
+  const handleExportJson = useCallback(() => {
+    const { nodes, edges, presets } = getSerializedGraph();
+    if (nodes.length === 0) {
+      window.alert(t('toolbar.exportJson.empty'));
+      return;
+    }
+    const name = activeTab.name || 'graph';
+    const data = { name, description: '', nodes, edges, presets };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${name.replace(/[^a-zA-Z0-9_-]/g, '_')}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [getSerializedGraph, activeTab.name, t]);
 
   const handleExportSubgraph = useCallback(async () => {
     const { nodes, edges } = getSerializedGraph();
@@ -124,9 +137,20 @@ export function Toolbar() {
         const graphData = await loadGraph(name);
         const rawNodes = graphData.nodes ?? [];
         const rawEdges = graphData.edges ?? [];
-        const { definitions, presets } = useNodeDefStore.getState();
-        setNodes(resolveSerializedNodes(rawNodes, definitions, presets));
+        const store = useNodeDefStore.getState();
+        // Merge embedded presets from the saved graph
+        const savedPresets = Array.isArray(graphData.presets) ? graphData.presets : [];
+        const mergedPresets = [...store.presets];
+        for (const p of savedPresets) {
+          if (!mergedPresets.some((ep) => ep.preset_name === p.preset_name)) {
+            mergedPresets.push(p);
+          }
+        }
+        setNodes(resolveSerializedNodes(rawNodes, store.definitions, mergedPresets));
         setEdges(resolveSerializedEdges(rawEdges));
+        if (savedPresets.length > 0) {
+          useNodeDefStore.setState({ presets: mergedPresets });
+        }
       } catch (e) {
         window.alert(t('toolbar.load.fail', { error: (e as Error).message }));
       }
@@ -149,9 +173,21 @@ export function Toolbar() {
           if (!Array.isArray(rawNodes) || !Array.isArray(edges)) {
             throw new Error('Invalid graph format');
           }
-          const { definitions, presets } = useNodeDefStore.getState();
-          setNodes(resolveSerializedNodes(rawNodes, definitions, presets));
+          const store = useNodeDefStore.getState();
+          // Merge embedded presets from the imported file
+          const importedPresets = Array.isArray(data.presets) ? data.presets : [];
+          const mergedPresets = [...store.presets];
+          for (const p of importedPresets) {
+            if (!mergedPresets.some((ep) => ep.preset_name === p.preset_name)) {
+              mergedPresets.push(p);
+            }
+          }
+          setNodes(resolveSerializedNodes(rawNodes, store.definitions, mergedPresets));
           setEdges(resolveSerializedEdges(edges));
+          // Persist merged presets into the store so preset nodes work correctly
+          if (importedPresets.length > 0) {
+            useNodeDefStore.setState({ presets: mergedPresets });
+          }
         } catch (err) {
           window.alert(t('toolbar.import.fail', { error: (err as Error).message }));
         }
@@ -173,36 +209,20 @@ export function Toolbar() {
 
   const statusKey = `status.${status}` as const;
 
+  // Derive status dot color + glow from theme tokens
+  const statusDotColor = STATUS_COLORS[status] ?? SURFACE.borderMedium;
+  const statusTextColor = STATUS_COLORS[status] ?? TEXT.dim;
+  const statusGlow = status === 'running' ? `0 0 6px ${STATUS_COLORS.running}` : 'none';
+
   return (
-    <div
-      style={{
-        height: 48,
-        background: '#1a1a1a',
-        borderBottom: '1px solid #2a2a2a',
-        display: 'flex',
-        alignItems: 'center',
-        padding: '0 16px',
-        gap: 8,
-        flexShrink: 0,
-        position: 'relative',
-        zIndex: 100,
-      }}
-    >
+    <div className={styles.root}>
       {/* Logo */}
-      <div
-        style={{
-          fontSize: '1rem',
-          fontWeight: 800,
-          color: '#eee',
-          marginRight: 12,
-          letterSpacing: '-0.02em',
-        }}
-      >
-        <span style={{ color: '#2196F3' }}>Codefy</span>
-        <span style={{ color: '#888' }}>UI</span>
+      <div className={styles.logo}>
+        <span className={styles.logoBrand}>Codefy</span>
+        <span className={styles.logoSuffix}>UI</span>
       </div>
 
-      <div style={{ width: 1, height: 24, background: '#333' }} />
+      <div className={styles.divider} />
 
       {/* Run */}
       <ToolbarButton
@@ -211,8 +231,8 @@ export function Toolbar() {
         title={t('toolbar.run.title')}
         style={{
           background: isRunning ? '#1a3d1a' : '#1b5e20',
-          borderColor: '#4CAF50',
-          color: '#4CAF50',
+          borderColor: BRAND.success,
+          color: BRAND.success,
         }}
       >
         {isRunning ? t('toolbar.running') : t('toolbar.run')}
@@ -225,14 +245,14 @@ export function Toolbar() {
         title={t('toolbar.stop.title')}
         style={{
           background: isRunning ? '#3d1a1a' : 'transparent',
-          borderColor: '#F44336',
-          color: '#F44336',
+          borderColor: BRAND.error,
+          color: BRAND.error,
         }}
       >
         {t('toolbar.stop')}
       </ToolbarButton>
 
-      <div style={{ width: 1, height: 24, background: '#333' }} />
+      <div className={styles.divider} />
 
       {/* Save */}
       <ToolbarButton
@@ -240,8 +260,8 @@ export function Toolbar() {
         title={t('toolbar.save.title')}
         style={{
           background: 'transparent',
-          borderColor: '#555',
-          color: '#ccc',
+          borderColor: SURFACE.borderHeavy,
+          color: TEXT.secondary,
         }}
       >
         {t('toolbar.save')}
@@ -253,11 +273,24 @@ export function Toolbar() {
         title={t('toolbar.export.title')}
         style={{
           background: 'transparent',
-          borderColor: '#D4A017',
-          color: '#D4A017',
+          borderColor: BRAND.preset,
+          color: BRAND.preset,
         }}
       >
         {t('toolbar.export')}
+      </ToolbarButton>
+
+      {/* Export JSON */}
+      <ToolbarButton
+        onClick={handleExportJson}
+        title={t('toolbar.exportJson.title')}
+        style={{
+          background: 'transparent',
+          borderColor: BRAND.primary,
+          color: BRAND.primary,
+        }}
+      >
+        {t('toolbar.exportJson')}
       </ToolbarButton>
 
       {/* Load */}
@@ -267,8 +300,8 @@ export function Toolbar() {
           title={t('toolbar.load.title')}
           style={{
             background: 'transparent',
-            borderColor: '#555',
-            color: '#ccc',
+            borderColor: SURFACE.borderHeavy,
+            color: TEXT.secondary,
           }}
         >
           {t('toolbar.load')}
@@ -277,30 +310,16 @@ export function Toolbar() {
         {loadMenuOpen && (
           <>
             <div
-              style={{ position: 'fixed', inset: 0, zIndex: 199 }}
+              className={styles.overlay}
               onClick={() => setLoadMenuOpen(false)}
             />
-            <div
-              style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                marginTop: 4,
-                background: '#222',
-                border: '1px solid #444',
-                borderRadius: 6,
-                minWidth: 200,
-                zIndex: 200,
-                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-                overflow: 'hidden',
-              }}
-            >
+            <div className={styles.loadDropdown}>
               {loadingGraphs ? (
-                <div style={{ padding: '10px 12px', fontSize: '0.8125rem', color: '#666' }}>
+                <div className={styles.dropdownMessageMuted}>
                   {t('toolbar.load.loading')}
                 </div>
               ) : savedGraphs.length === 0 ? (
-                <div style={{ padding: '10px 12px', fontSize: '0.8125rem', color: '#555' }}>
+                <div className={styles.dropdownMessageDim}>
                   {t('toolbar.load.empty')}
                 </div>
               ) : (
@@ -308,19 +327,8 @@ export function Toolbar() {
                   <button
                     key={g.file}
                     onClick={() => handleLoadGraph(g.file)}
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      padding: '8px 12px',
-                      textAlign: 'left',
-                      background: 'transparent',
-                      border: 'none',
-                      borderBottom: '1px solid #333',
-                      color: '#ccc',
-                      fontSize: '0.8125rem',
-                      cursor: 'pointer',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = '#2a2a2a')}
+                    className={styles.dropdownItem}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = SURFACE.hover)}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
                     {g.name}
@@ -328,26 +336,14 @@ export function Toolbar() {
                 ))
               )}
               {/* Divider + Upload */}
-              <div style={{ height: 1, background: '#444', margin: '2px 0' }} />
+              <div className={styles.dropdownDivider} />
               <button
                 onClick={() => {
                   setLoadMenuOpen(false);
                   fileInputRef.current?.click();
                 }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  width: '100%',
-                  padding: '8px 12px',
-                  textAlign: 'left',
-                  background: 'transparent',
-                  border: 'none',
-                  color: '#2196F3',
-                  fontSize: '0.8125rem',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.background = '#2a2a2a')}
+                className={styles.dropdownImport}
+                onMouseEnter={(e) => (e.currentTarget.style.background = SURFACE.hover)}
                 onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
               >
                 {t('toolbar.import')}
@@ -362,7 +358,7 @@ export function Toolbar() {
         ref={fileInputRef}
         type="file"
         accept=".json"
-        style={{ display: 'none' }}
+        className={styles.fileInput}
         onChange={handleImportFile}
       />
 
@@ -372,14 +368,14 @@ export function Toolbar() {
         title={t('toolbar.clear.title')}
         style={{
           background: 'transparent',
-          borderColor: '#555',
-          color: '#999',
+          borderColor: SURFACE.borderHeavy,
+          color: TEXT.tertiary,
         }}
       >
         {t('toolbar.clear')}
       </ToolbarButton>
 
-      <div style={{ width: 1, height: 24, background: '#333' }} />
+      <div className={styles.divider} />
 
       {/* Reload nodes */}
       <ToolbarButton
@@ -387,46 +383,27 @@ export function Toolbar() {
         title={t('toolbar.reloadNodes.title')}
         style={{
           background: 'transparent',
-          borderColor: '#444',
-          color: '#777',
+          borderColor: SURFACE.borderMedium,
+          color: '#777777',
         }}
       >
         {t('toolbar.reloadNodes')}
       </ToolbarButton>
 
       {/* Right side: status + language */}
-      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 12 }}>
+      <div className={styles.rightCluster}>
         {/* Status indicator */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className={styles.statusGroup}>
           <span
+            className={styles.statusDot}
             style={{
-              display: 'inline-block',
-              width: 8,
-              height: 8,
-              borderRadius: '50%',
-              background:
-                status === 'running'
-                  ? '#FFC107'
-                  : status === 'completed'
-                    ? '#4CAF50'
-                    : status === 'error'
-                      ? '#F44336'
-                      : '#444',
-              boxShadow: status === 'running' ? '0 0 6px #FFC107' : 'none',
+              background: statusDotColor,
+              boxShadow: statusGlow,
             }}
           />
           <span
-            style={{
-              fontSize: '0.75rem',
-              color:
-                status === 'running'
-                  ? '#FFC107'
-                  : status === 'completed'
-                    ? '#4CAF50'
-                    : status === 'error'
-                      ? '#F44336'
-                      : '#555',
-            }}
+            className={styles.statusLabel}
+            style={{ color: statusTextColor }}
           >
             {t(statusKey)}
           </span>
@@ -436,18 +413,8 @@ export function Toolbar() {
         <div style={{ position: 'relative' }}>
           <button
             onClick={() => setLangMenuOpen((v) => !v)}
-            style={{
-              padding: '3px 8px',
-              borderRadius: 4,
-              border: '1px solid #444',
-              background: langMenuOpen ? '#333' : '#222',
-              color: '#aaa',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              minWidth: 32,
-              textAlign: 'center',
-            }}
+            className={styles.langButton}
+            style={{ background: langMenuOpen ? SURFACE.borderLight : SURFACE.input }}
           >
             {SUPPORTED_LOCALES.find((l) => l.code === locale)?.label ?? locale}
           </button>
@@ -455,47 +422,26 @@ export function Toolbar() {
           {langMenuOpen && (
             <>
               <div
-                style={{ position: 'fixed', inset: 0, zIndex: 199 }}
+                className={styles.overlay}
                 onClick={() => setLangMenuOpen(false)}
               />
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '100%',
-                  right: 0,
-                  marginTop: 6,
-                  background: '#222',
-                  border: '1px solid #444',
-                  borderRadius: 6,
-                  minWidth: 140,
-                  zIndex: 200,
-                  boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-                  overflow: 'hidden',
-                  padding: '4px 0',
-                }}
-              >
+              <div className={styles.langDropdown}>
                 {SUPPORTED_LOCALES.map((l) => (
                   <button
                     key={l.code}
                     onClick={() => { setLocale(l.code); setLangMenuOpen(false); }}
+                    className={styles.langOption}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      width: '100%',
-                      padding: '7px 12px',
-                      background: 'transparent',
-                      border: 'none',
-                      color: l.code === locale ? '#2196F3' : '#ccc',
-                      fontSize: '0.8125rem',
-                      cursor: 'pointer',
+                      color: l.code === locale ? BRAND.primary : TEXT.secondary,
                       fontWeight: l.code === locale ? 600 : 400,
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = '#2a2a2a')}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = SURFACE.hover)}
                     onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                   >
                     <span>{l.nativeName}</span>
-                    {l.code === locale && <span style={{ fontSize: '0.6875rem' }}>✓</span>}
+                    {l.code === locale && (
+                      <span className={styles.langOptionCheck}>✓</span>
+                    )}
                   </button>
                 ))}
               </div>

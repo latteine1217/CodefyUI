@@ -6,7 +6,9 @@ import { FlowCanvas } from './components/Canvas/FlowCanvas';
 import { NodeConfigPanel } from './components/ConfigPanel/NodeConfigPanel';
 import { ResultsPanel } from './components/ResultsPanel/ResultsPanel';
 import { PresetConfigModal } from './components/PresetModal/PresetConfigModal';
+import { SubgraphEditorModal } from './components/SubgraphEditor/SubgraphEditorModal';
 import { useTabStore } from './store/tabStore';
+import styles from './App.module.css';
 
 function TabContent({ tabId }: { tabId: string }) {
   const activeTabId = useTabStore((s) => s.activeTabId);
@@ -14,19 +16,15 @@ function TabContent({ tabId }: { tabId: string }) {
 
   return (
     <div
-      style={{
-        flex: 1,
-        display: isActive ? 'flex' : 'none',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        minHeight: 0,
-      }}
+      className={styles.tabContent}
+      // "display" is the only value that changes based on state
+      style={{ display: isActive ? 'flex' : 'none' }}
     >
-      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+      <div className={styles.tabInner}>
         <ReactFlowProvider>
           <NodePalette />
-          <div style={{ flex: 1, position: 'relative', minWidth: 0 }}>
-            <div style={{ width: '100%', height: '100%' }}>
+          <div className={styles.canvasHost}>
+            <div className={styles.canvasFill}>
               <FlowCanvas />
             </div>
           </div>
@@ -42,24 +40,14 @@ function App() {
   const tabs = useTabStore((s) => s.tabs);
 
   return (
-    <div
-      style={{
-        width: '100vw',
-        height: '100vh',
-        background: '#121212',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-        color: '#eeeeee',
-        fontFamily: 'Inter, system-ui, -apple-system, sans-serif',
-      }}
-    >
+    <div className={styles.root}>
       <Toolbar />
       <TabBar />
       {tabs.map((tab) => (
         <TabContent key={tab.id} tabId={tab.id} />
       ))}
       <PresetConfigModal />
+      <SubgraphEditorModal />
     </div>
   );
 }

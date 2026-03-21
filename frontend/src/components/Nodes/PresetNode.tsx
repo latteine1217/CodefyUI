@@ -5,6 +5,8 @@ import type { NodeData } from '../../types';
 import { getPortColor } from '../../utils';
 import { useTabStore } from '../../store/tabStore';
 import { useI18n } from '../../i18n';
+import { STATUS_COLORS } from '../../styles/theme';
+import styles from './PresetNode.module.css';
 
 function PresetNode({ id, data, selected }: NodeProps<NodeData>) {
   const openPresetModal = useTabStore((s) => s.openPresetModal);
@@ -14,12 +16,14 @@ function PresetNode({ id, data, selected }: NodeProps<NodeData>) {
 
   const statusBorderColor =
     data.executionStatus === 'running'
-      ? '#FFC107'
+      ? STATUS_COLORS.running
       : data.executionStatus === 'completed'
-        ? '#4CAF50'
+        ? STATUS_COLORS.completed
         : data.executionStatus === 'error'
-          ? '#F44336'
-          : 'transparent';
+          ? STATUS_COLORS.error
+          : data.executionStatus === 'cached'
+            ? STATUS_COLORS.cached
+            : 'transparent';
 
   const borderColor = selected
     ? '#ffffff'
@@ -36,66 +40,27 @@ function PresetNode({ id, data, selected }: NodeProps<NodeData>) {
   return (
     <div
       onClick={handleClick}
+      className={styles.node}
       style={{
-        background: '#1e1e1e',
         border: `2px solid ${borderColor}`,
-        borderRadius: 8,
-        minWidth: 200,
-        fontSize: '0.8125rem',
-        color: '#eeeeee',
         boxShadow: selected
           ? '0 0 16px rgba(212,160,23,0.3)'
           : '0 4px 12px rgba(0,0,0,0.4)',
-        transition: 'border-color 0.2s, box-shadow 0.2s',
       }}
     >
       {/* Header with gold gradient */}
-      <div
-        style={{
-          background: 'linear-gradient(135deg, #B8860B, #D4A017, #C5941A)',
-          padding: '7px 12px',
-          borderRadius: '6px 6px 0 0',
-          fontWeight: 600,
-          fontSize: '0.875rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 8,
-        }}
-      >
-        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#1a1a1a' }}>
-          {data.label}
-        </span>
-        <span
-          style={{
-            fontSize: '0.625rem',
-            background: 'rgba(0,0,0,0.3)',
-            padding: '2px 5px',
-            borderRadius: 3,
-            whiteSpace: 'nowrap',
-            flexShrink: 0,
-            color: '#fff',
-            fontWeight: 700,
-            letterSpacing: '0.05em',
-          }}
-        >
-          {t('preset.badge')}
-        </span>
+      <div className={styles.header}>
+        <span className={styles.headerLabel}>{data.label}</span>
+        <span className={styles.headerBadge}>{t('preset.badge')}</span>
       </div>
 
       {/* Ports area */}
-      <div style={{ paddingTop: 6, paddingBottom: 6 }}>
+      <div className={styles.portsArea}>
         {/* Input handles */}
         {def?.inputs.map((input) => (
           <div
             key={`in-${input.name}`}
-            style={{
-              position: 'relative',
-              padding: '4px 12px 4px 18px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
+            className={styles.inputRow}
             title={input.description}
           >
             <Handle
@@ -115,11 +80,8 @@ function PresetNode({ id, data, selected }: NodeProps<NodeData>) {
               }}
             />
             <span
-              style={{
-                color: getPortColor(input.data_type),
-                fontSize: '0.75rem',
-                lineHeight: 1,
-              }}
+              className={styles.portLabel}
+              style={{ color: getPortColor(input.data_type) }}
             >
               {input.name}
             </span>
@@ -128,29 +90,19 @@ function PresetNode({ id, data, selected }: NodeProps<NodeData>) {
 
         {/* Divider */}
         {def && def.inputs.length > 0 && def.outputs.length > 0 && (
-          <div style={{ height: 1, background: '#333', margin: '4px 0' }} />
+          <div className={styles.portDivider} />
         )}
 
         {/* Output handles */}
         {def?.outputs.map((output) => (
           <div
             key={`out-${output.name}`}
-            style={{
-              position: 'relative',
-              padding: '4px 18px 4px 12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              gap: 6,
-            }}
+            className={styles.outputRow}
             title={output.description}
           >
             <span
-              style={{
-                color: getPortColor(output.data_type),
-                fontSize: '0.75rem',
-                lineHeight: 1,
-              }}
+              className={styles.portLabel}
+              style={{ color: getPortColor(output.data_type) }}
             >
               {output.name}
             </span>
@@ -175,81 +127,40 @@ function PresetNode({ id, data, selected }: NodeProps<NodeData>) {
       </div>
 
       {/* Footer: node count hint */}
-      <div
-        style={{
-          borderTop: '1px solid #333',
-          padding: '5px 10px',
-          fontSize: '0.6875rem',
-          color: '#888',
-          textAlign: 'center',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 4,
-        }}
-      >
-        <span style={{ color: '#D4A017' }}>{preset?.nodes.length ?? 0}</span>
+      <div className={styles.footer}>
+        <span className={styles.footerCount}>{preset?.nodes.length ?? 0}</span>
         <span>{t('preset.nodesInside')}</span>
       </div>
 
-      {/* Status footer */}
+      {/* Status footer — error */}
       {data.executionStatus === 'error' && data.error && (
         <div
-          style={{
-            padding: '4px 10px',
-            fontSize: '0.6875rem',
-            color: '#F44336',
-            borderTop: '1px solid #333',
-            maxWidth: 220,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
+          className={`${styles.statusBase} ${styles.statusError}`}
           title={data.error}
         >
           {t('node.error', { error: data.error })}
         </div>
       )}
 
+      {/* Status footer — running */}
       {data.executionStatus === 'running' && (
-        <div
-          style={{
-            padding: '4px 10px',
-            fontSize: '0.6875rem',
-            color: '#FFC107',
-            borderTop: '1px solid #333',
-            textAlign: 'center',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 6,
-          }}
-        >
-          <span
-            style={{
-              display: 'inline-block',
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: '#FFC107',
-              animation: 'pulse 1s infinite',
-            }}
-          />
+        <div className={`${styles.statusBase} ${styles.statusRunning}`}>
+          <span className={styles.statusRunningDot} />
           {t('node.running')}
         </div>
       )}
 
+      {/* Status footer — completed */}
       {data.executionStatus === 'completed' && (
-        <div
-          style={{
-            padding: '4px 10px',
-            fontSize: '0.6875rem',
-            color: '#4CAF50',
-            borderTop: '1px solid #333',
-            textAlign: 'center',
-          }}
-        >
+        <div className={`${styles.statusBase} ${styles.statusCompleted}`}>
           {t('node.completed')}
+        </div>
+      )}
+
+      {/* Status footer — cached */}
+      {data.executionStatus === 'cached' && (
+        <div className={`${styles.statusBase} ${styles.statusCached}`}>
+          {t('node.cached')}
         </div>
       )}
     </div>

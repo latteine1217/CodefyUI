@@ -1,0 +1,137 @@
+/* PresetNode.module.css */
+
+.node {
+  background: #1e1e1e;
+  border-radius: 8px;
+  min-width: 200px;
+  font-size: 0.8125rem;
+  color: #eeeeee;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Gold gradient header */
+.header {
+  background: linear-gradient(135deg, #B8860B, #D4A017, #C5941A);
+  padding: 7px 12px;
+  border-radius: 6px 6px 0 0;
+  font-weight: 600;
+  font-size: 0.875rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.headerLabel {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #1a1a1a;
+}
+
+.headerBadge {
+  font-size: 0.625rem;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+/* Ports area */
+.portsArea {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.inputRow {
+  position: relative;
+  padding: 4px 12px 4px 18px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.outputRow {
+  position: relative;
+  padding: 4px 18px 4px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.portLabel {
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.portDivider {
+  height: 1px;
+  background: #333;
+  margin: 4px 0;
+}
+
+/* Footer: node count hint */
+.footer {
+  border-top: 1px solid #333;
+  padding: 5px 10px;
+  font-size: 0.6875rem;
+  color: #888;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.footerCount {
+  color: #D4A017;
+}
+
+/* Status sections */
+.statusBase {
+  padding: 4px 10px;
+  font-size: 0.6875rem;
+  border-top: 1px solid #333;
+}
+
+.statusError {
+  color: #F44336;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statusRunning {
+  color: #FFC107;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.statusRunningDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #FFC107;
+  animation: pulse 1s infinite;
+}
+
+.statusCompleted {
+  color: #4CAF50;
+  text-align: center;
+}
+
+.statusCached {
+  color: #2196F3;
+  text-align: center;
+}

@@ -1,6 +1,8 @@
 import { useTabStore } from '../../store/tabStore';
 import { useI18n } from '../../i18n';
 import { ParamField } from '../shared/ParamField';
+import { CATEGORY_COLORS } from '../../styles/theme';
+import styles from './NodeConfigPanel.module.css';
 
 export function NodeConfigPanel() {
   const activeTab = useTabStore((s) => s.tabs.find((t) => t.id === s.activeTabId)!);
@@ -21,21 +23,10 @@ export function NodeConfigPanel() {
 
   if (!selectedNode) {
     return (
-      <div
-        style={{
-          width: 300,
-          height: '100%',
-          background: '#161616',
-          borderLeft: '1px solid #2a2a2a',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-        }}
-      >
-        <div style={{ textAlign: 'center', color: '#444', padding: 20 }}>
-          <div style={{ fontSize: '1.75rem', marginBottom: 8 }}>○</div>
-          <div style={{ fontSize: '0.8125rem' }}>{t('config.selectNode')}</div>
+      <div className={styles.emptyPanel}>
+        <div className={styles.emptyState}>
+          <div className={styles.emptyIcon}>○</div>
+          <div className={styles.emptyText}>{t('config.selectNode')}</div>
         </div>
       </div>
     );
@@ -43,130 +34,43 @@ export function NodeConfigPanel() {
 
   const isPreset = selectedNode.data.isPreset;
   const category = def?.category ?? 'Utility';
-  const CATEGORY_COLORS: Record<string, string> = {
-    CNN: '#4CAF50',
-    RNN: '#2196F3',
-    Transformer: '#9C27B0',
-    RL: '#FF9800',
-    Data: '#00BCD4',
-    Training: '#F44336',
-    IO: '#795548',
-    Control: '#FF6F00',
-    Utility: '#607D8B',
-  };
   const accentColor = isPreset ? '#D4A017' : (CATEGORY_COLORS[category] ?? '#607D8B');
 
   return (
-    <div
-      style={{
-        width: 300,
-        height: '100%',
-        background: '#161616',
-        borderLeft: '1px solid #2a2a2a',
-        display: 'flex',
-        flexDirection: 'column',
-        flexShrink: 0,
-        overflow: 'hidden',
-      }}
-    >
+    <div className={styles.panel}>
       {/* Panel header */}
       <div
-        style={{
-          padding: '12px 14px',
-          borderBottom: `2px solid ${accentColor}`,
-          flexShrink: 0,
-          background: '#1a1a1a',
-        }}
+        className={styles.header}
+        style={{ borderBottom: `2px solid ${accentColor}` }}
       >
-        <div
-          style={{
-            fontSize: '0.75rem',
-            fontWeight: 700,
-            color: '#888',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            marginBottom: 4,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-          }}
-        >
+        <div className={styles.headerMeta}>
           {t('config.title')}
           {isPreset && (
-            <span
-              style={{
-                fontSize: '0.625rem',
-                background: 'rgba(212,160,23,0.2)',
-                color: '#D4A017',
-                padding: '1px 5px',
-                borderRadius: 3,
-                fontWeight: 600,
-              }}
-            >
-              {t('preset.badge')}
-            </span>
+            <span className={styles.presetBadge}>{t('preset.badge')}</span>
           )}
         </div>
-        <div
-          style={{
-            fontSize: '1rem',
-            fontWeight: 600,
-            color: '#eee',
-          }}
-        >
-          {selectedNode.data.label}
-        </div>
-        <div
-          style={{
-            fontSize: '0.75rem',
-            color: accentColor,
-            marginTop: 2,
-          }}
-        >
+        <div className={styles.headerName}>{selectedNode.data.label}</div>
+        <div className={styles.headerCategory} style={{ color: accentColor }}>
           {category}
         </div>
         {def?.description && (
-          <div
-            style={{
-              fontSize: '0.75rem',
-              color: '#666',
-              marginTop: 6,
-              lineHeight: 1.4,
-            }}
-          >
+          <div className={styles.headerDescription}>
             {tn(nodeName, 'description', def.description)}
           </div>
         )}
       </div>
 
       {/* Scrollable content */}
-      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px' }}>
+      <div className={styles.content}>
         {/* Preset: Configure button */}
         {isPreset && (
           <div style={{ marginBottom: 16 }}>
-            <div
-              style={{
-                fontSize: '0.75rem',
-                color: '#888',
-                marginBottom: 8,
-                lineHeight: 1.4,
-              }}
-            >
+            <div className={styles.presetHint}>
               {t('preset.nodeCount', { count: selectedNode.data.presetDefinition?.nodes.length ?? 0 })}
             </div>
             <button
               onClick={() => openPresetModal(selectedNode.id)}
-              style={{
-                width: '100%',
-                padding: '8px 12px',
-                background: 'rgba(212,160,23,0.15)',
-                border: '1px solid #D4A017',
-                borderRadius: 6,
-                color: '#D4A017',
-                fontSize: '0.8125rem',
-                fontWeight: 600,
-                cursor: 'pointer',
-              }}
+              className={styles.presetConfigureBtn}
             >
               {t('preset.configure')}
             </button>
@@ -176,18 +80,7 @@ export function NodeConfigPanel() {
         {/* Params section (for non-preset nodes) */}
         {!isPreset && def && def.params.length > 0 ? (
           <div>
-            <div
-              style={{
-                fontSize: '0.6875rem',
-                fontWeight: 700,
-                color: '#666',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                marginBottom: 10,
-              }}
-            >
-              {t('config.parameters')}
-            </div>
+            <div className={styles.sectionHeader}>{t('config.parameters')}</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               {def.params.map((param) => (
                 <div key={param.name}>
@@ -197,19 +90,12 @@ export function NodeConfigPanel() {
                     onChange={handleChange}
                   />
                   {param.description && (
-                    <div
-                      style={{
-                        fontSize: '0.6875rem',
-                        color: '#555',
-                        marginTop: 2,
-                        lineHeight: 1.3,
-                      }}
-                    >
+                    <div className={styles.paramHint}>
                       {tn(nodeName, `param.${param.name}`, param.description)}
                     </div>
                   )}
                   {(param.min_value !== null || param.max_value !== null) && (
-                    <div style={{ fontSize: '0.6875rem', color: '#555', marginTop: 2 }}>
+                    <div className={styles.paramHint}>
                       {t('config.range', {
                         min: param.min_value !== null ? param.min_value : '-∞',
                         max: param.max_value !== null ? param.max_value : '+∞',
@@ -221,63 +107,24 @@ export function NodeConfigPanel() {
             </div>
           </div>
         ) : !isPreset ? (
-          <div
-            style={{
-              textAlign: 'center',
-              color: '#444',
-              fontSize: '0.8125rem',
-              paddingTop: 20,
-            }}
-          >
-            {t('config.noParams')}
-          </div>
+          <div className={styles.noParams}>{t('config.noParams')}</div>
         ) : null}
 
         {/* I/O info section */}
         {def && (def.inputs.length > 0 || def.outputs.length > 0) && (
           <div style={{ marginTop: 20 }}>
-            <div
-              style={{
-                fontSize: '0.6875rem',
-                fontWeight: 700,
-                color: '#666',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                marginBottom: 8,
-              }}
-            >
-              {t('config.ports')}
-            </div>
+            <div className={styles.sectionHeaderPorts}>{t('config.ports')}</div>
 
             {def.inputs.length > 0 && (
               <div style={{ marginBottom: 8 }}>
-                <div style={{ fontSize: '0.6875rem', color: '#555', marginBottom: 4 }}>{t('config.inputs')}</div>
+                <div className={styles.portSubLabel}>{t('config.inputs')}</div>
                 {def.inputs.map((inp) => (
-                  <div
-                    key={inp.name}
-                    style={{
-                      fontSize: '0.75rem',
-                      color: '#888',
-                      padding: '2px 0',
-                      display: 'flex',
-                      gap: 6,
-                      alignItems: 'center',
-                    }}
-                  >
-                    <span
-                      style={{
-                        display: 'inline-block',
-                        width: 6,
-                        height: 6,
-                        borderRadius: '50%',
-                        background: '#555',
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span style={{ color: '#aaa' }}>{inp.name}</span>
-                    <span style={{ color: '#555', fontSize: '0.6875rem' }}>{inp.data_type}</span>
+                  <div key={inp.name} className={styles.portRow}>
+                    <span className={styles.portDot} />
+                    <span className={styles.portName}>{inp.name}</span>
+                    <span className={styles.portType}>{inp.data_type}</span>
                     {inp.optional && (
-                      <span style={{ color: '#444', fontSize: '0.625rem' }}>{t('config.optional')}</span>
+                      <span className={styles.portOptional}>{t('config.optional')}</span>
                     )}
                   </div>
                 ))}
@@ -286,31 +133,12 @@ export function NodeConfigPanel() {
 
             {def.outputs.length > 0 && (
               <div>
-                <div style={{ fontSize: '0.6875rem', color: '#555', marginBottom: 4 }}>{t('config.outputs')}</div>
+                <div className={styles.portSubLabel}>{t('config.outputs')}</div>
                 {def.outputs.map((out) => (
-                  <div
-                    key={out.name}
-                    style={{
-                      fontSize: '0.75rem',
-                      color: '#888',
-                      padding: '2px 0',
-                      display: 'flex',
-                      gap: 6,
-                      alignItems: 'center',
-                    }}
-                  >
-                    <span
-                      style={{
-                        display: 'inline-block',
-                        width: 6,
-                        height: 6,
-                        borderRadius: '50%',
-                        background: '#555',
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span style={{ color: '#aaa' }}>{out.name}</span>
-                    <span style={{ color: '#555', fontSize: '0.6875rem' }}>{out.data_type}</span>
+                  <div key={out.name} className={styles.portRow}>
+                    <span className={styles.portDot} />
+                    <span className={styles.portName}>{out.name}</span>
+                    <span className={styles.portType}>{out.data_type}</span>
                   </div>
                 ))}
               </div>
@@ -321,18 +149,7 @@ export function NodeConfigPanel() {
         {/* Execution status */}
         {selectedNode.data.executionStatus && selectedNode.data.executionStatus !== 'idle' && (
           <div style={{ marginTop: 20 }}>
-            <div
-              style={{
-                fontSize: '0.6875rem',
-                fontWeight: 700,
-                color: '#666',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                marginBottom: 6,
-              }}
-            >
-              {t('config.execution')}
-            </div>
+            <div className={styles.sectionHeaderExecution}>{t('config.execution')}</div>
             <div
               style={{
                 padding: '6px 10px',
@@ -342,13 +159,17 @@ export function NodeConfigPanel() {
                     ? 'rgba(244,67,54,0.1)'
                     : selectedNode.data.executionStatus === 'completed'
                       ? 'rgba(76,175,80,0.1)'
-                      : 'rgba(255,193,7,0.1)',
+                      : selectedNode.data.executionStatus === 'cached'
+                        ? 'rgba(33,150,243,0.1)'
+                        : 'rgba(255,193,7,0.1)',
                 border: `1px solid ${
                   selectedNode.data.executionStatus === 'error'
                     ? '#F44336'
                     : selectedNode.data.executionStatus === 'completed'
                       ? '#4CAF50'
-                      : '#FFC107'
+                      : selectedNode.data.executionStatus === 'cached'
+                        ? '#2196F3'
+                        : '#FFC107'
                 }`,
                 fontSize: '0.75rem',
                 color:
@@ -356,7 +177,9 @@ export function NodeConfigPanel() {
                     ? '#F44336'
                     : selectedNode.data.executionStatus === 'completed'
                       ? '#4CAF50'
-                      : '#FFC107',
+                      : selectedNode.data.executionStatus === 'cached'
+                        ? '#2196F3'
+                        : '#FFC107',
               }}
             >
               {selectedNode.data.executionStatus === 'error' && selectedNode.data.error

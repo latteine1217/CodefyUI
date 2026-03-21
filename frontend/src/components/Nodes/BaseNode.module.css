@@ -1,0 +1,223 @@
+/* ── Node container base ── */
+.node {
+  background: #1e1e1e;
+  border-radius: 8px;
+  min-width: 180px;
+  font-size: 0.8125rem;
+  color: #eeeeee;
+  /* Dynamic border is injected via --border-color custom property */
+  border: 2px solid var(--border-color, #444444);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* ── Header ── */
+.header {
+  /* Dynamic: background set via inline style (headerColor from category) */
+  padding: 7px 12px;
+  border-radius: 6px 6px 0 0;
+  font-weight: 600;
+  font-size: 0.875rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.headerLabel {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.headerCategory {
+  font-size: 0.625rem;
+  opacity: 0.85;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 2px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Ports area ── */
+.portsArea {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+/* ── Port row ── */
+.portRowInput {
+  position: relative;
+  padding: 4px 12px 4px 18px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.portRowOutput {
+  position: relative;
+  padding: 4px 18px 4px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.portLabel {
+  /* Dynamic: color set via inline style (getPortColor) */
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.portOptional {
+  color: #666;
+  font-size: 0.625rem;
+}
+
+/* ── Port handle base ── */
+/* Note: background, position offsets injected inline because they depend on data_type and I/O side */
+.portHandle {
+  width: 10px !important;
+  height: 10px !important;
+  border: 2px solid #1e1e1e !important;
+  border-radius: 50% !important;
+  cursor: crosshair !important;
+}
+
+.portHandleInput {
+  left: -5px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+.portHandleOutput {
+  right: -5px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+/* ── Divider ── */
+.divider {
+  height: 1px;
+  background: #333;
+  margin: 4px 0;
+}
+
+/* ── Params section ── */
+.paramsSection {
+  border-top: 1px solid #333;
+  padding: 5px 10px;
+}
+
+.paramRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  padding: 1px 0;
+}
+
+.paramName {
+  font-size: 0.6875rem;
+  color: #777;
+}
+
+.paramValue {
+  font-size: 0.6875rem;
+  color: #bbb;
+  font-family: monospace;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* ── Sequential subgraph section ── */
+.subgraphSection {
+  border-top: 1px solid #333;
+  padding: 6px 10px;
+  text-align: center;
+}
+
+.subgraphLayerRow {
+  font-size: 0.6875rem;
+  color: #888;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.subgraphLayerCount {
+  color: #F44336;
+  font-weight: 600;
+}
+
+.subgraphHint {
+  font-size: 0.5625rem;
+  color: #555;
+  margin-top: 2px;
+}
+
+/* ── Status footer base ── */
+.statusFooter {
+  padding: 4px 10px;
+  font-size: 0.6875rem;
+  border-top: 1px solid #333;
+}
+
+.statusError {
+  color: #F44336;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statusRunning {
+  color: #FFC107;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.statusRunningDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #FFC107;
+  animation: pulse 1s infinite;
+}
+
+.statusCompleted {
+  color: #4CAF50;
+  text-align: center;
+}
+
+.statusCached {
+  color: #2196F3;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.statusCachedDot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #2196F3;
+}
+
+/* ── Pulse animation (re-declared here so it is self-contained) ── */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}

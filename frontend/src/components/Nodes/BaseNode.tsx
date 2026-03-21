@@ -3,34 +3,37 @@ import { Handle, Position } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { NodeData } from '../../types';
 import { getPortColor } from '../../utils';
+import { useTabStore } from '../../store/tabStore';
 import { useI18n } from '../../i18n';
+import { CATEGORY_COLORS, STATUS_COLORS } from '../../styles/theme';
+import styles from './BaseNode.module.css';
 
-const CATEGORY_COLORS: Record<string, string> = {
-  CNN: '#4CAF50',
-  RNN: '#2196F3',
-  Transformer: '#9C27B0',
-  RL: '#FF9800',
-  Data: '#00BCD4',
-  Training: '#F44336',
-  IO: '#795548',
-  Control: '#FF6F00',
-  Utility: '#607D8B',
-};
-
-function BaseNode({ data, selected }: NodeProps<NodeData>) {
+function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
+  const openSubgraphModal = useTabStore((s) => s.openSubgraphModal);
   const def = data.definition;
   const category = def?.category ?? 'Utility';
   const headerColor = CATEGORY_COLORS[category] ?? '#607D8B';
   const { t } = useI18n();
 
+  const isSequentialModel = data.type === 'SequentialModel';
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (e.detail === 2 && isSequentialModel) {
+      openSubgraphModal(id);
+    }
+  };
+
+  // Dynamic border: selected > execution status > default
   const statusBorderColor =
     data.executionStatus === 'running'
-      ? '#FFC107'
+      ? STATUS_COLORS.running
       : data.executionStatus === 'completed'
-        ? '#4CAF50'
+        ? STATUS_COLORS.completed
         : data.executionStatus === 'error'
-          ? '#F44336'
-          : 'transparent';
+          ? STATUS_COLORS.error
+          : data.executionStatus === 'cached'
+            ? STATUS_COLORS.cached
+            : 'transparent';
 
   const borderColor = selected
     ? '#ffffff'
@@ -40,128 +43,72 @@ function BaseNode({ data, selected }: NodeProps<NodeData>) {
 
   return (
     <div
+      onClick={handleClick}
+      className={styles.node}
       style={{
-        background: '#1e1e1e',
-        border: `2px solid ${borderColor}`,
-        borderRadius: 8,
-        minWidth: 180,
-        fontSize: '0.8125rem',
-        color: '#eeeeee',
+        '--border-color': borderColor,
         boxShadow: selected
           ? '0 0 16px rgba(255,255,255,0.15)'
           : '0 4px 12px rgba(0,0,0,0.4)',
-        transition: 'border-color 0.2s, box-shadow 0.2s',
-      }}
+        cursor: isSequentialModel ? 'pointer' : undefined,
+      } as React.CSSProperties}
     >
       {/* Header */}
       <div
-        style={{
-          background: headerColor,
-          padding: '7px 12px',
-          borderRadius: '6px 6px 0 0',
-          fontWeight: 600,
-          fontSize: '0.875rem',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          gap: 8,
-        }}
+        className={styles.header}
+        style={{ background: headerColor }}
       >
-        <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <span className={styles.headerLabel}>
           {data.label}
         </span>
-        <span
-          style={{
-            fontSize: '0.625rem',
-            opacity: 0.85,
-            background: 'rgba(0,0,0,0.25)',
-            padding: '2px 5px',
-            borderRadius: 3,
-            whiteSpace: 'nowrap',
-            flexShrink: 0,
-          }}
-        >
+        <span className={styles.headerCategory}>
           {category}
         </span>
       </div>
 
       {/* Ports area */}
-      <div style={{ paddingTop: 6, paddingBottom: 6 }}>
+      <div className={styles.portsArea}>
         {/* Input handles */}
         {def?.inputs.map((input) => (
           <div
             key={`in-${input.name}`}
-            style={{
-              position: 'relative',
-              padding: '4px 12px 4px 18px',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-            }}
+            className={styles.portRowInput}
             title={input.description}
           >
             <Handle
               type="target"
               position={Position.Left}
               id={input.name}
-              style={{
-                background: getPortColor(input.data_type),
-                width: 10,
-                height: 10,
-                border: '2px solid #1e1e1e',
-                left: -5,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                borderRadius: '50%',
-                cursor: 'crosshair',
-              }}
+              className={`${styles.portHandle} ${styles.portHandleInput}`}
+              style={{ background: getPortColor(input.data_type) }}
             />
             <span
-              style={{
-                color: getPortColor(input.data_type),
-                fontSize: '0.75rem',
-                lineHeight: 1,
-              }}
+              className={styles.portLabel}
+              style={{ color: getPortColor(input.data_type) }}
             >
               {input.name}
             </span>
             {input.optional && (
-              <span style={{ color: '#666', fontSize: '0.625rem' }}>{t('node.opt')}</span>
+              <span className={styles.portOptional}>{t('node.opt')}</span>
             )}
           </div>
         ))}
 
         {/* Divider between inputs and outputs */}
         {def && def.inputs.length > 0 && def.outputs.length > 0 && (
-          <div
-            style={{
-              height: 1,
-              background: '#333',
-              margin: '4px 0',
-            }}
-          />
+          <div className={styles.divider} />
         )}
 
         {/* Output handles */}
         {def?.outputs.map((output) => (
           <div
             key={`out-${output.name}`}
-            style={{
-              position: 'relative',
-              padding: '4px 18px 4px 12px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              gap: 6,
-            }}
+            className={styles.portRowOutput}
             title={output.description}
           >
             <span
-              style={{
-                color: getPortColor(output.data_type),
-                fontSize: '0.75rem',
-                lineHeight: 1,
-              }}
+              className={styles.portLabel}
+              style={{ color: getPortColor(output.data_type) }}
             >
               {output.name}
             </span>
@@ -169,55 +116,44 @@ function BaseNode({ data, selected }: NodeProps<NodeData>) {
               type="source"
               position={Position.Right}
               id={output.name}
-              style={{
-                background: getPortColor(output.data_type),
-                width: 10,
-                height: 10,
-                border: '2px solid #1e1e1e',
-                right: -5,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                borderRadius: '50%',
-                cursor: 'crosshair',
-              }}
+              className={`${styles.portHandle} ${styles.portHandleOutput}`}
+              style={{ background: getPortColor(output.data_type) }}
             />
           </div>
         ))}
       </div>
 
-      {/* Params display */}
-      {def && def.params.length > 0 && (
-        <div
-          style={{
-            borderTop: '1px solid #333',
-            padding: '5px 10px',
-          }}
-        >
+      {/* Params display — special view for SequentialModel */}
+      {isSequentialModel && (
+        <div className={styles.subgraphSection}>
+          {(() => {
+            let count = 0;
+            try { count = JSON.parse(data.params.layers ?? '[]').length; } catch { /* ignore */ }
+            return (
+              <>
+                <div className={styles.subgraphLayerRow}>
+                  <span className={styles.subgraphLayerCount}>{count}</span>
+                  <span>{t('subgraph.layerCount', { count: '' }).replace(/\s*$/, '')}</span>
+                </div>
+                <div className={styles.subgraphHint}>
+                  {t('subgraph.hint')}
+                </div>
+              </>
+            );
+          })()}
+        </div>
+      )}
+
+      {/* Params display — normal nodes */}
+      {!isSequentialModel && def && def.params.length > 0 && (
+        <div className={styles.paramsSection}>
           {def.params.map((p) => {
             const val = data.params[p.name] ?? p.default;
             return (
-              <div
-                key={p.name}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '1px 0',
-                }}
-              >
-                <span style={{ fontSize: '0.6875rem', color: '#777' }}>{p.name}</span>
+              <div key={p.name} className={styles.paramRow}>
+                <span className={styles.paramName}>{p.name}</span>
                 <span
-                  style={{
-                    fontSize: '0.6875rem',
-                    color: '#bbb',
-                    fontFamily: 'monospace',
-                    maxWidth: 100,
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    whiteSpace: 'nowrap',
-                    textAlign: 'right',
-                  }}
+                  className={styles.paramValue}
                   title={String(val)}
                 >
                   {String(val)}
@@ -228,64 +164,36 @@ function BaseNode({ data, selected }: NodeProps<NodeData>) {
         </div>
       )}
 
-      {/* Status footer */}
+      {/* Status footer — error */}
       {data.executionStatus === 'error' && data.error && (
         <div
-          style={{
-            padding: '4px 10px',
-            fontSize: '0.6875rem',
-            color: '#F44336',
-            borderTop: '1px solid #333',
-            maxWidth: 220,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
+          className={`${styles.statusFooter} ${styles.statusError}`}
           title={data.error}
         >
           {t('node.error', { error: data.error })}
         </div>
       )}
 
+      {/* Status footer — running */}
       {data.executionStatus === 'running' && (
-        <div
-          style={{
-            padding: '4px 10px',
-            fontSize: '0.6875rem',
-            color: '#FFC107',
-            borderTop: '1px solid #333',
-            textAlign: 'center',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 6,
-          }}
-        >
-          <span
-            style={{
-              display: 'inline-block',
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: '#FFC107',
-              animation: 'pulse 1s infinite',
-            }}
-          />
+        <div className={`${styles.statusFooter} ${styles.statusRunning}`}>
+          <span className={styles.statusRunningDot} />
           {t('node.running')}
         </div>
       )}
 
+      {/* Status footer — completed */}
       {data.executionStatus === 'completed' && (
-        <div
-          style={{
-            padding: '4px 10px',
-            fontSize: '0.6875rem',
-            color: '#4CAF50',
-            borderTop: '1px solid #333',
-            textAlign: 'center',
-          }}
-        >
+        <div className={`${styles.statusFooter} ${styles.statusCompleted}`}>
           {t('node.completed')}
+        </div>
+      )}
+
+      {/* Status footer — cached */}
+      {data.executionStatus === 'cached' && (
+        <div className={`${styles.statusFooter} ${styles.statusCached}`}>
+          <span className={styles.statusCachedDot} />
+          {t('node.cached')}
         </div>
       )}
     </div>
