@@ -1,8 +1,8 @@
-import asyncio
-import sys
-from pathlib import Path
+"""Tests for the graph engine: topological sort, validation, execution."""
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
+import asyncio
+
+import pytest
 
 from app.core.graph_engine import (
     GraphValidationError,
@@ -10,12 +10,6 @@ from app.core.graph_engine import (
     topological_sort,
     validate_graph,
 )
-from app.core.node_registry import registry
-from app.config import settings
-
-# Ensure nodes are discovered
-if len(registry.nodes) == 0:
-    registry.discover(settings.NODES_DIR, "app.nodes")
 
 
 def test_topological_sort_linear():
@@ -48,11 +42,8 @@ def test_cycle_detection():
         {"source": "b", "target": "c"},
         {"source": "c", "target": "a"},
     ]
-    try:
+    with pytest.raises(GraphValidationError):
         topological_sort(nodes, edges)
-        assert False, "Should have raised GraphValidationError"
-    except GraphValidationError:
-        pass
 
 
 def test_validate_graph_valid():
@@ -88,7 +79,8 @@ def test_validate_graph_type_mismatch():
     assert "mismatch" in errors[0].lower() or "Type" in errors[0]
 
 
-def test_execute_print_nodes():
+@pytest.mark.asyncio
+async def test_execute_print_nodes():
     nodes = [
         {"id": "1", "type": "Print", "data": {"params": {"label": "first"}}},
         {"id": "2", "type": "Print", "data": {"params": {"label": "second"}}},
@@ -96,7 +88,6 @@ def test_execute_print_nodes():
     edges = [
         {"source": "1", "target": "2", "sourceHandle": "value", "targetHandle": "value"},
     ]
-    # Execute with no input - Print node passes through None
-    results = asyncio.run(execute_graph(nodes, edges))
+    results = await execute_graph(nodes, edges)
     assert "1" in results
     assert "2" in results

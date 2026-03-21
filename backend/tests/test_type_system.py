@@ -1,7 +1,4 @@
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
+"""Tests for the type compatibility system."""
 
 from app.core.node_base import DataType
 from app.core.type_system import is_compatible

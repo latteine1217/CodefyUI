@@ -1,9 +1,6 @@
-import sys
-from pathlib import Path
+"""Tests for the node registry."""
 
-# Ensure backend is on path
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
+from app.config import settings
 from app.core.node_base import BaseNode, DataType, PortDefinition
 from app.core.node_registry import NodeRegistry
 
@@ -34,7 +31,6 @@ def test_register_and_get():
 
 def test_discover_builtin_nodes():
     reg = NodeRegistry()
-    from app.config import settings
     count = reg.discover(settings.NODES_DIR, "app.nodes")
     assert count >= 23
     assert reg.get("Conv2d") is not None
@@ -53,7 +49,6 @@ def test_clear():
 def test_node_definitions():
     """Verify all discovered nodes have valid definitions."""
     reg = NodeRegistry()
-    from app.config import settings
     reg.discover(settings.NODES_DIR, "app.nodes")
     for name, cls in reg.nodes.items():
         assert cls.NODE_NAME, f"{name} missing NODE_NAME"
