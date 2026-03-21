@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
 import logging
 import traceback
 from collections import defaultdict, deque
@@ -339,7 +340,29 @@ async def execute_graph(
                 async with semaphore:
                     instance = node_cls()
                     loop = asyncio.get_event_loop()
-                    result = await loop.run_in_executor(None, instance.execute, inputs, params)
+
+                    # Thread-safe progress bridge: sync thread → async on_progress
+                    def _progress_bridge(data: dict) -> None:
+                        if on_progress:
+                            future = asyncio.run_coroutine_threadsafe(
+                                _maybe_await(on_progress(progress_id, "progress", data)),
+                                loop,
+                            )
+                            try:
+                                future.result(timeout=10)
+                            except Exception:
+                                pass
+
+                    # Only pass progress_callback if the node accepts it
+                    sig = inspect.signature(instance.execute)
+                    if 'progress_callback' in sig.parameters:
+                        result = await loop.run_in_executor(
+                            None, instance.execute, inputs, params, _progress_bridge
+                        )
+                    else:
+                        result = await loop.run_in_executor(
+                            None, instance.execute, inputs, params
+                        )
                 outputs[node_id] = result
                 if cache is not None and node_id in node_cache_keys:
                     cache.put(node_cache_keys[node_id], result)

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { applyNodeChanges, applyEdgeChanges } from '@xyflow/react';
 import type { Node, Edge, NodeChange, EdgeChange, Connection } from '@xyflow/react';
 import { generateId } from '../utils';
-import type { NodeData, NodeDefinition, PresetDefinition, ExecutionStatus } from '../types';
+import type { NodeData, NodeDefinition, PresetDefinition, ExecutionStatus, OutputSummary, NodeProgress } from '../types';
 import { ExecutionWebSocket } from '../api/ws';
 
 // ── Per-tab state ──
@@ -27,6 +27,8 @@ export interface TabState {
   status: ExecutionStatus;
   logs: LogEntry[];
   ws: ExecutionWebSocket;
+  // output summaries per node (for edge inspection)
+  outputSummaries: Record<string, Record<string, OutputSummary>>;
 }
 
 function createTabState(id: string, name: string): TabState {
@@ -41,6 +43,7 @@ function createTabState(id: string, name: string): TabState {
     status: 'idle',
     logs: [],
     ws: new ExecutionWebSocket(),
+    outputSummaries: {},
   };
 }
 
@@ -91,6 +94,9 @@ interface TabStoreState {
 
   // execution actions for specific tab (used by WS handlers)
   setTabNodeExecutionStatus: (tabId: string, nodeId: string, status: NodeData['executionStatus'], error?: string) => void;
+  setTabNodeProgress: (tabId: string, nodeId: string, progress: NodeProgress) => void;
+  setTabOutputSummary: (tabId: string, nodeId: string, summary: Record<string, OutputSummary>) => void;
+  clearOutputSummaries: () => void;
   setTabStatus: (tabId: string, s: ExecutionStatus) => void;
   addTabLog: (tabId: string, entry: Omit<LogEntry, 'timestamp'>) => void;
 }
@@ -491,6 +497,27 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
         ),
       })),
     }),
+
+  setTabNodeProgress: (tabId, nodeId, progress) =>
+    set({
+      tabs: updateTab(get().tabs, tabId, (tab) => ({
+        nodes: tab.nodes.map((n) =>
+          n.id === nodeId
+            ? { ...n, data: { ...n.data, progress } }
+            : n
+        ),
+      })),
+    }),
+
+  setTabOutputSummary: (tabId, nodeId, summary) =>
+    set({
+      tabs: updateTab(get().tabs, tabId, (tab) => ({
+        outputSummaries: { ...tab.outputSummaries, [nodeId]: summary },
+      })),
+    }),
+
+  clearOutputSummaries: () =>
+    set({ tabs: updateTab(get().tabs, get().activeTabId, () => ({ outputSummaries: {} })) }),
 
   setTabStatus: (tabId, s) =>
     set({ tabs: updateTab(get().tabs, tabId, () => ({ status: s })) }),

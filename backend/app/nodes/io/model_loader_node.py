@@ -49,7 +49,7 @@ class ModelLoaderNode(BaseNode):
                 param_type=ParamType.SELECT,
                 default="cpu",
                 description="Device to load weights onto",
-                options=["cpu", "cuda"],
+                options=["cpu", "cuda", "mps"],
             ),
             ParamDefinition(
                 name="strict",
@@ -72,6 +72,9 @@ class ModelLoaderNode(BaseNode):
 
         if device == "cuda" and not torch.cuda.is_available():
             logger.warning("CUDA not available, falling back to CPU")
+            device = "cpu"
+        elif device == "mps" and not torch.backends.mps.is_available():
+            logger.warning("MPS not available, falling back to CPU")
             device = "cpu"
 
         p = Path(path)

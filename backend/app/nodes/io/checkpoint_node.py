@@ -109,7 +109,7 @@ class CheckpointLoaderNode(BaseNode):
                 param_type=ParamType.SELECT,
                 default="cpu",
                 description="Device to load onto",
-                options=["cpu", "cuda"],
+                options=["cpu", "cuda", "mps"],
             ),
         ]
 
@@ -127,6 +127,9 @@ class CheckpointLoaderNode(BaseNode):
         if device == "cuda" and not torch.cuda.is_available():
             logger.warning("CUDA not available, falling back to CPU")
             device = "cpu"
+        elif device == "mps" and not torch.backends.mps.is_available():
+            logger.warning("MPS not available, falling back to CPU")
+            device = "cpu"
 
         p = Path(path)
         if not p.is_absolute():
@@ -138,7 +141,18 @@ class CheckpointLoaderNode(BaseNode):
 
         model.load_state_dict(checkpoint["model_state_dict"])
         model = model.to(device)
+
+        # Re-bind optimizer to device-mapped parameters before restoring state
+        for param_group in optimizer.param_groups:
+            param_group["params"] = list(model.parameters())
+
         optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
+
+        # Move optimizer state tensors (momentum buffers, etc.) to device
+        for state in optimizer.state.values():
+            for k, v in state.items():
+                if isinstance(v, torch.Tensor):
+                    state[k] = v.to(device)
 
         epoch = checkpoint.get("epoch", 0)
         losses = checkpoint.get("losses", torch.tensor([]))

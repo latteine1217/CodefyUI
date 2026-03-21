@@ -36,6 +36,29 @@ export interface PresetDefinition {
   exposed_params: { internal_node: string; param_name: string; display_name: string; group: string; param_def: ParamDefinition | null }[];
 }
 
+export interface NodeProgress {
+  event: string;
+  epoch?: number;
+  total_epochs?: number;
+  loss?: number;
+  losses?: number[];
+  [key: string]: unknown;
+}
+
+export interface OutputSummary {
+  type: string;
+  shape?: number[];
+  dtype?: string;
+  min?: number;
+  max?: number;
+  mean?: number;
+  value?: any;
+  class?: string;
+  params?: number;
+  trainable?: number;
+  repr?: string;
+}
+
 export interface NodeData {
   label: string;
   type: string;
@@ -43,6 +66,7 @@ export interface NodeData {
   definition?: NodeDefinition;
   executionStatus?: ExecutionStatus;
   error?: string;
+  progress?: NodeProgress;
   isPreset?: boolean;
   presetDefinition?: PresetDefinition;
   internalParams?: Record<string, Record<string, any>>;

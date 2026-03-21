@@ -66,5 +66,10 @@ class BaseNode(ABC):
         return []
 
     @abstractmethod
-    def execute(self, inputs: dict[str, Any], params: dict[str, Any]) -> dict[str, Any]:
+    def execute(
+        self,
+        inputs: dict[str, Any],
+        params: dict[str, Any],
+        progress_callback: Any | None = None,
+    ) -> dict[str, Any]:
         ...

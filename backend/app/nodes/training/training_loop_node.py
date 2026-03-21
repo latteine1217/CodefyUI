@@ -36,11 +36,16 @@ class TrainingLoopNode(BaseNode):
                 param_type=ParamType.SELECT,
                 default="cpu",
                 description="Device to train on",
-                options=["cpu", "cuda"],
+                options=["cpu", "cuda", "mps"],
             ),
         ]
 
-    def execute(self, inputs: dict[str, Any], params: dict[str, Any]) -> dict[str, Any]:
+    def execute(
+        self,
+        inputs: dict[str, Any],
+        params: dict[str, Any],
+        progress_callback: Any | None = None,
+    ) -> dict[str, Any]:
         import torch
 
         model = inputs["model"]
@@ -53,9 +58,41 @@ class TrainingLoopNode(BaseNode):
         if device == "cuda" and not torch.cuda.is_available():
             logger.warning("CUDA not available, falling back to CPU")
             device = "cpu"
+        elif device == "mps" and not torch.backends.mps.is_available():
+            logger.warning("MPS not available, falling back to CPU")
+            device = "cpu"
 
         model = model.to(device)
+        loss_fn = loss_fn.to(device)
+
+        # Re-bind optimizer to model's device-mapped parameters to ensure
+        # consistency after model.to(device) (which may create new Parameter
+        # objects on certain PyTorch versions / backends such as MPS).
+        for param_group in optimizer.param_groups:
+            param_group["params"] = list(model.parameters())
+
         model.train()
+
+        # Collect training config for frontend display
+        param_count = sum(p.numel() for p in model.parameters())
+        trainable_count = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        optimizer_name = optimizer.__class__.__name__
+        lr = optimizer.param_groups[0].get("lr", "N/A")
+        loss_fn_name = loss_fn.__class__.__name__
+        training_config = {
+            "model_class": model.__class__.__name__,
+            "params": param_count,
+            "trainable": trainable_count,
+            "optimizer": optimizer_name,
+            "lr": lr,
+            "loss_fn": loss_fn_name,
+            "epochs": epochs,
+            "device": device,
+            "batch_size": getattr(dataloader, "batch_size", "N/A"),
+        }
+
+        if progress_callback:
+            progress_callback({"event": "config", "config": training_config})
 
         epoch_losses = []
 
@@ -90,6 +127,15 @@ class TrainingLoopNode(BaseNode):
             avg_loss = running_loss / max(batch_count, 1)
             epoch_losses.append(avg_loss)
             logger.info("Epoch %d/%d - Loss: %.4f", epoch + 1, epochs, avg_loss)
+
+            if progress_callback:
+                progress_callback({
+                    "event": "epoch",
+                    "epoch": epoch + 1,
+                    "total_epochs": epochs,
+                    "loss": round(avg_loss, 6),
+                    "losses": [round(l, 6) for l in epoch_losses],
+                })
 
         losses_tensor = torch.tensor(epoch_losses, dtype=torch.float32)
 

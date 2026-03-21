@@ -14,6 +14,52 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 
+def _summarize_single(value: Any) -> dict[str, Any]:
+    """Generate a human-readable summary for a single output value."""
+    try:
+        import torch
+
+        if isinstance(value, torch.Tensor):
+            summary: dict[str, Any] = {
+                "type": "tensor",
+                "shape": list(value.shape),
+                "dtype": str(value.dtype),
+            }
+            if value.numel() > 0 and value.is_floating_point():
+                summary["min"] = round(float(value.min()), 4)
+                summary["max"] = round(float(value.max()), 4)
+                summary["mean"] = round(float(value.mean()), 4)
+            elif value.numel() > 0:
+                summary["min"] = int(value.min())
+                summary["max"] = int(value.max())
+            return summary
+        if isinstance(value, torch.nn.Module):
+            param_count = sum(p.numel() for p in value.parameters())
+            return {
+                "type": "model",
+                "class": value.__class__.__name__,
+                "params": param_count,
+                "trainable": sum(p.numel() for p in value.parameters() if p.requires_grad),
+            }
+    except ImportError:
+        pass
+    if isinstance(value, (int, float, bool)):
+        return {"type": "scalar", "value": value}
+    if isinstance(value, str):
+        return {"type": "string", "value": value[:200]}
+    return {"type": type(value).__name__, "repr": repr(value)[:200]}
+
+
+def _summarize_outputs(result: dict[str, Any]) -> dict[str, Any]:
+    """Summarize all output ports of a node result."""
+    summary = {}
+    for key, val in result.items():
+        if key.startswith("__"):
+            continue
+        summary[key] = _summarize_single(val)
+    return summary
+
+
 @router.websocket("/ws/execution")
 async def websocket_execution(ws: WebSocket):
     await ws.accept()
@@ -50,6 +96,8 @@ async def websocket_execution(ws: WebSocket):
                     }
                     if result and status == "error":
                         msg["error"] = result.get("error", "")
+                    if result and status == "progress":
+                        msg["progress"] = result
                     if result and status == "completed":
                         # Forward log output (from Print node etc.)
                         if "__log__" in result:
@@ -61,6 +109,8 @@ async def websocket_execution(ws: WebSocket):
                             if isinstance(val, str) and len(val) > 200 and val[:20].isalnum():
                                 msg["image"] = val
                                 break
+                        # Generate output summaries for edge inspection
+                        msg["output_summary"] = _summarize_outputs(result)
                     await ws.send_text(json.dumps(msg))
 
                 async def _run() -> None:

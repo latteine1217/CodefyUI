@@ -9,12 +9,14 @@ import {
   type OnConnect,
   type IsValidConnection,
   type Connection,
+  type Edge,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
 import BaseNode from '../Nodes/BaseNode';
 import PresetNode from '../Nodes/PresetNode';
 import { EmptyCanvasOverlay } from './EmptyCanvasOverlay';
+import { EdgeDataTooltip } from './EdgeDataTooltip';
 import {
   NodeContextMenu,
   useNodeContextMenuItems,
@@ -25,6 +27,7 @@ import { useDragAndDrop } from '../../hooks/useDragAndDrop';
 import { isValidConnection } from '../../utils';
 import { useI18n } from '../../i18n';
 import { CATEGORY_COLORS } from '../../styles/theme';
+import type { OutputSummary } from '../../types';
 import styles from './FlowCanvas.module.css';
 
 const nodeTypes: NodeTypes = {
@@ -44,6 +47,16 @@ export function FlowCanvas() {
   const { t } = useI18n();
 
   const [contextMenu, setContextMenu] = useState<ContextMenuPosition | null>(null);
+  const [edgeTooltip, setEdgeTooltip] = useState<{
+    x: number; y: number;
+    sourceLabel: string; targetLabel: string;
+    portName: string; summary: OutputSummary;
+  } | null>(null);
+
+  const outputSummaries = useTabStore((s) => {
+    const tab = s.tabs.find((t) => t.id === s.activeTabId);
+    return tab?.outputSummaries ?? {};
+  });
 
   const { onDragOver, onDrop } = useDragAndDrop();
 
@@ -90,9 +103,33 @@ export function FlowCanvas() {
     [setSelectedNodeId]
   );
 
+  const handleEdgeClick = useCallback(
+    (event: React.MouseEvent, edge: Edge) => {
+      const sourceId = edge.source;
+      const sourceHandle = edge.sourceHandle ?? '';
+      const nodeSummaries = outputSummaries[sourceId];
+      if (!nodeSummaries || !nodeSummaries[sourceHandle]) {
+        setEdgeTooltip(null);
+        return;
+      }
+      const sourceNode = activeTab.nodes.find((n) => n.id === sourceId);
+      const targetNode = activeTab.nodes.find((n) => n.id === edge.target);
+      setEdgeTooltip({
+        x: event.clientX + 8,
+        y: event.clientY - 8,
+        sourceLabel: sourceNode?.data.label ?? sourceId.slice(0, 8),
+        targetLabel: targetNode?.data.label ?? edge.target.slice(0, 8),
+        portName: sourceHandle,
+        summary: nodeSummaries[sourceHandle],
+      });
+    },
+    [outputSummaries, activeTab.nodes]
+  );
+
   const handlePaneClick = useCallback(() => {
     setSelectedNodeId(null);
     setContextMenu(null);
+    setEdgeTooltip(null);
   }, [setSelectedNodeId]);
 
   const handleNodeContextMenu = useCallback(
@@ -136,6 +173,7 @@ export function FlowCanvas() {
         onConnect={handleConnect}
         isValidConnection={handleIsValidConnection}
         onNodeClick={handleNodeClick}
+        onEdgeClick={handleEdgeClick}
         onNodeContextMenu={handleNodeContextMenu}
         onPaneClick={handlePaneClick}
         onDragOver={onDragOver}
@@ -181,6 +219,18 @@ export function FlowCanvas() {
           position={contextMenu}
           items={menuItems}
           onClose={() => setContextMenu(null)}
+        />
+      )}
+
+      {edgeTooltip && (
+        <EdgeDataTooltip
+          x={edgeTooltip.x}
+          y={edgeTooltip.y}
+          sourceLabel={edgeTooltip.sourceLabel}
+          targetLabel={edgeTooltip.targetLabel}
+          portName={edgeTooltip.portName}
+          summary={edgeTooltip.summary}
+          onClose={() => setEdgeTooltip(null)}
         />
       )}
     </div>
