@@ -7,6 +7,7 @@ import { saveGraph, loadGraph, listGraphs, createPreset, exportGraph } from '../
 import { useI18n, SUPPORTED_LOCALES } from '../../i18n';
 import { resolveSerializedNodes, resolveSerializedEdges } from '../../utils';
 import { SURFACE, TEXT, BRAND, STATUS_COLORS } from '../../styles/theme';
+import { CustomNodeManager } from '../CustomNodeManager/CustomNodeManager';
 import styles from './Toolbar.module.css';
 
 /* ── Shared dropdown menu component ─────────────────────────────── */
@@ -214,6 +215,7 @@ export function Toolbar() {
 
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [customNodeManagerOpen, setCustomNodeManagerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isRunning = status === 'running';
@@ -460,6 +462,16 @@ export function Toolbar() {
         {t('toolbar.reloadNodes')}
       </button>
 
+      {/* Custom Node Manager */}
+      <button
+        onClick={() => setCustomNodeManagerOpen(true)}
+        title={t('toolbar.customNodes.title')}
+        className={styles.menuTrigger}
+        style={{ color: TEXT.muted }}
+      >
+        {t('toolbar.customNodes')}
+      </button>
+
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -519,6 +531,11 @@ export function Toolbar() {
           )}
         </div>
       </div>
+
+      <CustomNodeManager
+        open={customNodeManagerOpen}
+        onClose={() => setCustomNodeManagerOpen(false)}
+      />
     </div>
   );
 }

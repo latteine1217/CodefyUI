@@ -138,6 +138,18 @@ const en = {
   'toolbar.tooltips.off': 'Tips OFF',
   'toolbar.tooltips.title': 'Toggle node description tooltips',
 
+  // Custom Node Manager
+  'customNodes.title': 'Custom Node Manager',
+  'customNodes.loading': 'Loading...',
+  'customNodes.empty': 'No custom nodes. Upload a .py file to get started.',
+  'customNodes.enabled': 'Enabled',
+  'customNodes.disabled': 'Disabled',
+  'customNodes.delete': 'Delete',
+  'customNodes.delete.confirm': 'Delete "{name}"? This cannot be undone.',
+  'customNodes.upload': 'Upload .py',
+  'toolbar.customNodes': 'Custom Nodes',
+  'toolbar.customNodes.title': 'Manage custom nodes',
+
   // Grid Snap
   'toolbar.gridSnap.on': 'Snap ON',
   'toolbar.gridSnap.off': 'Snap OFF',

@@ -81,3 +81,46 @@ export async function reloadNodes() {
   if (!res.ok) throw new Error(`Reload failed: ${res.statusText}`);
   return res.json();
 }
+
+// ── Custom Node Manager ──
+
+export interface CustomNodeInfo {
+  filename: string;
+  enabled: boolean;
+  nodes: string[];
+}
+
+export async function listCustomNodes(): Promise<CustomNodeInfo[]> {
+  const res = await fetch(`${BASE_URL}/custom-nodes`);
+  if (!res.ok) throw new Error(`Failed to list custom nodes: ${res.statusText}`);
+  return res.json();
+}
+
+export async function toggleCustomNode(filename: string) {
+  const res = await fetch(`${BASE_URL}/custom-nodes/toggle`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ filename }),
+  });
+  if (!res.ok) throw new Error(`Toggle failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function uploadCustomNode(file: File) {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${BASE_URL}/custom-nodes/upload`, {
+    method: 'POST',
+    body: form,
+  });
+  if (!res.ok) throw new Error(`Upload failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function deleteCustomNode(filename: string) {
+  const res = await fetch(`${BASE_URL}/custom-nodes/${encodeURIComponent(filename)}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error(`Delete failed: ${res.statusText}`);
+  return res.json();
+}

@@ -140,6 +140,18 @@ const zhTW: Record<TranslationKey, string> = {
   'toolbar.tooltips.off': '提示 OFF',
   'toolbar.tooltips.title': '切換節點描述提示',
 
+  // Custom Node Manager
+  'customNodes.title': '自訂節點管理',
+  'customNodes.loading': '載入中...',
+  'customNodes.empty': '沒有自訂節點。上傳 .py 檔案開始使用。',
+  'customNodes.enabled': '啟用',
+  'customNodes.disabled': '停用',
+  'customNodes.delete': '刪除',
+  'customNodes.delete.confirm': '確定要刪除「{name}」嗎？此操作無法復原。',
+  'customNodes.upload': '上傳 .py',
+  'toolbar.customNodes': '自訂節點',
+  'toolbar.customNodes.title': '管理自訂節點',
+
   // Grid Snap
   'toolbar.gridSnap.on': '吸附 ON',
   'toolbar.gridSnap.off': '吸附 OFF',
