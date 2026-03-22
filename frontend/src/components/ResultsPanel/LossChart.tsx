@@ -63,20 +63,20 @@ export function LossChart({ losses, height = 80 }: LossChartProps) {
               <line
                 x1={padding.left} y1={y}
                 x2={svgWidth - padding.right} y2={y}
-                stroke="#2a2a2a" strokeWidth={0.5}
+                stroke="#333" strokeWidth={0.5}
               />
-              <text x={padding.left - 3} y={y + 3} textAnchor="end" fill="#444" fontSize={8}>
+              <text x={padding.left - 3} y={y + 3} textAnchor="end" fill="#777" fontSize={9}>
                 {formatTick(tick)}
               </text>
             </g>
           );
         })}
         {/* X axis labels */}
-        <text x={padding.left} y={height - 2} fill="#444" fontSize={8}>1</text>
-        <text x={padding.left + chartW} y={height - 2} fill="#444" fontSize={8} textAnchor="end">
+        <text x={padding.left} y={height - 2} fill="#777" fontSize={9}>1</text>
+        <text x={padding.left + chartW} y={height - 2} fill="#777" fontSize={9} textAnchor="end">
           {losses.length}
         </text>
-        <text x={padding.left + chartW / 2} y={height - 2} fill="#333" fontSize={7} textAnchor="middle">
+        <text x={padding.left + chartW / 2} y={height - 2} fill="#666" fontSize={8} textAnchor="middle">
           epoch
         </text>
         {/* Loss polyline */}

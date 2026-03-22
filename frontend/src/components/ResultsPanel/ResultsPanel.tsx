@@ -38,11 +38,13 @@ export function ResultsPanel() {
   const [collapsed, setCollapsed] = useState(false);
   const [panelHeight, setPanelHeight] = useState(DEFAULT_HEIGHT);
   const [panelTab, setPanelTab] = useState<PanelTab>('log');
+  const [infoColWidth, setInfoColWidth] = useState(300);
   const heightBeforeCollapse = useRef(DEFAULT_HEIGHT);
   const isDragging = useRef(false);
   const startY = useRef(0);
   const startHeight = useRef(0);
   const prevHadTraining = useRef(false);
+  const colDragging = useRef(false);
 
   // Parse training data from logs
   const trainingData = useMemo(() => {
@@ -128,6 +130,32 @@ export function ResultsPanel() {
       return !prev;
     });
   }, [panelHeight]);
+
+  const handleColDividerDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    colDragging.current = true;
+    const startX = e.clientX;
+    const startW = infoColWidth;
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!colDragging.current) return;
+      const delta = startX - ev.clientX;
+      setInfoColWidth(Math.max(180, Math.min(600, startW + delta)));
+    };
+
+    const onMouseUp = () => {
+      colDragging.current = false;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [infoColWidth]);
 
   return (
     <div
@@ -248,8 +276,14 @@ export function ResultsPanel() {
                   )}
                 </div>
 
+                {/* Resizable column divider */}
+                <div
+                  className={styles.columnDivider}
+                  onMouseDown={handleColDividerDown}
+                />
+
                 {/* Right column: config + epoch table */}
-                <div className={styles.trainingInfoCol}>
+                <div className={styles.trainingInfoCol} style={{ width: infoColWidth }}>
                   {/* Training config */}
                   {trainingData.config && (
                     <div className={styles.configSection}>

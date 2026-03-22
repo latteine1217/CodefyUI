@@ -9,7 +9,7 @@
   position: relative;
 }
 
-/* Resize drag handle */
+/* Resize drag handle (top edge) */
 .resizeHandle {
   position: absolute;
   top: -3px;
@@ -33,7 +33,7 @@
   padding: 0 12px;
   border-bottom: 1px solid #1e1e1e;
   flex-shrink: 0;
-  height: 30px;
+  height: 32px;
 }
 
 .headerLeft {
@@ -50,15 +50,15 @@
 
 /* ── Inner panel tabs ── */
 .panelTabBtn {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  color: #555;
+  color: #777;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  padding: 6px 10px;
+  padding: 7px 10px;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -67,40 +67,40 @@
 }
 
 .panelTabBtn:hover:not(.panelTabDisabled) {
-  color: #aaa;
+  color: #bbb;
 }
 
 .panelTabActive {
-  color: #ccc;
+  color: #ddd;
   border-bottom-color: #4d90fe;
 }
 
 .panelTabDisabled {
-  color: #333;
+  color: #444;
   cursor: not-allowed;
 }
 
 .countBadge {
-  font-size: 0.5625rem;
+  font-size: 0.625rem;
   background: #222;
-  border: 1px solid #333;
+  border: 1px solid #3a3a3a;
   border-radius: 10px;
   padding: 0 5px;
-  color: #666;
+  color: #888;
   font-weight: 400;
 }
 
 .countBadgeTraining {
-  background: rgba(255, 193, 7, 0.1);
-  border-color: rgba(255, 193, 7, 0.3);
+  background: rgba(255, 193, 7, 0.12);
+  border-color: rgba(255, 193, 7, 0.35);
   color: #FFC107;
 }
 
 .clearBtn {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   padding: 2px 8px;
   background: transparent;
-  border: 1px solid #333;
+  border: 1px solid #3a3a3a;
   border-radius: 3px;
 }
 
@@ -112,25 +112,25 @@
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: 1px solid #333;
+  border: 1px solid #3a3a3a;
   border-radius: 3px;
-  color: #666;
+  color: #888;
   cursor: pointer;
   line-height: 1;
 }
 
 .collapseBtn:hover {
   background: #222;
-  color: #aaa;
+  color: #bbb;
 }
 
 .clearBtnEnabled {
-  color: #666;
+  color: #888;
   cursor: pointer;
 }
 
 .clearBtnDisabled {
-  color: #333;
+  color: #444;
   cursor: not-allowed;
 }
 
@@ -148,8 +148,8 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: #333;
-  font-size: 0.75rem;
+  color: #555;
+  font-size: 0.8125rem;
 }
 
 /* Log entry base (dynamic bg + border-left applied inline) */
@@ -162,17 +162,17 @@
 }
 
 .timestamp {
-  font-size: 0.6875rem;
-  color: #444;
+  font-size: 0.75rem;
+  color: #666;
   flex-shrink: 0;
   line-height: 1.6;
 }
 
 .nodeIdBadge {
-  font-size: 0.625rem;
-  color: #555;
+  font-size: 0.6875rem;
+  color: #888;
   background: #1a1a1a;
-  border: 1px solid #2a2a2a;
+  border: 1px solid #333;
   border-radius: 2px;
   padding: 0 4px;
   flex-shrink: 0;
@@ -191,7 +191,7 @@
 
 /* Log message text */
 .logMessage {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   line-height: 1.6;
   word-break: break-word;
 }
@@ -213,29 +213,44 @@
 /* Left column — chart */
 .trainingChartCol {
   flex: 1;
-  min-width: 200px;
-  padding: 6px 12px;
-  border-right: 1px solid #222;
+  min-width: 160px;
+  padding: 8px 14px;
+  border-right: 1px solid #2a2a2a;
   display: flex;
   flex-direction: column;
+}
+
+/* Drag divider between columns */
+.columnDivider {
+  width: 5px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.columnDivider:hover,
+.columnDividerActive {
+  background: rgba(77, 144, 254, 0.4);
 }
 
 /* Right column — config + epochs */
 .trainingInfoCol {
-  width: 280px;
   flex-shrink: 0;
   overflow-y: auto;
+  overflow-x: hidden;
   display: flex;
   flex-direction: column;
+  min-width: 180px;
 }
 
 .sectionHeader {
-  font-size: 0.625rem;
-  color: #666;
+  font-size: 0.75rem;
+  color: #999;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  padding: 4px 0;
+  padding: 6px 0 4px;
 }
 
 /* Chart */
@@ -252,76 +267,77 @@
 
 /* Config grid */
 .configSection {
-  padding: 6px 10px;
-  border-bottom: 1px solid #222;
+  padding: 8px 12px;
+  border-bottom: 1px solid #2a2a2a;
 }
 
 .configGrid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .configRow {
   display: flex;
   justify-content: space-between;
-  gap: 6px;
-  padding: 1px 0;
+  gap: 8px;
+  padding: 2px 0;
 }
 
 .configKey {
-  font-size: 0.625rem;
-  color: #555;
+  font-size: 0.75rem;
+  color: #888;
+  white-space: nowrap;
 }
 
 .configVal {
-  font-size: 0.625rem;
-  color: #aaa;
+  font-size: 0.75rem;
+  color: #ccc;
   font-family: monospace;
   text-align: right;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 100px;
+  min-width: 0;
 }
 
 /* Epoch table */
 .epochSection {
-  padding: 6px 10px;
+  padding: 8px 12px;
   flex: 1;
   overflow-y: auto;
 }
 
 .epochTable {
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
 }
 
 .epochRow {
   display: grid;
-  grid-template-columns: 28px 1fr 1fr 40px;
-  gap: 4px;
-  padding: 2px 0;
-  color: #888;
+  grid-template-columns: 32px 1fr 1fr 48px;
+  gap: 6px;
+  padding: 3px 0;
+  color: #bbb;
 }
 
 .epochRowHeader {
-  color: #555;
+  color: #888;
   font-weight: 600;
-  border-bottom: 1px solid #222;
-  padding-bottom: 3px;
+  border-bottom: 1px solid #2a2a2a;
+  padding-bottom: 4px;
   margin-bottom: 2px;
 }
 
 .deltaDown {
-  color: #4CAF50;
+  color: #66BB6A;
 }
 
 .deltaUp {
-  color: #F44336;
+  color: #EF5350;
 }
 
 .epochTime {
-  color: #444;
+  color: #777;
   text-align: right;
 }
 
@@ -333,24 +349,24 @@
   position: fixed;
   z-index: 1000;
   background: #1a1a1a;
-  border: 1px solid #444;
+  border: 1px solid #555;
   border-radius: 6px;
-  padding: 8px 12px;
-  font-size: 0.75rem;
+  padding: 10px 14px;
+  font-size: 0.8125rem;
   color: #ddd;
-  min-width: 180px;
-  max-width: 300px;
+  min-width: 200px;
+  max-width: 320px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
 }
 
 .edgeTooltipTitle {
   font-weight: 600;
-  color: #888;
-  font-size: 0.625rem;
+  color: #aaa;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   margin-bottom: 6px;
-  border-bottom: 1px solid #333;
+  border-bottom: 1px solid #3a3a3a;
   padding-bottom: 4px;
 }
 
@@ -362,13 +378,13 @@
 }
 
 .edgeTooltipLabel {
-  color: #777;
-  font-size: 0.6875rem;
+  color: #999;
+  font-size: 0.75rem;
 }
 
 .edgeTooltipValue {
-  color: #ccc;
+  color: #ddd;
   font-family: monospace;
-  font-size: 0.6875rem;
+  font-size: 0.75rem;
   text-align: right;
 }
