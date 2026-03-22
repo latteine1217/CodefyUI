@@ -36,7 +36,7 @@ const en = {
   'toolbar.export': 'Export as Subgraph',
   'toolbar.export.title': 'Export current graph as a reusable subgraph/preset',
   'toolbar.export.prompt': 'Enter a name for this subgraph:',
-  'toolbar.export.success': 'Subgraph "{name}" exported successfully! It now appears in the Presets tab.',
+  'toolbar.export.success': 'Subgraph "{name}" exported successfully! It now appears in the Nodes panel.',
   'toolbar.export.fail': 'Export failed: {error}',
   'toolbar.exportPython': 'Export as Python',
   'toolbar.exportPython.title': 'Download graph as a standalone Python script',
@@ -52,7 +52,7 @@ const en = {
   'status.cached': 'Cached',
 
   // Node Palette
-  'palette.title': 'Node Palette',
+  'palette.title': 'Nodes',
   'palette.search': 'Search nodes...',
   'palette.loading': 'Loading nodes...',
   'palette.loadFail': 'Failed to load nodes: {error}',
@@ -60,9 +60,8 @@ const en = {
   'palette.noMatch': 'No matching nodes',
   'palette.empty': 'No nodes available',
   'palette.hint': 'Drag nodes onto the canvas',
-  'palette.tabPresets': 'Presets',
-  'palette.tabOperations': 'Operations',
-  'palette.noPresets': 'No presets available',
+  'palette.composite': 'Composite',
+  'palette.basic': 'Basic',
 
   // Config Panel
   'config.title': 'Node Config',
@@ -102,8 +101,10 @@ const en = {
 
   // Empty Canvas
   'empty.title': 'Build your first deep learning model',
-  'empty.subtitle': 'Pick a preset to get started quickly',
+  'empty.subtitle': 'Pick an example to get started quickly',
   'empty.hint': 'or drag a node from the left palette',
+  'empty.loading': 'Loading examples...',
+  'empty.loadError': 'Failed to load example',
 
   // Context Menu
   'contextMenu.rename': 'Rename',

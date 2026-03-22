@@ -105,23 +105,23 @@
 }
 
 .collapseBtn {
-  font-size: 0.75rem;
-  width: 22px;
-  height: 22px;
+  font-size: 0.9375rem;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: transparent;
   border: 1px solid #3a3a3a;
   border-radius: 3px;
-  color: #888;
+  color: #999;
   cursor: pointer;
   line-height: 1;
 }
 
 .collapseBtn:hover {
   background: #222;
-  color: #bbb;
+  color: #eee;
 }
 
 .clearBtnEnabled {

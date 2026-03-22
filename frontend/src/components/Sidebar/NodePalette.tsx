@@ -133,16 +133,31 @@ function PresetItem({ preset }: PresetItemProps) {
   );
 }
 
-// ── Category Section ──
+// ── Sub-header separator ──
 
-interface CategorySectionProps {
+function SubHeader({ label }: { label: string }) {
+  return (
+    <div className={styles.subHeader}>
+      <span className={styles.subHeaderLine} />
+      <span className={styles.subHeaderText}>{label}</span>
+      <span className={styles.subHeaderLine} />
+    </div>
+  );
+}
+
+// ── Unified Category Section ──
+
+interface UnifiedCategorySectionProps {
   category: string;
+  presets: PresetDefinition[];
   nodes: NodeDefinition[];
 }
 
-function CategorySection({ category, nodes }: CategorySectionProps) {
+function UnifiedCategorySection({ category, presets, nodes }: UnifiedCategorySectionProps) {
   const [expanded, setExpanded] = useState(true);
   const color = CATEGORY_COLORS[category] ?? '#607D8B';
+  const { t } = useI18n();
+  const hasBoth = presets.length > 0 && nodes.length > 0;
 
   return (
     <div className={styles.categorySection}>
@@ -159,7 +174,7 @@ function CategorySection({ category, nodes }: CategorySectionProps) {
           {category}
         </span>
         <span className={styles.categoryCount}>
-          {nodes.length}
+          {presets.length + nodes.length}
         </span>
         <span className={styles.categoryChevron}>
           {expanded ? '▾' : '▸'}
@@ -168,6 +183,11 @@ function CategorySection({ category, nodes }: CategorySectionProps) {
 
       {expanded && (
         <div className={styles.categoryNodes}>
+          {hasBoth && <SubHeader label={t('palette.composite')} />}
+          {presets.map((p) => (
+            <PresetItem key={p.preset_name} preset={p} />
+          ))}
+          {hasBoth && <SubHeader label={t('palette.basic')} />}
           {nodes.map((def) => (
             <NodeItem key={def.node_name} definition={def} />
           ))}
@@ -177,102 +197,50 @@ function CategorySection({ category, nodes }: CategorySectionProps) {
   );
 }
 
-// ── Preset Category Section ──
-
-interface PresetCategorySectionProps {
-  category: string;
-  presets: PresetDefinition[];
-}
-
-function PresetCategorySection({ category, presets }: PresetCategorySectionProps) {
-  const [expanded, setExpanded] = useState(true);
-  const color = CATEGORY_COLORS[category] ?? '#D4A017';
-
-  return (
-    <div className={styles.categorySection}>
-      <button
-        onClick={() => setExpanded((prev) => !prev)}
-        className={styles.categoryButton}
-        style={{ borderBottom: `2px solid ${color}` }}
-      >
-        <span
-          className={styles.categoryDot}
-          style={{ background: color }}
-        />
-        <span className={styles.categoryName} style={{ color }}>
-          {category}
-        </span>
-        <span className={styles.categoryCount}>
-          {presets.length}
-        </span>
-        <span className={styles.categoryChevron}>
-          {expanded ? '▾' : '▸'}
-        </span>
-      </button>
-
-      {expanded && (
-        <div className={styles.categoryNodes}>
-          {presets.map((p) => (
-            <PresetItem key={p.preset_name} preset={p} />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ── Main Palette ──
-
-type PaletteTab = 'presets' | 'operations';
 
 export function NodePalette() {
   const { categorized, loading, error, refetch } = useNodeDefinitions();
   const presetCategorized = useNodeDefStore((s) => s.presetCategorized);
-  const presets = useNodeDefStore((s) => s.presets);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState<PaletteTab>('presets');
   const { t } = useI18n();
 
-  // Operations tab filtering
+  // Merge categories from both sources
+  const allCategoryKeys = new Set([
+    ...Object.keys(categorized),
+    ...Object.keys(presetCategorized),
+  ]);
   const orderedCategories = [
-    ...CATEGORY_ORDER.filter((c) => c in categorized),
-    ...Object.keys(categorized).filter((c) => !CATEGORY_ORDER.includes(c)),
+    ...CATEGORY_ORDER.filter((c) => allCategoryKeys.has(c)),
+    ...[...allCategoryKeys].filter((c) => !CATEGORY_ORDER.includes(c)).sort(),
   ];
 
-  const filteredCategorized: Record<string, NodeDefinition[]> = {};
-  if (searchQuery.trim()) {
-    const q = searchQuery.toLowerCase();
-    for (const [cat, nodes] of Object.entries(categorized)) {
-      const matched = nodes.filter(
+  // Unified filtering
+  const q = searchQuery.trim().toLowerCase();
+  const mergedCategories: { category: string; presets: PresetDefinition[]; nodes: NodeDefinition[] }[] = [];
+
+  for (const cat of orderedCategories) {
+    let filteredNodes = categorized[cat] ?? [];
+    let filteredPresets = presetCategorized[cat] ?? [];
+
+    if (q) {
+      filteredNodes = filteredNodes.filter(
         (n) =>
           n.node_name.toLowerCase().includes(q) ||
           n.description.toLowerCase().includes(q)
       );
-      if (matched.length > 0) filteredCategorized[cat] = matched;
-    }
-  } else {
-    Object.assign(filteredCategorized, categorized);
-  }
-  const displayCategories = orderedCategories.filter((c) => c in filteredCategorized);
-
-  // Presets tab filtering
-  const presetCategories = Object.keys(presetCategorized);
-  const filteredPresets: Record<string, PresetDefinition[]> = {};
-  if (searchQuery.trim()) {
-    const q = searchQuery.toLowerCase();
-    for (const [cat, ps] of Object.entries(presetCategorized)) {
-      const matched = ps.filter(
+      filteredPresets = filteredPresets.filter(
         (p) =>
           p.preset_name.toLowerCase().includes(q) ||
           p.description.toLowerCase().includes(q) ||
           p.tags.some((tag) => tag.toLowerCase().includes(q))
       );
-      if (matched.length > 0) filteredPresets[cat] = matched;
     }
-  } else {
-    Object.assign(filteredPresets, presetCategorized);
+
+    if (filteredNodes.length > 0 || filteredPresets.length > 0) {
+      mergedCategories.push({ category: cat, presets: filteredPresets, nodes: filteredNodes });
+    }
   }
-  const displayPresetCategories = presetCategories.filter((c) => c in filteredPresets);
 
   return (
     <div className={styles.sidebar}>
@@ -288,30 +256,6 @@ export function NodePalette() {
           onChange={(e) => setSearchQuery(e.target.value)}
           className={styles.searchInput}
         />
-      </div>
-
-      {/* Tab bar */}
-      <div className={styles.tabBar}>
-        <button
-          onClick={() => setActiveTab('presets')}
-          className={styles.tabButton}
-          style={{
-            borderBottom: activeTab === 'presets' ? '2px solid #D4A017' : '2px solid transparent',
-            color: activeTab === 'presets' ? '#D4A017' : '#666',
-          }}
-        >
-          {t('palette.tabPresets')}
-        </button>
-        <button
-          onClick={() => setActiveTab('operations')}
-          className={styles.tabButton}
-          style={{
-            borderBottom: activeTab === 'operations' ? '2px solid #888' : '2px solid transparent',
-            color: activeTab === 'operations' ? '#ccc' : '#666',
-          }}
-        >
-          {t('palette.tabOperations')}
-        </button>
       </div>
 
       {/* Content */}
@@ -333,42 +277,19 @@ export function NodePalette() {
           </div>
         )}
 
-        {/* Presets tab */}
-        {!loading && !error && activeTab === 'presets' && (
+        {!loading && !error && (
           <>
-            {presets.length === 0 && (
-              <div className={styles.stateMessageMuted}>
-                {t('palette.noPresets')}
-              </div>
-            )}
-            {displayPresetCategories.length === 0 && presets.length > 0 && searchQuery && (
-              <div className={styles.stateMessageMuted}>
-                {t('palette.noMatch')}
-              </div>
-            )}
-            {displayPresetCategories.map((cat) => (
-              <PresetCategorySection
-                key={cat}
-                category={cat}
-                presets={filteredPresets[cat]}
-              />
-            ))}
-          </>
-        )}
-
-        {/* Operations tab */}
-        {!loading && !error && activeTab === 'operations' && (
-          <>
-            {displayCategories.length === 0 && (
+            {mergedCategories.length === 0 && (
               <div className={styles.stateMessageMuted}>
                 {searchQuery ? t('palette.noMatch') : t('palette.empty')}
               </div>
             )}
-            {displayCategories.map((category) => (
-              <CategorySection
+            {mergedCategories.map(({ category, presets, nodes }) => (
+              <UnifiedCategorySection
                 key={category}
                 category={category}
-                nodes={filteredCategorized[category]}
+                presets={presets}
+                nodes={nodes}
               />
             ))}
           </>

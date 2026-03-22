@@ -1,4 +1,5 @@
-import { ReactFlowProvider } from '@xyflow/react';
+import { useMemo } from 'react';
+import { ReactFlowProvider, MiniMap } from '@xyflow/react';
 import { Toolbar } from './components/Toolbar/Toolbar';
 import { TabBar } from './components/TabBar/TabBar';
 import { NodePalette } from './components/Sidebar/NodePalette';
@@ -9,7 +10,50 @@ import { PresetConfigModal } from './components/PresetModal/PresetConfigModal';
 import { SubgraphEditorModal } from './components/SubgraphEditor/SubgraphEditorModal';
 import { useTabStore } from './store/tabStore';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
+import { CATEGORY_COLORS } from './styles/theme';
 import styles from './App.module.css';
+
+const minimapNodeColor = (node: any) => {
+  const data = node.data as any;
+  if (data?.isPreset) return '#D4A017';
+  const category = data?.definition?.category ?? 'Utility';
+  return CATEGORY_COLORS[category] ?? '#607D8B';
+};
+
+function RightColumn() {
+  const selectedNodeId = useTabStore(
+    (s) => s.tabs.find((t) => t.id === s.activeTabId)?.selectedNodeId ?? null,
+  );
+  const hasSelection = selectedNodeId !== null;
+
+  const minimapStyle = useMemo(
+    () => ({
+      position: 'relative' as const,
+      width: '100%',
+      height: '100%',
+      background: '#1e1e1e',
+      borderRadius: 0,
+      border: 'none',
+      margin: 0,
+    }),
+    [],
+  );
+
+  return (
+    <div className={styles.rightColumn}>
+      {hasSelection && <NodeConfigPanel />}
+      <div className={styles.minimapWrapper}>
+        <MiniMap
+          pannable
+          zoomable
+          nodeColor={minimapNodeColor}
+          maskColor="rgba(0,0,0,0.7)"
+          style={minimapStyle}
+        />
+      </div>
+    </div>
+  );
+}
 
 function TabContent({ tabId }: { tabId: string }) {
   const activeTabId = useTabStore((s) => s.activeTabId);
@@ -18,7 +62,6 @@ function TabContent({ tabId }: { tabId: string }) {
   return (
     <div
       className={styles.tabContent}
-      // "display" is the only value that changes based on state
       style={{ display: isActive ? 'flex' : 'none' }}
     >
       <div className={styles.tabInner}>
@@ -29,7 +72,7 @@ function TabContent({ tabId }: { tabId: string }) {
               <FlowCanvas />
             </div>
           </div>
-          <NodeConfigPanel />
+          <RightColumn />
         </ReactFlowProvider>
       </div>
       <ResultsPanel />

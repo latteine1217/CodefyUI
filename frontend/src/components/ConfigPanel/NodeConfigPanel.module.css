@@ -9,33 +9,7 @@
   flex-direction: column;
   flex-shrink: 0;
   overflow: hidden;
-}
-
-/* Empty state (no node selected) */
-.emptyPanel {
-  width: 300px;
-  height: 100%;
-  background: #161616;
-  border-left: 1px solid #2a2a2a;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.emptyState {
-  text-align: center;
-  color: #444;
-  padding: 20px;
-}
-
-.emptyIcon {
-  font-size: 1.75rem;
-  margin-bottom: 8px;
-}
-
-.emptyText {
-  font-size: 0.8125rem;
+  transition: opacity 0.2s ease;
 }
 
 /* Panel header */

@@ -5,6 +5,8 @@ interface UIState {
   toggleTooltips: () => void;
   gridSnapEnabled: boolean;
   toggleGridSnap: () => void;
+  isCanvasPanning: boolean;
+  setCanvasPanning: (panning: boolean) => void;
 }
 
 const TOOLTIPS_KEY = 'codefyui-tooltips';
@@ -25,4 +27,6 @@ export const useUIStore = create<UIState>((set) => ({
       localStorage.setItem(GRIDSNAP_KEY, String(next));
       return { gridSnapEnabled: next };
     }),
+  isCanvasPanning: false,
+  setCanvasPanning: (panning) => set({ isCanvasPanning: panning }),
 }));

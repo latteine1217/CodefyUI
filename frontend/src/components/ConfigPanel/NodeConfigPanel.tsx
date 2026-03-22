@@ -1,4 +1,5 @@
 import { useTabStore } from '../../store/tabStore';
+import { useUIStore } from '../../store/uiStore';
 import { useI18n } from '../../i18n';
 import { ParamField } from '../shared/ParamField';
 import { CATEGORY_COLORS } from '../../styles/theme';
@@ -10,6 +11,7 @@ export function NodeConfigPanel() {
   const selectedNodeId = activeTab.selectedNodeId;
   const updateNodeParams = useTabStore((s) => s.updateNodeParams);
   const openPresetModal = useTabStore((s) => s.openPresetModal);
+  const isCanvasPanning = useUIStore((s) => s.isCanvasPanning);
   const { t, tn } = useI18n();
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId);
@@ -21,23 +23,17 @@ export function NodeConfigPanel() {
     updateNodeParams(selectedNodeId, { [paramName]: value });
   };
 
-  if (!selectedNode) {
-    return (
-      <div className={styles.emptyPanel}>
-        <div className={styles.emptyState}>
-          <div className={styles.emptyIcon}>○</div>
-          <div className={styles.emptyText}>{t('config.selectNode')}</div>
-        </div>
-      </div>
-    );
-  }
+  if (!selectedNode) return null;
 
   const isPreset = selectedNode.data.isPreset;
   const category = def?.category ?? 'Utility';
   const accentColor = isPreset ? '#D4A017' : (CATEGORY_COLORS[category] ?? '#607D8B');
 
   return (
-    <div className={styles.panel}>
+    <div
+      className={styles.panel}
+      style={{ opacity: isCanvasPanning ? 0.4 : 1 }}
+    >
       {/* Panel header */}
       <div
         className={styles.header}

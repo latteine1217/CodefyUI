@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import routes_custom_nodes, routes_graph, routes_models, routes_nodes, routes_presets, ws_execution
+from .api import routes_custom_nodes, routes_examples, routes_graph, routes_models, routes_nodes, routes_presets, ws_execution
 from .config import settings
 from .core.logging_config import setup_logging
 from .core.node_registry import registry
@@ -52,6 +52,7 @@ app.add_middleware(
 )
 
 app.include_router(routes_nodes.router)
+app.include_router(routes_examples.router)
 app.include_router(routes_graph.router)
 app.include_router(routes_presets.router)
 app.include_router(routes_custom_nodes.router)

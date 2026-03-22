@@ -3,7 +3,6 @@ import {
   ReactFlow,
   Background,
   Controls,
-  MiniMap,
   BackgroundVariant,
   useReactFlow,
   type NodeTypes,
@@ -29,7 +28,6 @@ import { useUIStore } from '../../store/uiStore';
 import { useDragAndDrop } from '../../hooks/useDragAndDrop';
 import { isValidConnection } from '../../utils';
 import { useI18n } from '../../i18n';
-import { CATEGORY_COLORS } from '../../styles/theme';
 import type { OutputSummary } from '../../types';
 import styles from './FlowCanvas.module.css';
 
@@ -49,6 +47,7 @@ export function FlowCanvas() {
   const renameNode = useTabStore((s) => s.renameNode);
   const { t } = useI18n();
   const gridSnapEnabled = useUIStore((s) => s.gridSnapEnabled);
+  const setCanvasPanning = useUIStore((s) => s.setCanvasPanning);
   const { screenToFlowPosition } = useReactFlow();
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -221,6 +220,8 @@ export function FlowCanvas() {
         onPaneClick={handlePaneClick}
         onDragOver={onDragOver}
         onDrop={onDrop}
+        onMoveStart={() => setCanvasPanning(true)}
+        onMoveEnd={() => setCanvasPanning(false)}
         nodeTypes={nodeTypes}
         fitView
         proOptions={proOptions}
@@ -243,20 +244,6 @@ export function FlowCanvas() {
           size={1.5}
         />
         <Controls />
-        <MiniMap
-          style={{
-            background: '#1e1e1e',
-            border: '1px solid #333',
-            borderRadius: 6,
-          }}
-          nodeColor={(node) => {
-            const data = node.data as any;
-            if (data?.isPreset) return '#D4A017';
-            const category = data?.definition?.category ?? 'Utility';
-            return CATEGORY_COLORS[category] ?? '#607D8B';
-          }}
-          maskColor="rgba(0,0,0,0.7)"
-        />
       </ReactFlow>
 
       {contextMenu && (

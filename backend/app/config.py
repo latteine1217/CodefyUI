@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     GRAPHS_DIR: Path = Path(__file__).parent.parent / "data" / "graphs"
     PRESETS_DIR: Path = Path(__file__).parent / "presets"
     MODELS_DIR: Path = Path(__file__).parent.parent / "data" / "models"
+    EXAMPLES_DIR: Path = Path(__file__).parent.parent.parent / "examples"
 
     LOG_LEVEL: str = "INFO"
     LOG_DIR: Path | None = None

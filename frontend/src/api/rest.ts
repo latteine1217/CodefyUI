@@ -76,6 +76,29 @@ export async function createPreset(data: {
   return res.json();
 }
 
+// ── Examples ──
+
+export interface ExampleSummary {
+  name: string;
+  description: string;
+  category: string;
+  path: string;
+  node_count: number;
+  edge_count: number;
+}
+
+export async function listExamples(): Promise<ExampleSummary[]> {
+  const res = await fetch(`${BASE_URL}/examples/list`);
+  if (!res.ok) throw new Error(`Failed to list examples: ${res.statusText}`);
+  return res.json();
+}
+
+export async function loadExample(path: string) {
+  const res = await fetch(`${BASE_URL}/examples/load?path=${encodeURIComponent(path)}`);
+  if (!res.ok) throw new Error(`Failed to load example: ${res.statusText}`);
+  return res.json();
+}
+
 export async function reloadNodes() {
   const res = await fetch(`${BASE_URL}/nodes/reload`, { method: 'POST' });
   if (!res.ok) throw new Error(`Reload failed: ${res.statusText}`);

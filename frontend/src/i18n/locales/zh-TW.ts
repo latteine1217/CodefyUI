@@ -38,7 +38,7 @@ const zhTW: Record<TranslationKey, string> = {
   'toolbar.export': '匯出為子圖',
   'toolbar.export.title': '將目前圖表匯出為可重用的子圖/預設模組',
   'toolbar.export.prompt': '請輸入子圖名稱：',
-  'toolbar.export.success': '子圖「{name}」匯出成功！已出現在預設模組分頁中。',
+  'toolbar.export.success': '子圖「{name}」匯出成功！已出現在節點面板中。',
   'toolbar.export.fail': '匯出失敗：{error}',
   'toolbar.exportPython': '匯出為 Python',
   'toolbar.exportPython.title': '將圖表下載為獨立的 Python 腳本',
@@ -54,7 +54,7 @@ const zhTW: Record<TranslationKey, string> = {
   'status.cached': '已快取',
 
   // Node Palette
-  'palette.title': '節點面板',
+  'palette.title': '節點',
   'palette.search': '搜尋節點...',
   'palette.loading': '載入節點中...',
   'palette.loadFail': '載入節點失敗：{error}',
@@ -62,9 +62,8 @@ const zhTW: Record<TranslationKey, string> = {
   'palette.noMatch': '找不到符合的節點',
   'palette.empty': '沒有可用的節點',
   'palette.hint': '拖曳節點到畫布上',
-  'palette.tabPresets': '預設模組',
-  'palette.tabOperations': '操作節點',
-  'palette.noPresets': '沒有可用的預設模組',
+  'palette.composite': '復合',
+  'palette.basic': '基本',
 
   // Config Panel
   'config.title': '節點設定',
@@ -104,8 +103,10 @@ const zhTW: Record<TranslationKey, string> = {
 
   // Empty Canvas
   'empty.title': '建立你的第一個深度學習模型',
-  'empty.subtitle': '選擇一個預設模組快速開始',
+  'empty.subtitle': '選擇一個範例快速開始',
   'empty.hint': '或從左側面板拖曳節點',
+  'empty.loading': '載入範例中...',
+  'empty.loadError': '載入範例失敗',
 
   // Context Menu
   'contextMenu.rename': '重新命名',
