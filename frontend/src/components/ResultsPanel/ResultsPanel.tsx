@@ -39,12 +39,14 @@ export function ResultsPanel() {
   const [panelHeight, setPanelHeight] = useState(DEFAULT_HEIGHT);
   const [panelTab, setPanelTab] = useState<PanelTab>('log');
   const [infoColWidth, setInfoColWidth] = useState(300);
+  const [configHeight, setConfigHeight] = useState<number | null>(null);
   const heightBeforeCollapse = useRef(DEFAULT_HEIGHT);
   const isDragging = useRef(false);
   const startY = useRef(0);
   const startHeight = useRef(0);
   const prevHadTraining = useRef(false);
   const colDragging = useRef(false);
+  const rowDragging = useRef(false);
 
   // Parse training data from logs
   const trainingData = useMemo(() => {
@@ -156,6 +158,32 @@ export function ResultsPanel() {
     document.addEventListener('mousemove', onMouseMove);
     document.addEventListener('mouseup', onMouseUp);
   }, [infoColWidth]);
+
+  const handleRowDividerDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    rowDragging.current = true;
+    const startYPos = e.clientY;
+    const startH = configHeight ?? e.currentTarget.parentElement?.querySelector('[data-config]')?.clientHeight ?? 100;
+
+    const onMouseMove = (ev: MouseEvent) => {
+      if (!rowDragging.current) return;
+      const delta = ev.clientY - startYPos;
+      setConfigHeight(Math.max(40, startH + delta));
+    };
+
+    const onMouseUp = () => {
+      rowDragging.current = false;
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.body.style.cursor = 'ns-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  }, [configHeight]);
 
   return (
     <div
@@ -286,7 +314,11 @@ export function ResultsPanel() {
                 <div className={styles.trainingInfoCol} style={{ width: infoColWidth }}>
                   {/* Training config */}
                   {trainingData.config && (
-                    <div className={styles.configSection}>
+                    <div
+                      className={styles.configSection}
+                      data-config
+                      style={configHeight != null ? { height: configHeight, flexShrink: 0 } : undefined}
+                    >
                       <div className={styles.sectionHeader}>{t('results.trainingConfig')}</div>
                       <div className={styles.configGrid}>
                         {Object.entries(trainingData.config).map(([key, val]) => (
@@ -303,12 +335,25 @@ export function ResultsPanel() {
                     </div>
                   )}
 
+                  {/* Resizable row divider between config and epochs */}
+                  {trainingData.config && trainingData.epochs.length > 0 && (
+                    <div
+                      className={styles.rowDivider}
+                      onMouseDown={handleRowDividerDown}
+                    />
+                  )}
+
                   {/* Epoch table */}
                   {trainingData.epochs.length > 0 && (
                     <div className={styles.epochSection}>
-                      <div className={styles.sectionHeader}>
-                        Epochs ({trainingData.epochs.length}/{trainingData.epochs[0]?.total ?? '?'})
-                      </div>
+                      {(() => {
+                        const last = trainingData.epochs[trainingData.epochs.length - 1];
+                        return (
+                          <div className={styles.sectionHeader}>
+                            Epochs ({last.epoch}/{last.total})
+                          </div>
+                        );
+                      })()}
                       <div className={styles.epochTable}>
                         <div className={`${styles.epochRow} ${styles.epochRowHeader}`}>
                           <span>#</span>

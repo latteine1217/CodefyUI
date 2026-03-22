@@ -237,11 +237,25 @@
 /* Right column — config + epochs */
 .trainingInfoCol {
   flex-shrink: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   min-width: 180px;
+}
+
+/* Horizontal drag divider between config and epoch sections */
+.rowDivider {
+  height: 5px;
+  flex-shrink: 0;
+  cursor: ns-resize;
+  background: transparent;
+  transition: background 0.15s;
+  border-top: 1px solid #2a2a2a;
+}
+
+.rowDivider:hover,
+.rowDivider:active {
+  background: rgba(77, 144, 254, 0.4);
 }
 
 .sectionHeader {
@@ -268,7 +282,7 @@
 /* Config grid */
 .configSection {
   padding: 8px 12px;
-  border-bottom: 1px solid #2a2a2a;
+  overflow-y: auto;
 }
 
 .configGrid {

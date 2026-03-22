@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -50,6 +50,9 @@ export function FlowCanvas() {
   const { t } = useI18n();
   const gridSnapEnabled = useUIStore((s) => s.gridSnapEnabled);
   const { screenToFlowPosition } = useReactFlow();
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const reactFlowId = useId();
 
   const [quickSearch, setQuickSearch] = useState<{
     screen: { x: number; y: number };
@@ -143,20 +146,23 @@ export function FlowCanvas() {
   setQuickSearchRef.current = setQuickSearch;
 
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
     const handler = (e: MouseEvent) => {
       const flowPos = screenToFlowRef.current({ x: e.clientX, y: e.clientY });
       setQuickSearchRef.current({ screen: { x: e.clientX, y: e.clientY }, flow: flowPos });
     };
     // Wait for React Flow to mount, then attach directly to .react-flow__pane
     const timer = setTimeout(() => {
-      const pane = document.querySelector('.react-flow__pane');
+      const pane = container.querySelector('.react-flow__pane');
       if (pane) {
         pane.addEventListener('dblclick', handler as EventListener);
       }
     }, 100);
     return () => {
       clearTimeout(timer);
-      const pane = document.querySelector('.react-flow__pane');
+      const pane = container.querySelector('.react-flow__pane');
       if (pane) pane.removeEventListener('dblclick', handler as EventListener);
     };
   }, []);
@@ -199,9 +205,10 @@ export function FlowCanvas() {
   const isEmpty = activeTab.nodes.length === 0;
 
   return (
-    <div className={styles.canvas}>
+    <div ref={containerRef} className={styles.canvas}>
       {isEmpty && <EmptyCanvasOverlay />}
       <ReactFlow
+        id={reactFlowId}
         nodes={activeTab.nodes}
         edges={activeTab.edges}
         onNodesChange={onNodesChange}
