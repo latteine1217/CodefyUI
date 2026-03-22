@@ -85,6 +85,7 @@ async def websocket_execution(ws: WebSocket):
                 edges = data.get("edges", [])
                 error_mode = data.get("error_mode", "fail_fast")
                 max_retries = data.get("max_retries", 0)
+                changed_nodes = data.get("changed_nodes")  # partial re-execution hint
 
                 current_context = ExecutionContext()
 
@@ -124,6 +125,7 @@ async def websocket_execution(ws: WebSocket):
                             error_mode=error_mode,
                             max_retries=max_retries,
                             cache=cache,
+                            changed_nodes=changed_nodes,
                         )
                         await ws.send_text(json.dumps({"type": "execution_complete"}))
                     except CancellationError:

@@ -236,6 +236,7 @@ async def execute_graph(
     error_mode: str = "fail_fast",
     max_retries: int = 0,
     cache: "ExecutionCache | None" = None,
+    changed_nodes: list[str] | None = None,
 ) -> dict[str, Any]:
     """Execute the graph with parallel levels, cancellation, error recovery, and caching.
 
@@ -247,6 +248,7 @@ async def execute_graph(
         error_mode: 'fail_fast', 'continue', or 'retry'.
         max_retries: Number of retries when error_mode is 'retry'.
         cache: Optional ExecutionCache for skipping unchanged nodes.
+        changed_nodes: Optional list of node IDs that changed — force re-execute these (bypass cache).
     """
     from .execution_context import CancellationError
 
@@ -277,6 +279,7 @@ async def execute_graph(
     outputs: dict[str, dict[str, Any]] = {}
     node_errors: dict[str, str] = {}  # node_id -> error message
     node_cache_keys: dict[str, str] = {}  # node_id -> cache key
+    force_rerun: set[str] = set(changed_nodes) if changed_nodes else set()
 
     max_workers = context.max_workers if context else 4
     semaphore = asyncio.Semaphore(max_workers)
@@ -312,7 +315,7 @@ async def execute_graph(
                 await _maybe_await(on_progress(progress_id, "skipped", None))
             return
 
-        # Check cache
+        # Check cache (skip for force-rerun nodes from partial re-execution)
         if cache is not None:
             upstream_keys = []
             for src_id, _, _ in incoming.get(node_id, []):
@@ -320,12 +323,13 @@ async def execute_graph(
                     upstream_keys.append(node_cache_keys[src_id])
             cache_key = cache.compute_key(node_type, params, upstream_keys)
             node_cache_keys[node_id] = cache_key
-            cached = cache.get(cache_key)
-            if cached is not None:
-                outputs[node_id] = cached
-                if on_progress:
-                    await _maybe_await(on_progress(progress_id, "cached", cached))
-                return
+            if node_id not in force_rerun:
+                cached = cache.get(cache_key)
+                if cached is not None:
+                    outputs[node_id] = cached
+                    if on_progress:
+                        await _maybe_await(on_progress(progress_id, "cached", cached))
+                    return
 
         if on_progress:
             await _maybe_await(on_progress(progress_id, "running", None))

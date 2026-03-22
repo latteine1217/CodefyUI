@@ -33,6 +33,8 @@ export interface TabState {
   // undo/redo
   undoStack: UndoSnapshot[];
   redoStack: UndoSnapshot[];
+  // dirty tracking for partial re-execution
+  dirtyNodeIds: Set<string>;
   // execution
   status: ExecutionStatus;
   logs: LogEntry[];
@@ -52,6 +54,7 @@ function createTabState(id: string, name: string): TabState {
     subgraphModalNodeId: null,
     undoStack: [],
     redoStack: [],
+    dirtyNodeIds: new Set(),
     status: 'idle',
     logs: [],
     ws: new ExecutionWebSocket(),
@@ -104,6 +107,11 @@ interface TabStoreState {
   clipboard: { nodes: Node<NodeData>[]; edges: Edge[] } | null;
   copySelectedNodes: () => void;
   pasteNodes: () => void;
+
+  // dirty tracking for partial re-execution
+  markDirty: (nodeId: string) => void;
+  clearDirty: () => void;
+  getDirtyWithDownstream: () => string[];
 
   // execution actions (operate on active tab)
   setStatus: (s: ExecutionStatus) => void;
@@ -275,6 +283,7 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
       animated: false,
       style: { stroke: '#555', strokeWidth: 2 },
     };
+    if (connection.target) get().markDirty(connection.target);
     set({
       tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
         edges: [...tab.edges, edge],
@@ -353,7 +362,8 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
     });
   },
 
-  updateNodeParams: (nodeId, params) =>
+  updateNodeParams: (nodeId, params) => {
+    get().markDirty(nodeId);
     set({
       tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
         nodes: tab.nodes.map((n) =>
@@ -362,7 +372,8 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
             : n
         ),
       })),
-    }),
+    });
+  },
 
   updatePresetInternalParam: (nodeId, internalNodeId, paramName, value) =>
     set({
@@ -629,6 +640,50 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
         edges: [...tab.edges, ...newEdges],
       })),
     });
+  },
+
+  // ── Dirty tracking (partial re-execution) ──
+
+  markDirty: (nodeId) =>
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (tab) => {
+        const next = new Set(tab.dirtyNodeIds);
+        next.add(nodeId);
+        return { dirtyNodeIds: next };
+      }),
+    }),
+
+  clearDirty: () =>
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, () => ({
+        dirtyNodeIds: new Set(),
+      })),
+    }),
+
+  getDirtyWithDownstream: () => {
+    const tab = get().getActiveTab();
+    if (tab.dirtyNodeIds.size === 0) return [];
+
+    // Build adjacency: source -> targets
+    const adj = new Map<string, string[]>();
+    for (const edge of tab.edges) {
+      if (!adj.has(edge.source)) adj.set(edge.source, []);
+      adj.get(edge.source)!.push(edge.target);
+    }
+
+    // BFS from all dirty nodes
+    const result = new Set<string>(tab.dirtyNodeIds);
+    const queue = [...tab.dirtyNodeIds];
+    while (queue.length > 0) {
+      const nid = queue.shift()!;
+      for (const downstream of adj.get(nid) ?? []) {
+        if (!result.has(downstream)) {
+          result.add(downstream);
+          queue.push(downstream);
+        }
+      }
+    }
+    return [...result];
   },
 
   // ── Execution actions (active tab) ──

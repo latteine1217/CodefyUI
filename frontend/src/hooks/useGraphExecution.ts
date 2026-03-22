@@ -113,7 +113,17 @@ export function useGraphExecution() {
     clearOutputSummaries();
     setTabStatus(tab.id, 'running');
     const graph = getSerializedGraph();
-    ws.send({ action: 'execute', ...graph });
+
+    // Partial re-execution: pass changed_nodes hint to backend
+    const { getDirtyWithDownstream, clearDirty } = useTabStore.getState();
+    const changedNodes = getDirtyWithDownstream();
+    clearDirty();
+
+    ws.send({
+      action: 'execute',
+      ...graph,
+      ...(changedNodes.length > 0 ? { changed_nodes: changedNodes } : {}),
+    });
   }, [getActiveTab, getSerializedGraph, clearLogs, clearExecutionStatus, clearOutputSummaries, setTabStatus, addTabLog]);
 
   const stop = useCallback(() => {
