@@ -75,10 +75,10 @@
   "edges": [
     { "id": "e-1", "source": "model-builder", "target": "weight-loader", "sourceHandle": "model", "targetHandle": "model" },
     { "id": "e-2", "source": "weight-loader", "target": "inference", "sourceHandle": "model", "targetHandle": "model" },
-    { "id": "e-3", "source": "test-image", "target": "add-batch-dim", "sourceHandle": "tensor", "targetHandle": "input" },
-    { "id": "e-3b", "source": "add-batch-dim", "target": "inference", "sourceHandle": "output", "targetHandle": "input" },
+    { "id": "e-3", "source": "test-image", "target": "add-batch-dim", "sourceHandle": "tensor", "targetHandle": "tensor" },
+    { "id": "e-3b", "source": "add-batch-dim", "target": "inference", "sourceHandle": "tensor", "targetHandle": "input" },
     { "id": "e-4", "source": "inference", "target": "print-output", "sourceHandle": "output", "targetHandle": "value" },
-    { "id": "e-5", "source": "inference", "target": "softmax", "sourceHandle": "output", "targetHandle": "input" },
-    { "id": "e-6", "source": "softmax", "target": "print-probs", "sourceHandle": "output", "targetHandle": "value" }
+    { "id": "e-5", "source": "inference", "target": "softmax", "sourceHandle": "output", "targetHandle": "tensor" },
+    { "id": "e-6", "source": "softmax", "target": "print-probs", "sourceHandle": "tensor", "targetHandle": "value" }
   ]
 }
