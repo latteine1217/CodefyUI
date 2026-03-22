@@ -6,9 +6,9 @@ Execute a graph.json directly from the command line without starting the server.
 
 Usage:
     python run_graph.py <path_to_graph.json>
-    python run_graph.py ../examples/TrainCNN-MNIST/graph.json
-    python run_graph.py ../examples/TrainCNN-MNIST/graph.json --validate-only
-    python run_graph.py ../examples/TrainCNN-MNIST/graph.json --verbose
+    python run_graph.py ../examples/Usage_Example/CNN-MNIST/TrainCNN-MNIST/graph.json
+    python run_graph.py ../examples/Usage_Example/CNN-MNIST/TrainCNN-MNIST/graph.json --validate-only
+    python run_graph.py ../examples/Usage_Example/CNN-MNIST/TrainCNN-MNIST/graph.json --verbose
 """
 
 import argparse
