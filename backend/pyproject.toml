@@ -20,6 +20,7 @@ ml = [
     "torch>=2.0.0",
     "torchvision>=0.15.0",
     "gymnasium>=0.29.0",
+    "safetensors>=0.4.0",
 ]
 dev = [
     "pytest>=7.0.0",

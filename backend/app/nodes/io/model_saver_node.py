@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 class ModelSaverNode(BaseNode):
     NODE_NAME = "ModelSaver"
     CATEGORY = "IO"
-    DESCRIPTION = "Save model weights (state_dict) to a .pt/.pth file"
+    DESCRIPTION = "Save model weights (state_dict) to a .pt/.pth/.safetensors file"
 
     @classmethod
     def define_inputs(cls) -> list[PortDefinition]:
@@ -31,7 +31,7 @@ class ModelSaverNode(BaseNode):
                 name="path",
                 param_type=ParamType.STRING,
                 default="model_weights.pt",
-                description="Output file path (.pt or .pth)",
+                description="Output file path (.pt, .pth, or .safetensors)",
             ),
             ParamDefinition(
                 name="save_mode",
@@ -39,6 +39,13 @@ class ModelSaverNode(BaseNode):
                 default="state_dict",
                 description="Save mode: state_dict (recommended) or full model",
                 options=["state_dict", "full_model"],
+            ),
+            ParamDefinition(
+                name="format",
+                param_type=ParamType.SELECT,
+                default="pytorch",
+                description="File format: pytorch (.pt/.pth) or safetensors (.safetensors)",
+                options=["pytorch", "safetensors"],
             ),
         ]
 
@@ -51,13 +58,26 @@ class ModelSaverNode(BaseNode):
         model = inputs["model"]
         path = params.get("path", "model_weights.pt")
         save_mode = params.get("save_mode", "state_dict")
+        fmt = params.get("format", "pytorch")
 
         p = Path(path)
         if not p.is_absolute():
             p = settings.MODELS_DIR / p
+
+        if fmt == "safetensors":
+            if save_mode == "full_model":
+                raise ValueError("safetensors format only supports state_dict mode, not full_model")
+            if p.suffix not in (".safetensors",):
+                p = p.with_suffix(".safetensors")
+
         p.parent.mkdir(parents=True, exist_ok=True)
 
-        if save_mode == "state_dict":
+        if fmt == "safetensors":
+            from safetensors.torch import save_file
+            save_file(model.state_dict(), str(p))
+            param_count = sum(p_.numel() for p_ in model.parameters())
+            logger.info("Saved safetensors to %s (%s parameters)", p, f"{param_count:,}")
+        elif save_mode == "state_dict":
             torch.save(model.state_dict(), str(p))
             param_count = sum(p_.numel() for p_ in model.parameters())
             logger.info("Saved state_dict to %s (%s parameters)", p, f"{param_count:,}")

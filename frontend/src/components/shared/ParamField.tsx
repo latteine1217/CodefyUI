@@ -1,4 +1,6 @@
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ParamDefinition } from '../../types';
+import { listModelFiles, uploadModelFile } from '../../api/rest';
 import styles from './ParamField.module.css';
 
 interface ParamFieldProps {
@@ -8,8 +10,104 @@ interface ParamFieldProps {
   label?: string;
 }
 
+function ModelFileField({
+  param,
+  value,
+  onChange,
+  displayLabel,
+}: {
+  param: ParamDefinition;
+  value: any;
+  onChange: (name: string, value: any) => void;
+  displayLabel: string;
+}) {
+  const [files, setFiles] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const refresh = useCallback(() => {
+    listModelFiles().then((list) => setFiles(list.map((f) => f.filename)));
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const result = await uploadModelFile(file);
+      refresh();
+      onChange(param.name, result.filename);
+    } catch (err: any) {
+      alert(err.message ?? 'Upload failed');
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  return (
+    <div>
+      <label className={styles.label}>{displayLabel}</label>
+      <div className={styles.modelFileRow}>
+        <select
+          value={value ?? ''}
+          onChange={(e) => onChange(param.name, e.target.value)}
+          className={`${styles.input} ${styles.select} ${styles.modelFileSelect}`}
+        >
+          <option value="" style={{ background: '#222' }}>
+            -- select file --
+          </option>
+          {files.map((f) => (
+            <option key={f} value={f} style={{ background: '#222' }}>
+              {f}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          className={styles.modelFileBtn}
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+        >
+          {uploading ? '...' : '↑'}
+        </button>
+        <button
+          type="button"
+          className={styles.modelFileBtn}
+          onClick={refresh}
+          title="Refresh file list"
+        >
+          ↻
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".pt,.pth,.safetensors,.ckpt,.bin"
+          style={{ display: 'none' }}
+          onChange={handleUpload}
+        />
+      </div>
+    </div>
+  );
+}
+
 export function ParamField({ param, value, onChange, label }: ParamFieldProps) {
   const displayLabel = label ?? param.name;
+
+  if (param.param_type === 'model_file') {
+    return (
+      <ModelFileField
+        param={param}
+        value={value}
+        onChange={onChange}
+        displayLabel={displayLabel}
+      />
+    );
+  }
 
   if (param.param_type === 'bool') {
     return (

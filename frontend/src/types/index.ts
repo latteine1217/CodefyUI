@@ -7,7 +7,7 @@ export interface PortDefinition {
 
 export interface ParamDefinition {
   name: string;
-  param_type: 'int' | 'float' | 'string' | 'bool' | 'select';
+  param_type: 'int' | 'float' | 'string' | 'bool' | 'select' | 'model_file';
   default: any;
   description: string;
   options: string[];

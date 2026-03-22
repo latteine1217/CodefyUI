@@ -100,8 +100,8 @@ class CheckpointLoaderNode(BaseNode):
         return [
             ParamDefinition(
                 name="path",
-                param_type=ParamType.STRING,
-                default="checkpoint.pt",
+                param_type=ParamType.MODEL_FILE,
+                default="",
                 description="Path to the checkpoint file",
             ),
             ParamDefinition(

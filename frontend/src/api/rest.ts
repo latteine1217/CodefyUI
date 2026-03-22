@@ -124,3 +124,38 @@ export async function deleteCustomNode(filename: string) {
   if (!res.ok) throw new Error(`Delete failed: ${res.statusText}`);
   return res.json();
 }
+
+// ── Model Files ──
+
+export interface ModelFileInfo {
+  filename: string;
+  size: number;
+}
+
+export async function listModelFiles(): Promise<ModelFileInfo[]> {
+  const res = await fetch(`${BASE_URL}/models`);
+  if (!res.ok) throw new Error(`Failed to list model files: ${res.statusText}`);
+  return res.json();
+}
+
+export async function uploadModelFile(file: File): Promise<ModelFileInfo> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${BASE_URL}/models/upload`, {
+    method: 'POST',
+    body: form,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail ?? `Upload failed: ${res.statusText}`);
+  }
+  return res.json();
+}
+
+export async function deleteModelFile(filename: string) {
+  const res = await fetch(`${BASE_URL}/models/${encodeURIComponent(filename)}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error(`Delete failed: ${res.statusText}`);
+  return res.json();
+}

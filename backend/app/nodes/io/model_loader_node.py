@@ -33,9 +33,9 @@ class ModelLoaderNode(BaseNode):
         return [
             ParamDefinition(
                 name="path",
-                param_type=ParamType.STRING,
-                default="model_weights.pt",
-                description="Path to the weights file (.pt or .pth)",
+                param_type=ParamType.MODEL_FILE,
+                default="",
+                description="Path to the weights file (.pt, .pth, .safetensors)",
             ),
             ParamDefinition(
                 name="load_mode",
@@ -83,6 +83,8 @@ class ModelLoaderNode(BaseNode):
         if not p.exists():
             raise FileNotFoundError(f"Weights file not found: {p}")
 
+        is_safetensors = p.suffix == ".safetensors"
+
         if load_mode == "state_dict":
             model = inputs.get("model")
             if model is None:
@@ -90,12 +92,18 @@ class ModelLoaderNode(BaseNode):
                     "state_dict mode requires a model input. "
                     "Connect a SequentialModel or other model node, or use full_model mode."
                 )
-            state_dict = torch.load(str(p), map_location=device, weights_only=True)
+            if is_safetensors:
+                from safetensors.torch import load_file
+                state_dict = load_file(str(p), device=device)
+            else:
+                state_dict = torch.load(str(p), map_location=device, weights_only=True)
             model.load_state_dict(state_dict, strict=strict)
             model = model.to(device)
             param_count = sum(p_.numel() for p_ in model.parameters())
             logger.info("Loaded state_dict from %s (%s parameters, strict=%s)", p, f"{param_count:,}", strict)
         else:
+            if is_safetensors:
+                raise ValueError("safetensors format only supports state_dict mode, not full_model")
             model = torch.load(str(p), map_location=device, weights_only=False)
             model = model.to(device)
             logger.info("Loaded full model from %s", p)

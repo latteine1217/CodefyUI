@@ -25,6 +25,7 @@ class ParamType(str, Enum):
     STRING = "string"
     BOOL = "bool"
     SELECT = "select"
+    MODEL_FILE = "model_file"
 
 
 @dataclass
