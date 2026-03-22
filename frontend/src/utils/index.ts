@@ -12,6 +12,7 @@ export const DATA_TYPE_COLORS: Record<string, string> = {
   SCALAR: '#00BCD4',
   STRING: '#8BC34A',
   IMAGE: '#FF5722',
+  LIST: '#CDDC39',
   ANY: '#9E9E9E',
 };
 

@@ -8,7 +8,7 @@ export const CATEGORY_COLORS: Record<string, string> = {
   Data: '#00BCD4',
   Training: '#F44336',
   IO: '#795548',
-  Control: '#FF6F00',
+  'Data Flow': '#FF6F00',
   Utility: '#607D8B',
   Normalization: '#26A69A',
   'Tensor Operations': '#5C6BC0',

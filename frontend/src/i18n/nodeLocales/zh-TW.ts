@@ -218,10 +218,12 @@ const zhTW: NodeTranslations = {
     },
   },
   TrainingLoop: {
-    description: '在 DataLoader 上執行訓練迴圈，指定訓練 epoch 數量',
+    description: '執行訓練迴圈，支援驗證、早停、學習率排程和梯度裁剪',
     params: {
       epochs: '訓練 epoch 數量',
       device: '訓練裝置',
+      early_stopping_patience: '驗證損失未改善 N 個 epoch 後停止（0 = 停用）',
+      grad_clip_norm: '最大梯度範數裁剪（0 = 停用）',
     },
   },
 
@@ -310,21 +312,21 @@ const zhTW: NodeTranslations = {
     },
   },
 
-  // ── Control ──
-  Compare: {
-    description: '比較兩個純量值，輸出 1.0（真）或 0.0（假）',
+  // ── Data Flow ──
+  Switch: {
+    description: '根據選擇器索引選取多個輸入之一。純資料流條件選擇：所有輸入都會被求值，選擇器決定轉發哪一個。',
+  },
+  Map: {
+    description: '對列表中的每個元素套用子圖（預設模組）。函數式批次處理。',
     params: {
-      operation: '比較運算子',
+      subgraph: '要套用到每個元素的子圖/預設模組名稱',
     },
   },
-  If: {
-    description: '根據條件選擇兩個輸入之一。非零 = 真，零 = 假。注意：兩個分支都會被執行。',
-  },
-  ForLoop: {
-    description: '執行子圖（預設模組）N 次。每次迭代將上一次的輸出作為下一次的輸入。',
+  Reduce: {
+    description: '將列表聚合為單一結果。支援 sum、mean、min、max、concat、stack、first、last。',
     params: {
-      subgraph: '每次迭代要執行的子圖/預設模組名稱',
-      iterations: '迭代次數',
+      operation: '聚合運算',
+      dim: 'concat/stack 運算的維度',
     },
   },
 

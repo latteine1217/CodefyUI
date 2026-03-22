@@ -11,6 +11,7 @@ _COMPAT: dict[DataType, set[DataType]] = {
     DataType.SCALAR: {DataType.SCALAR, DataType.ANY},
     DataType.STRING: {DataType.STRING, DataType.ANY},
     DataType.IMAGE: {DataType.IMAGE, DataType.TENSOR, DataType.ANY},
+    DataType.LIST: {DataType.LIST, DataType.ANY},
     DataType.ANY: {dt for dt in DataType},
 }
 

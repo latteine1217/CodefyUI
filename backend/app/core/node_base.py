@@ -16,6 +16,7 @@ class DataType(str, Enum):
     SCALAR = "SCALAR"
     STRING = "STRING"
     IMAGE = "IMAGE"
+    LIST = "LIST"
     ANY = "ANY"
 
 
