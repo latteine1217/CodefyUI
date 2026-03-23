@@ -3,8 +3,11 @@ import json
 import logging
 from typing import Any
 
+from urllib.parse import urlparse
+
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
+from ..config import settings
 from ..core.cache import ExecutionCache
 from ..core.execution_context import CancellationError, ExecutionContext
 from ..core.graph_engine import GraphValidationError, execute_graph
@@ -62,6 +65,14 @@ def _summarize_outputs(result: dict[str, Any]) -> dict[str, Any]:
 
 @router.websocket("/ws/execution")
 async def websocket_execution(ws: WebSocket):
+    # Validate Origin header against allowed CORS origins
+    origin = ws.headers.get("origin")
+    if origin:
+        allowed = {urlparse(o).netloc for o in settings.CORS_ORIGINS}
+        if urlparse(origin).netloc not in allowed:
+            await ws.close(code=4003, reason="Origin not allowed")
+            return
+
     await ws.accept()
 
     current_task: asyncio.Task | None = None

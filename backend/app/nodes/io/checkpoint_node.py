@@ -58,6 +58,13 @@ class CheckpointSaverNode(BaseNode):
         p = Path(path)
         if not p.is_absolute():
             p = settings.MODELS_DIR / p
+        p = p.resolve()
+
+        # Restrict writes to project data directory
+        data_root = settings.MODELS_DIR.parent.resolve()
+        if not p.is_relative_to(data_root):
+            raise ValueError("Output path must be within the project data directory")
+
         p.parent.mkdir(parents=True, exist_ok=True)
 
         checkpoint = {
@@ -134,10 +141,17 @@ class CheckpointLoaderNode(BaseNode):
         p = Path(path)
         if not p.is_absolute():
             p = settings.MODELS_DIR / p
+        p = p.resolve()
+
+        # Restrict reads to project data directory
+        data_root = settings.MODELS_DIR.parent.resolve()
+        if not p.is_relative_to(data_root):
+            raise ValueError("Checkpoint file path must be within the project data directory")
+
         if not p.exists():
             raise FileNotFoundError(f"Checkpoint file not found: {p}")
 
-        checkpoint = torch.load(str(p), map_location=device, weights_only=False)
+        checkpoint = torch.load(str(p), map_location=device, weights_only=True)
 
         model.load_state_dict(checkpoint["model_state_dict"])
         model = model.to(device)

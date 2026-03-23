@@ -7,6 +7,7 @@ import traceback
 from collections import defaultdict, deque
 from typing import Any, Callable
 
+from ..config import settings
 from .node_base import BaseNode
 from .node_registry import registry
 from .type_system import is_compatible
@@ -382,16 +383,22 @@ async def execute_graph(
         assert last_error is not None
         if error_mode == "fail_fast":
             if on_progress:
+                error_detail: dict[str, str] = {"error": str(last_error)}
+                if settings.DEBUG:
+                    error_detail["traceback"] = traceback.format_exc()
                 await _maybe_await(
-                    on_progress(progress_id, "error", {"error": str(last_error), "traceback": traceback.format_exc()})
+                    on_progress(progress_id, "error", error_detail)
                 )
             raise last_error
         else:
             # continue or retry-exhausted
             node_errors[node_id] = str(last_error)
             if on_progress:
+                error_detail = {"error": str(last_error)}
+                if settings.DEBUG:
+                    error_detail["traceback"] = traceback.format_exc()
                 await _maybe_await(
-                    on_progress(progress_id, "error", {"error": str(last_error), "traceback": traceback.format_exc()})
+                    on_progress(progress_id, "error", error_detail)
                 )
 
     # Execute level by level

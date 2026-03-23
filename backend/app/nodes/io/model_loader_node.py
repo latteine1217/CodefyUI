@@ -80,6 +80,13 @@ class ModelLoaderNode(BaseNode):
         p = Path(path)
         if not p.is_absolute():
             p = settings.MODELS_DIR / p
+        p = p.resolve()
+
+        # Restrict reads to project data directory
+        data_root = settings.MODELS_DIR.parent.resolve()
+        if not p.is_relative_to(data_root):
+            raise ValueError("Weights file path must be within the project data directory")
+
         if not p.exists():
             raise FileNotFoundError(f"Weights file not found: {p}")
 
@@ -104,7 +111,11 @@ class ModelLoaderNode(BaseNode):
         else:
             if is_safetensors:
                 raise ValueError("safetensors format only supports state_dict mode, not full_model")
-            model = torch.load(str(p), map_location=device, weights_only=False)
+            logger.warning(
+                "full_model mode uses weights_only=True for safety. "
+                "If loading fails, re-save the model as state_dict."
+            )
+            model = torch.load(str(p), map_location=device, weights_only=True)
             model = model.to(device)
             logger.info("Loaded full model from %s", p)
 

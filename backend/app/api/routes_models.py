@@ -14,6 +14,14 @@ router = APIRouter(prefix="/api/models", tags=["models"])
 ALLOWED_EXTENSIONS = {".pt", ".pth", ".safetensors", ".ckpt", ".bin"}
 
 
+def _safe_path(base_dir: Path, filename: str) -> Path:
+    """Resolve *filename* under *base_dir* and ensure it stays within it."""
+    resolved = (base_dir / filename).resolve()
+    if not resolved.is_relative_to(base_dir.resolve()):
+        raise HTTPException(status_code=400, detail="Invalid filename")
+    return resolved
+
+
 @router.get("")
 async def list_model_files():
     """List all model files in the models directory."""
@@ -36,7 +44,9 @@ async def upload_model_file(file: UploadFile):
     if not file.filename:
         raise HTTPException(status_code=400, detail="No filename provided")
 
-    ext = Path(file.filename).suffix.lower()
+    # Use only the basename to prevent path traversal via filename
+    safe_name = Path(file.filename).name
+    ext = Path(safe_name).suffix.lower()
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=400,
@@ -45,19 +55,23 @@ async def upload_model_file(file: UploadFile):
 
     models_dir = settings.MODELS_DIR
     models_dir.mkdir(parents=True, exist_ok=True)
-    dest = models_dir / file.filename
+    dest = _safe_path(models_dir, safe_name)
+
     content = await file.read()
+    if len(content) > settings.MAX_UPLOAD_SIZE:
+        raise HTTPException(status_code=413, detail="File too large")
+
     dest.write_bytes(content)
 
-    logger.info("Uploaded model file: %s (%d bytes)", file.filename, len(content))
-    return {"filename": file.filename, "size": len(content)}
+    logger.info("Uploaded model file: %s (%d bytes)", safe_name, len(content))
+    return {"filename": safe_name, "size": len(content)}
 
 
 @router.delete("/{filename}")
 async def delete_model_file(filename: str):
     """Delete a model weight file."""
     models_dir = settings.MODELS_DIR
-    filepath = models_dir / filename
+    filepath = _safe_path(models_dir, filename)
 
     if not filepath.exists():
         raise HTTPException(status_code=404, detail=f"File not found: {filename}")

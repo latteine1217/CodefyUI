@@ -63,6 +63,12 @@ class ModelSaverNode(BaseNode):
         p = Path(path)
         if not p.is_absolute():
             p = settings.MODELS_DIR / p
+        p = p.resolve()
+
+        # Restrict writes to project data directory
+        data_root = settings.MODELS_DIR.parent.resolve()
+        if not p.is_relative_to(data_root):
+            raise ValueError("Output path must be within the project data directory")
 
         if fmt == "safetensors":
             if save_mode == "full_model":

@@ -62,10 +62,28 @@ class FileReaderNode(BaseNode):
         encoding = params.get("encoding", "utf-8")
         csv_header = params.get("csv_header", True)
 
+        from ...config import settings
+
         if not path:
             raise ValueError("File path is required")
 
         p = Path(path)
+        if not p.is_absolute():
+            p = settings.GRAPHS_DIR / p
+        p = p.resolve()
+
+        # Restrict file reading to project data directories
+        allowed_roots = [
+            settings.GRAPHS_DIR.resolve(),
+            settings.MODELS_DIR.resolve(),
+            settings.EXAMPLES_DIR.resolve(),
+        ]
+        if not any(p.is_relative_to(root) for root in allowed_roots):
+            raise ValueError(
+                "File path must be within the project data directories "
+                "(graphs, models, or examples)"
+            )
+
         if not p.exists():
             raise FileNotFoundError(f"File not found: {path}")
 

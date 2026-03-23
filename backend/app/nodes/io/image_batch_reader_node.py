@@ -73,10 +73,24 @@ class ImageBatchReaderNode(BaseNode):
         max_images = params.get("max_images", 0)
         mode = params.get("mode", "RGB")
 
+        from ...config import settings
+
         if not directory:
             raise ValueError("Directory path is required")
 
         d = Path(directory)
+        if not d.is_absolute():
+            d = settings.MODELS_DIR.parent / d
+        d = d.resolve()
+
+        # Restrict reads to project data directories
+        allowed_roots = [
+            settings.MODELS_DIR.parent.resolve(),
+            settings.EXAMPLES_DIR.resolve(),
+        ]
+        if not any(d.is_relative_to(root) for root in allowed_roots):
+            raise ValueError("Directory must be within the project data or examples directories")
+
         if not d.exists():
             raise FileNotFoundError(f"Directory not found: {directory}")
 
