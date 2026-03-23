@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   ReactFlow,
+  MiniMap,
   Background,
   Controls,
   BackgroundVariant,
@@ -12,6 +13,7 @@ import {
   type Edge,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import { CATEGORY_COLORS } from '../../styles/theme';
 
 import BaseNode from '../Nodes/BaseNode';
 import PresetNode from '../Nodes/PresetNode';
@@ -35,6 +37,14 @@ const nodeTypes: NodeTypes = {
   baseNode: BaseNode,
   presetNode: PresetNode,
 };
+
+const minimapNodeColor = (node: any) => {
+  const data = node.data as any;
+  if (data?.isPreset) return '#D4A017';
+  const category = data?.definition?.category ?? 'Utility';
+  return CATEGORY_COLORS[category] ?? '#607D8B';
+};
+
 
 export function FlowCanvas() {
   const activeTab = useTabStore((s) => s.tabs.find((t) => t.id === s.activeTabId)!);
@@ -244,6 +254,14 @@ export function FlowCanvas() {
           size={1.5}
         />
         <Controls />
+        <MiniMap
+          pannable
+          zoomable
+          position="bottom-right"
+          nodeColor={minimapNodeColor}
+          maskColor="rgba(0,0,0,0.7)"
+          style={{ background: '#1e1e1e' }}
+        />
       </ReactFlow>
 
       {contextMenu && (
