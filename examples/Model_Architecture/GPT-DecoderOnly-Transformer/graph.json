@@ -5,90 +5,318 @@
     {
       "id": "dataset-1",
       "type": "Dataset",
-      "position": { "x": 50, "y": 50 },
-      "data": { "params": { "name": "MNIST", "split": "train", "data_dir": "./data" } }
+      "position": {
+        "x": 50,
+        "y": 50
+      },
+      "data": {
+        "params": {
+          "name": "MNIST",
+          "split": "train",
+          "data_dir": "./data"
+        }
+      }
     },
     {
       "id": "transform-1",
       "type": "Transform",
-      "position": { "x": 350, "y": 50 },
-      "data": { "params": { "resize": 0, "normalize": true, "to_tensor": true } }
+      "position": {
+        "x": 400,
+        "y": 50
+      },
+      "data": {
+        "params": {
+          "resize": 0,
+          "normalize": true,
+          "to_tensor": true
+        }
+      }
     },
     {
       "id": "dataloader-1",
       "type": "DataLoader",
-      "position": { "x": 650, "y": 50 },
-      "data": { "params": { "batch_size": 16, "shuffle": true, "num_workers": 0 } }
+      "position": {
+        "x": 750,
+        "y": 50
+      },
+      "data": {
+        "params": {
+          "batch_size": 16,
+          "shuffle": true,
+          "num_workers": 0
+        }
+      }
     },
     {
       "id": "reshape-tokens",
       "type": "Reshape",
-      "position": { "x": 50, "y": 300 },
-      "data": { "params": { "shape": "-1,128,768" } }
+      "position": {
+        "x": 50,
+        "y": 300
+      },
+      "data": {
+        "params": {
+          "shape": "-1,128,768"
+        }
+      }
     },
     {
       "id": "print-embed",
       "type": "Print",
-      "position": { "x": 50, "y": 480 },
-      "data": { "params": { "label": "Token + Positional Embeddings" } }
+      "position": {
+        "x": 50,
+        "y": 700
+      },
+      "data": {
+        "params": {
+          "label": "Token + Positional Embeddings"
+        }
+      }
     },
     {
       "id": "decoder-1",
       "type": "TransformerDecoder",
-      "position": { "x": 400, "y": 300 },
-      "data": { "params": { "d_model": 768, "nhead": 12, "num_layers": 12, "dim_feedforward": 3072 } }
+      "position": {
+        "x": 750,
+        "y": 300
+      },
+      "data": {
+        "params": {
+          "d_model": 768,
+          "nhead": 12,
+          "num_layers": 12,
+          "dim_feedforward": 3072
+        }
+      }
     },
     {
       "id": "dropout-1",
       "type": "Dropout",
-      "position": { "x": 750, "y": 300 },
-      "data": { "params": { "p": 0.1 } }
+      "position": {
+        "x": 50,
+        "y": 500
+      },
+      "data": {
+        "params": {
+          "p": 0.1
+        }
+      }
     },
     {
       "id": "reshape-logits",
       "type": "Reshape",
-      "position": { "x": 1100, "y": 300 },
-      "data": { "params": { "shape": "-1,768" } }
+      "position": {
+        "x": 400,
+        "y": 500
+      },
+      "data": {
+        "params": {
+          "shape": "-1,768"
+        }
+      }
     },
     {
       "id": "print-logits",
       "type": "Print",
-      "position": { "x": 1100, "y": 480 },
-      "data": { "params": { "label": "Logits → Vocabulary Projection → Next Token" } }
+      "position": {
+        "x": 400,
+        "y": 700
+      },
+      "data": {
+        "params": {
+          "label": "Logits → Vocabulary Projection → Next Token"
+        }
+      }
     },
     {
       "id": "loss-1",
       "type": "Loss",
-      "position": { "x": 50, "y": 580 },
-      "data": { "params": { "type": "CrossEntropyLoss" } }
+      "position": {
+        "x": 50,
+        "y": 950
+      },
+      "data": {
+        "params": {
+          "type": "CrossEntropyLoss"
+        }
+      }
     },
     {
       "id": "optimizer-1",
       "type": "Optimizer",
-      "position": { "x": 400, "y": 580 },
-      "data": { "params": { "type": "AdamW", "lr": 0.0003, "weight_decay": 0.1 } }
+      "position": {
+        "x": 400,
+        "y": 950
+      },
+      "data": {
+        "params": {
+          "type": "AdamW",
+          "lr": 0.0003,
+          "weight_decay": 0.1
+        }
+      }
     },
     {
       "id": "visualize-loss",
       "type": "Visualize",
-      "position": { "x": 750, "y": 580 },
-      "data": { "params": { "title": "GPT Language Modeling Loss", "plot_type": "line" } }
+      "position": {
+        "x": 50,
+        "y": 1150
+      },
+      "data": {
+        "params": {
+          "title": "GPT Language Modeling Loss",
+          "plot_type": "line"
+        }
+      }
     },
     {
       "id": "visualize-attn",
       "type": "Visualize",
-      "position": { "x": 1100, "y": 580 },
-      "data": { "params": { "title": "Causal Attention Pattern", "plot_type": "heatmap" } }
+      "position": {
+        "x": 400,
+        "y": 1150
+      },
+      "data": {
+        "params": {
+          "title": "Causal Attention Pattern",
+          "plot_type": "heatmap"
+        }
+      }
+    },
+    {
+      "id": "seq-model",
+      "type": "SequentialModel",
+      "position": {
+        "x": 400,
+        "y": 300
+      },
+      "data": {
+        "params": {
+          "layers": "[{\"type\": \"Linear\", \"in_features\": 784, \"out_features\": 768}, {\"type\": \"Reshape\", \"shape\": \"128,6\"}, {\"type\": \"TransformerDecoder\", \"d_model\": 6, \"nhead\": 2, \"num_layers\": 12, \"dim_feedforward\": 24}, {\"type\": \"Flatten\"}, {\"type\": \"Dropout\", \"p\": 0.1}, {\"type\": \"Linear\", \"in_features\": 768, \"out_features\": 50257}]"
+        }
+      }
+    },
+    {
+      "id": "train-loop",
+      "type": "TrainingLoop",
+      "position": {
+        "x": 1100,
+        "y": 300
+      },
+      "data": {
+        "params": {
+          "epochs": 10,
+          "device": "cpu"
+        }
+      }
     }
   ],
   "edges": [
-    { "id": "e-1", "source": "dataset-1", "target": "transform-1", "sourceHandle": "dataset", "targetHandle": "dataset" },
-    { "id": "e-2", "source": "transform-1", "target": "dataloader-1", "sourceHandle": "dataset", "targetHandle": "dataset" },
-    { "id": "e-3", "source": "reshape-tokens", "target": "decoder-1", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-4", "source": "reshape-tokens", "target": "decoder-1", "sourceHandle": "tensor", "targetHandle": "memory" },
-    { "id": "e-5", "source": "reshape-tokens", "target": "print-embed", "sourceHandle": "tensor", "targetHandle": "value" },
-    { "id": "e-6", "source": "decoder-1", "target": "dropout-1", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-7", "source": "dropout-1", "target": "reshape-logits", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-8", "source": "reshape-logits", "target": "print-logits", "sourceHandle": "tensor", "targetHandle": "value" }
+    {
+      "id": "e-1",
+      "source": "dataset-1",
+      "target": "transform-1",
+      "sourceHandle": "dataset",
+      "targetHandle": "dataset"
+    },
+    {
+      "id": "e-2",
+      "source": "transform-1",
+      "target": "dataloader-1",
+      "sourceHandle": "dataset",
+      "targetHandle": "dataset"
+    },
+    {
+      "id": "e-3",
+      "source": "reshape-tokens",
+      "target": "decoder-1",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-4",
+      "source": "reshape-tokens",
+      "target": "decoder-1",
+      "sourceHandle": "tensor",
+      "targetHandle": "memory"
+    },
+    {
+      "id": "e-5",
+      "source": "reshape-tokens",
+      "target": "print-embed",
+      "sourceHandle": "tensor",
+      "targetHandle": "value"
+    },
+    {
+      "id": "e-6",
+      "source": "decoder-1",
+      "target": "dropout-1",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-7",
+      "source": "dropout-1",
+      "target": "reshape-logits",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-8",
+      "source": "reshape-logits",
+      "target": "print-logits",
+      "sourceHandle": "tensor",
+      "targetHandle": "value"
+    },
+    {
+      "id": "e-auto-9",
+      "source": "seq-model",
+      "target": "train-loop",
+      "sourceHandle": "model",
+      "targetHandle": "model"
+    },
+    {
+      "id": "e-auto-10",
+      "source": "seq-model",
+      "target": "optimizer-1",
+      "sourceHandle": "model",
+      "targetHandle": "model"
+    },
+    {
+      "id": "e-auto-11",
+      "source": "optimizer-1",
+      "target": "train-loop",
+      "sourceHandle": "optimizer",
+      "targetHandle": "optimizer"
+    },
+    {
+      "id": "e-auto-12",
+      "source": "dataloader-1",
+      "target": "train-loop",
+      "sourceHandle": "dataloader",
+      "targetHandle": "dataloader"
+    },
+    {
+      "id": "e-auto-13",
+      "source": "loss-1",
+      "target": "train-loop",
+      "sourceHandle": "loss_fn",
+      "targetHandle": "loss_fn"
+    },
+    {
+      "id": "e-auto-14",
+      "source": "train-loop",
+      "target": "visualize-loss",
+      "sourceHandle": "losses",
+      "targetHandle": "data"
+    },
+    {
+      "id": "e-auto-15",
+      "source": "train-loop",
+      "target": "visualize-attn",
+      "sourceHandle": "metrics",
+      "targetHandle": "data"
+    }
   ]
 }

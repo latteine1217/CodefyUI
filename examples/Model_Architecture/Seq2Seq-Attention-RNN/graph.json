@@ -5,106 +5,378 @@
     {
       "id": "dataset-1",
       "type": "Dataset",
-      "position": { "x": 50, "y": 50 },
-      "data": { "params": { "name": "MNIST", "split": "train", "data_dir": "./data" } }
+      "position": {
+        "x": 50,
+        "y": 50
+      },
+      "data": {
+        "params": {
+          "name": "MNIST",
+          "split": "train",
+          "data_dir": "./data"
+        }
+      }
     },
     {
       "id": "transform-1",
       "type": "Transform",
-      "position": { "x": 350, "y": 50 },
-      "data": { "params": { "resize": 0, "normalize": true, "to_tensor": true } }
+      "position": {
+        "x": 400,
+        "y": 50
+      },
+      "data": {
+        "params": {
+          "resize": 0,
+          "normalize": true,
+          "to_tensor": true
+        }
+      }
     },
     {
       "id": "dataloader-1",
       "type": "DataLoader",
-      "position": { "x": 650, "y": 50 },
-      "data": { "params": { "batch_size": 32, "shuffle": true, "num_workers": 0 } }
+      "position": {
+        "x": 750,
+        "y": 50
+      },
+      "data": {
+        "params": {
+          "batch_size": 32,
+          "shuffle": true,
+          "num_workers": 0
+        }
+      }
     },
     {
       "id": "reshape-src",
       "type": "Reshape",
-      "position": { "x": 50, "y": 280 },
-      "data": { "params": { "shape": "-1,28,256" } }
+      "position": {
+        "x": 50,
+        "y": 300
+      },
+      "data": {
+        "params": {
+          "shape": "-1,28,256"
+        }
+      }
     },
     {
       "id": "encoder-gru",
       "type": "GRU",
-      "position": { "x": 350, "y": 280 },
-      "data": { "params": { "input_size": 256, "hidden_size": 256, "num_layers": 2, "batch_first": true, "bidirectional": true } }
+      "position": {
+        "x": 750,
+        "y": 300
+      },
+      "data": {
+        "params": {
+          "input_size": 256,
+          "hidden_size": 256,
+          "num_layers": 2,
+          "batch_first": true,
+          "bidirectional": true
+        }
+      }
     },
     {
       "id": "print-enc",
       "type": "Print",
-      "position": { "x": 350, "y": 440 },
-      "data": { "params": { "label": "Encoder: BiGRU Context Vectors (512 dim)" } }
+      "position": {
+        "x": 50,
+        "y": 700
+      },
+      "data": {
+        "params": {
+          "label": "Encoder: BiGRU Context Vectors (512 dim)"
+        }
+      }
     },
     {
       "id": "attention-1",
       "type": "MultiHeadAttention",
-      "position": { "x": 700, "y": 280 },
-      "data": { "params": { "embed_dim": 512, "num_heads": 8 } }
+      "position": {
+        "x": 50,
+        "y": 500
+      },
+      "data": {
+        "params": {
+          "embed_dim": 512,
+          "num_heads": 8
+        }
+      }
     },
     {
       "id": "visualize-attn",
       "type": "Visualize",
-      "position": { "x": 700, "y": 440 },
-      "data": { "params": { "title": "Cross-Attention Weights", "plot_type": "heatmap" } }
+      "position": {
+        "x": 50,
+        "y": 1150
+      },
+      "data": {
+        "params": {
+          "title": "Cross-Attention Weights",
+          "plot_type": "heatmap"
+        }
+      }
     },
     {
       "id": "dropout-1",
       "type": "Dropout",
-      "position": { "x": 1050, "y": 280 },
-      "data": { "params": { "p": 0.1 } }
+      "position": {
+        "x": 400,
+        "y": 500
+      },
+      "data": {
+        "params": {
+          "p": 0.1
+        }
+      }
     },
     {
       "id": "decoder-lstm",
       "type": "LSTM",
-      "position": { "x": 1050, "y": 440 },
-      "data": { "params": { "input_size": 512, "hidden_size": 256, "num_layers": 2, "batch_first": true, "bidirectional": false } }
+      "position": {
+        "x": 750,
+        "y": 500
+      },
+      "data": {
+        "params": {
+          "input_size": 512,
+          "hidden_size": 256,
+          "num_layers": 2,
+          "batch_first": true,
+          "bidirectional": false
+        }
+      }
     },
     {
       "id": "reshape-out",
       "type": "Reshape",
-      "position": { "x": 1350, "y": 440 },
-      "data": { "params": { "shape": "-1,256" } }
+      "position": {
+        "x": 1100,
+        "y": 500
+      },
+      "data": {
+        "params": {
+          "shape": "-1,256"
+        }
+      }
     },
     {
       "id": "print-dec",
       "type": "Print",
-      "position": { "x": 1350, "y": 600 },
-      "data": { "params": { "label": "Decoder: Target sequence output" } }
+      "position": {
+        "x": 400,
+        "y": 700
+      },
+      "data": {
+        "params": {
+          "label": "Decoder: Target sequence output"
+        }
+      }
     },
     {
       "id": "loss-1",
       "type": "Loss",
-      "position": { "x": 50, "y": 620 },
-      "data": { "params": { "type": "CrossEntropyLoss" } }
+      "position": {
+        "x": 50,
+        "y": 950
+      },
+      "data": {
+        "params": {
+          "type": "CrossEntropyLoss"
+        }
+      }
     },
     {
       "id": "optimizer-1",
       "type": "Optimizer",
-      "position": { "x": 350, "y": 620 },
-      "data": { "params": { "type": "Adam", "lr": 0.0005, "weight_decay": 0.0 } }
+      "position": {
+        "x": 400,
+        "y": 950
+      },
+      "data": {
+        "params": {
+          "type": "Adam",
+          "lr": 0.0005,
+          "weight_decay": 0.0
+        }
+      }
     },
     {
       "id": "visualize-loss",
       "type": "Visualize",
-      "position": { "x": 700, "y": 620 },
-      "data": { "params": { "title": "Seq2Seq Translation Loss", "plot_type": "line" } }
+      "position": {
+        "x": 400,
+        "y": 1150
+      },
+      "data": {
+        "params": {
+          "title": "Seq2Seq Translation Loss",
+          "plot_type": "line"
+        }
+      }
+    },
+    {
+      "id": "seq-model",
+      "type": "SequentialModel",
+      "position": {
+        "x": 400,
+        "y": 300
+      },
+      "data": {
+        "params": {
+          "layers": "[{\"type\": \"GRU\", \"input_size\": 256, \"hidden_size\": 256, \"num_layers\": 2, \"batch_first\": true, \"bidirectional\": true}, {\"type\": \"MultiHeadAttention\", \"embed_dim\": 512, \"num_heads\": 8}, {\"type\": \"Dropout\", \"p\": 0.1}, {\"type\": \"LSTM\", \"input_size\": 512, \"hidden_size\": 256, \"num_layers\": 2, \"batch_first\": true, \"bidirectional\": false}, {\"type\": \"SelectIndex\", \"dim\": 1, \"index\": -1}, {\"type\": \"Linear\", \"in_features\": 256, \"out_features\": 10000}]"
+        }
+      }
+    },
+    {
+      "id": "train-loop",
+      "type": "TrainingLoop",
+      "position": {
+        "x": 1100,
+        "y": 300
+      },
+      "data": {
+        "params": {
+          "epochs": 20,
+          "device": "cpu"
+        }
+      }
     }
   ],
   "edges": [
-    { "id": "e-1", "source": "dataset-1", "target": "transform-1", "sourceHandle": "dataset", "targetHandle": "dataset" },
-    { "id": "e-2", "source": "transform-1", "target": "dataloader-1", "sourceHandle": "dataset", "targetHandle": "dataset" },
-    { "id": "e-3", "source": "reshape-src", "target": "encoder-gru", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-4", "source": "encoder-gru", "target": "print-enc", "sourceHandle": "output", "targetHandle": "value" },
-    { "id": "e-5", "source": "encoder-gru", "target": "attention-1", "sourceHandle": "output", "targetHandle": "key" },
-    { "id": "e-6", "source": "encoder-gru", "target": "attention-1", "sourceHandle": "output", "targetHandle": "value" },
-    { "id": "e-7", "source": "encoder-gru", "target": "attention-1", "sourceHandle": "output", "targetHandle": "query" },
-    { "id": "e-8", "source": "attention-1", "target": "visualize-attn", "sourceHandle": "weights", "targetHandle": "data" },
-    { "id": "e-9", "source": "attention-1", "target": "dropout-1", "sourceHandle": "output", "targetHandle": "tensor" },
-    { "id": "e-10", "source": "dropout-1", "target": "decoder-lstm", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-11", "source": "decoder-lstm", "target": "reshape-out", "sourceHandle": "output", "targetHandle": "tensor" },
-    { "id": "e-12", "source": "reshape-out", "target": "print-dec", "sourceHandle": "tensor", "targetHandle": "value" }
+    {
+      "id": "e-1",
+      "source": "dataset-1",
+      "target": "transform-1",
+      "sourceHandle": "dataset",
+      "targetHandle": "dataset"
+    },
+    {
+      "id": "e-2",
+      "source": "transform-1",
+      "target": "dataloader-1",
+      "sourceHandle": "dataset",
+      "targetHandle": "dataset"
+    },
+    {
+      "id": "e-3",
+      "source": "reshape-src",
+      "target": "encoder-gru",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-4",
+      "source": "encoder-gru",
+      "target": "print-enc",
+      "sourceHandle": "output",
+      "targetHandle": "value"
+    },
+    {
+      "id": "e-5",
+      "source": "encoder-gru",
+      "target": "attention-1",
+      "sourceHandle": "output",
+      "targetHandle": "key"
+    },
+    {
+      "id": "e-6",
+      "source": "encoder-gru",
+      "target": "attention-1",
+      "sourceHandle": "output",
+      "targetHandle": "value"
+    },
+    {
+      "id": "e-7",
+      "source": "encoder-gru",
+      "target": "attention-1",
+      "sourceHandle": "output",
+      "targetHandle": "query"
+    },
+    {
+      "id": "e-8",
+      "source": "attention-1",
+      "target": "visualize-attn",
+      "sourceHandle": "weights",
+      "targetHandle": "data"
+    },
+    {
+      "id": "e-9",
+      "source": "attention-1",
+      "target": "dropout-1",
+      "sourceHandle": "output",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-10",
+      "source": "dropout-1",
+      "target": "decoder-lstm",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-11",
+      "source": "decoder-lstm",
+      "target": "reshape-out",
+      "sourceHandle": "output",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-12",
+      "source": "reshape-out",
+      "target": "print-dec",
+      "sourceHandle": "tensor",
+      "targetHandle": "value"
+    },
+    {
+      "id": "e-auto-13",
+      "source": "seq-model",
+      "target": "train-loop",
+      "sourceHandle": "model",
+      "targetHandle": "model"
+    },
+    {
+      "id": "e-auto-14",
+      "source": "seq-model",
+      "target": "optimizer-1",
+      "sourceHandle": "model",
+      "targetHandle": "model"
+    },
+    {
+      "id": "e-auto-15",
+      "source": "optimizer-1",
+      "target": "train-loop",
+      "sourceHandle": "optimizer",
+      "targetHandle": "optimizer"
+    },
+    {
+      "id": "e-auto-16",
+      "source": "dataloader-1",
+      "target": "train-loop",
+      "sourceHandle": "dataloader",
+      "targetHandle": "dataloader"
+    },
+    {
+      "id": "e-auto-17",
+      "source": "loss-1",
+      "target": "train-loop",
+      "sourceHandle": "loss_fn",
+      "targetHandle": "loss_fn"
+    },
+    {
+      "id": "e-auto-18",
+      "source": "train-loop",
+      "target": "visualize-attn",
+      "sourceHandle": "losses",
+      "targetHandle": "data"
+    },
+    {
+      "id": "e-auto-19",
+      "source": "train-loop",
+      "target": "visualize-loss",
+      "sourceHandle": "metrics",
+      "targetHandle": "data"
+    }
   ]
 }

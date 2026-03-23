@@ -5,183 +5,602 @@
     {
       "id": "dataset-1",
       "type": "Dataset",
-      "position": { "x": 50, "y": 50 },
-      "data": { "params": { "name": "CIFAR10", "split": "train", "data_dir": "./data" } }
+      "position": {
+        "x": 50,
+        "y": 50
+      },
+      "data": {
+        "params": {
+          "name": "CIFAR10",
+          "split": "train",
+          "data_dir": "./data"
+        }
+      }
     },
     {
       "id": "transform-1",
       "type": "Transform",
-      "position": { "x": 350, "y": 50 },
-      "data": { "params": { "resize": 32, "normalize": true, "to_tensor": true } }
+      "position": {
+        "x": 400,
+        "y": 50
+      },
+      "data": {
+        "params": {
+          "resize": 32,
+          "normalize": true,
+          "to_tensor": true
+        }
+      }
     },
     {
       "id": "dataloader-1",
       "type": "DataLoader",
-      "position": { "x": 650, "y": 50 },
-      "data": { "params": { "batch_size": 128, "shuffle": true, "num_workers": 4 } }
+      "position": {
+        "x": 750,
+        "y": 50
+      },
+      "data": {
+        "params": {
+          "batch_size": 128,
+          "shuffle": true,
+          "num_workers": 4
+        }
+      }
     },
     {
       "id": "stem-conv",
       "type": "Conv2d",
-      "position": { "x": 50, "y": 280 },
-      "data": { "params": { "in_channels": 3, "out_channels": 64, "kernel_size": 3, "stride": 1, "padding": 1 } }
+      "position": {
+        "x": 50,
+        "y": 300
+      },
+      "data": {
+        "params": {
+          "in_channels": 3,
+          "out_channels": 64,
+          "kernel_size": 3,
+          "stride": 1,
+          "padding": 1
+        }
+      }
     },
     {
       "id": "stem-bn",
       "type": "BatchNorm2d",
-      "position": { "x": 350, "y": 280 },
-      "data": { "params": { "num_features": 64 } }
+      "position": {
+        "x": 750,
+        "y": 300
+      },
+      "data": {
+        "params": {
+          "num_features": 64
+        }
+      }
     },
     {
       "id": "stem-act",
       "type": "Activation",
-      "position": { "x": 650, "y": 280 },
-      "data": { "params": { "function": "relu" } }
+      "position": {
+        "x": 50,
+        "y": 500
+      },
+      "data": {
+        "params": {
+          "function": "relu"
+        }
+      }
     },
     {
       "id": "res1-conv1",
       "type": "Conv2d",
-      "position": { "x": 50, "y": 480 },
-      "data": { "params": { "in_channels": 64, "out_channels": 64, "kernel_size": 3, "stride": 1, "padding": 1 } }
+      "position": {
+        "x": 400,
+        "y": 500
+      },
+      "data": {
+        "params": {
+          "in_channels": 64,
+          "out_channels": 64,
+          "kernel_size": 3,
+          "stride": 1,
+          "padding": 1
+        }
+      }
     },
     {
       "id": "res1-bn1",
       "type": "BatchNorm2d",
-      "position": { "x": 350, "y": 480 },
-      "data": { "params": { "num_features": 64 } }
+      "position": {
+        "x": 750,
+        "y": 500
+      },
+      "data": {
+        "params": {
+          "num_features": 64
+        }
+      }
     },
     {
       "id": "res1-act1",
       "type": "Activation",
-      "position": { "x": 650, "y": 480 },
-      "data": { "params": { "function": "relu" } }
+      "position": {
+        "x": 1100,
+        "y": 500
+      },
+      "data": {
+        "params": {
+          "function": "relu"
+        }
+      }
     },
     {
       "id": "res1-conv2",
       "type": "Conv2d",
-      "position": { "x": 950, "y": 480 },
-      "data": { "params": { "in_channels": 64, "out_channels": 64, "kernel_size": 3, "stride": 1, "padding": 1 } }
+      "position": {
+        "x": 50,
+        "y": 700
+      },
+      "data": {
+        "params": {
+          "in_channels": 64,
+          "out_channels": 64,
+          "kernel_size": 3,
+          "stride": 1,
+          "padding": 1
+        }
+      }
     },
     {
       "id": "res1-bn2",
       "type": "BatchNorm2d",
-      "position": { "x": 1250, "y": 480 },
-      "data": { "params": { "num_features": 64 } }
+      "position": {
+        "x": 400,
+        "y": 700
+      },
+      "data": {
+        "params": {
+          "num_features": 64
+        }
+      }
     },
     {
       "id": "skip1-concat",
       "type": "Concat",
-      "position": { "x": 950, "y": 350 },
-      "data": { "params": { "dim": 1 } }
+      "position": {
+        "x": 750,
+        "y": 700
+      },
+      "data": {
+        "params": {
+          "dim": 1
+        }
+      }
     },
     {
       "id": "res1-act2",
       "type": "Activation",
-      "position": { "x": 1250, "y": 350 },
-      "data": { "params": { "function": "relu" } }
+      "position": {
+        "x": 1100,
+        "y": 700
+      },
+      "data": {
+        "params": {
+          "function": "relu"
+        }
+      }
     },
     {
       "id": "res2-conv1",
       "type": "Conv2d",
-      "position": { "x": 50, "y": 700 },
-      "data": { "params": { "in_channels": 128, "out_channels": 128, "kernel_size": 3, "stride": 1, "padding": 1 } }
+      "position": {
+        "x": 50,
+        "y": 900
+      },
+      "data": {
+        "params": {
+          "in_channels": 128,
+          "out_channels": 128,
+          "kernel_size": 3,
+          "stride": 1,
+          "padding": 1
+        }
+      }
     },
     {
       "id": "res2-bn1",
       "type": "BatchNorm2d",
-      "position": { "x": 350, "y": 700 },
-      "data": { "params": { "num_features": 128 } }
+      "position": {
+        "x": 400,
+        "y": 900
+      },
+      "data": {
+        "params": {
+          "num_features": 128
+        }
+      }
     },
     {
       "id": "res2-act1",
       "type": "Activation",
-      "position": { "x": 650, "y": 700 },
-      "data": { "params": { "function": "relu" } }
+      "position": {
+        "x": 750,
+        "y": 900
+      },
+      "data": {
+        "params": {
+          "function": "relu"
+        }
+      }
     },
     {
       "id": "res2-conv2",
       "type": "Conv2d",
-      "position": { "x": 950, "y": 700 },
-      "data": { "params": { "in_channels": 128, "out_channels": 128, "kernel_size": 3, "stride": 1, "padding": 1 } }
+      "position": {
+        "x": 1100,
+        "y": 900
+      },
+      "data": {
+        "params": {
+          "in_channels": 128,
+          "out_channels": 128,
+          "kernel_size": 3,
+          "stride": 1,
+          "padding": 1
+        }
+      }
     },
     {
       "id": "res2-bn2",
       "type": "BatchNorm2d",
-      "position": { "x": 1250, "y": 700 },
-      "data": { "params": { "num_features": 128 } }
+      "position": {
+        "x": 50,
+        "y": 1100
+      },
+      "data": {
+        "params": {
+          "num_features": 128
+        }
+      }
     },
     {
       "id": "skip2-concat",
       "type": "Concat",
-      "position": { "x": 950, "y": 580 },
-      "data": { "params": { "dim": 1 } }
+      "position": {
+        "x": 400,
+        "y": 1100
+      },
+      "data": {
+        "params": {
+          "dim": 1
+        }
+      }
     },
     {
       "id": "res2-act2",
       "type": "Activation",
-      "position": { "x": 1250, "y": 580 },
-      "data": { "params": { "function": "relu" } }
+      "position": {
+        "x": 750,
+        "y": 1100
+      },
+      "data": {
+        "params": {
+          "function": "relu"
+        }
+      }
     },
     {
       "id": "pool-final",
       "type": "MaxPool2d",
-      "position": { "x": 50, "y": 900 },
-      "data": { "params": { "kernel_size": 4, "stride": 4 } }
+      "position": {
+        "x": 1100,
+        "y": 1100
+      },
+      "data": {
+        "params": {
+          "kernel_size": 4,
+          "stride": 4
+        }
+      }
     },
     {
       "id": "dropout-1",
       "type": "Dropout",
-      "position": { "x": 350, "y": 900 },
-      "data": { "params": { "p": 0.3 } }
+      "position": {
+        "x": 50,
+        "y": 1300
+      },
+      "data": {
+        "params": {
+          "p": 0.3
+        }
+      }
     },
     {
       "id": "reshape-1",
       "type": "Reshape",
-      "position": { "x": 650, "y": 900 },
-      "data": { "params": { "shape": "-1,3200" } }
+      "position": {
+        "x": 400,
+        "y": 1300
+      },
+      "data": {
+        "params": {
+          "shape": "-1,3200"
+        }
+      }
     },
     {
       "id": "loss-1",
       "type": "Loss",
-      "position": { "x": 50, "y": 1100 },
-      "data": { "params": { "type": "CrossEntropyLoss" } }
+      "position": {
+        "x": 50,
+        "y": 1550
+      },
+      "data": {
+        "params": {
+          "type": "CrossEntropyLoss"
+        }
+      }
     },
     {
       "id": "optimizer-1",
       "type": "Optimizer",
-      "position": { "x": 350, "y": 1100 },
-      "data": { "params": { "type": "SGD", "lr": 0.1, "weight_decay": 0.0001 } }
+      "position": {
+        "x": 400,
+        "y": 1550
+      },
+      "data": {
+        "params": {
+          "type": "SGD",
+          "lr": 0.1,
+          "weight_decay": 0.0001
+        }
+      }
     },
     {
       "id": "visualize-1",
       "type": "Visualize",
-      "position": { "x": 650, "y": 1100 },
-      "data": { "params": { "title": "ResNet Training Curve", "plot_type": "line" } }
+      "position": {
+        "x": 50,
+        "y": 1750
+      },
+      "data": {
+        "params": {
+          "title": "ResNet Training Curve",
+          "plot_type": "line"
+        }
+      }
+    },
+    {
+      "id": "seq-model",
+      "type": "SequentialModel",
+      "position": {
+        "x": 400,
+        "y": 300
+      },
+      "data": {
+        "params": {
+          "layers": "[{\"type\": \"Conv2d\", \"in_channels\": 3, \"out_channels\": 64, \"kernel_size\": 3, \"stride\": 1, \"padding\": 1}, {\"type\": \"BatchNorm2d\", \"num_features\": 64}, {\"type\": \"ReLU\"}, {\"type\": \"Conv2d\", \"in_channels\": 64, \"out_channels\": 64, \"kernel_size\": 3, \"stride\": 1, \"padding\": 1}, {\"type\": \"BatchNorm2d\", \"num_features\": 64}, {\"type\": \"ReLU\"}, {\"type\": \"Conv2d\", \"in_channels\": 64, \"out_channels\": 128, \"kernel_size\": 3, \"stride\": 2, \"padding\": 1}, {\"type\": \"BatchNorm2d\", \"num_features\": 128}, {\"type\": \"ReLU\"}, {\"type\": \"Conv2d\", \"in_channels\": 128, \"out_channels\": 128, \"kernel_size\": 3, \"stride\": 1, \"padding\": 1}, {\"type\": \"BatchNorm2d\", \"num_features\": 128}, {\"type\": \"ReLU\"}, {\"type\": \"AdaptiveAvgPool2d\", \"output_size\": 1}, {\"type\": \"Flatten\"}, {\"type\": \"Dropout\", \"p\": 0.3}, {\"type\": \"Linear\", \"in_features\": 128, \"out_features\": 10}]"
+        }
+      }
+    },
+    {
+      "id": "train-loop",
+      "type": "TrainingLoop",
+      "position": {
+        "x": 1100,
+        "y": 300
+      },
+      "data": {
+        "params": {
+          "epochs": 20,
+          "device": "cpu"
+        }
+      }
     }
   ],
   "edges": [
-    { "id": "e-1", "source": "dataset-1", "target": "transform-1", "sourceHandle": "dataset", "targetHandle": "dataset" },
-    { "id": "e-2", "source": "transform-1", "target": "dataloader-1", "sourceHandle": "dataset", "targetHandle": "dataset" },
-    { "id": "e-3", "source": "stem-conv", "target": "stem-bn", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-4", "source": "stem-bn", "target": "stem-act", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-5", "source": "stem-act", "target": "res1-conv1", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-6", "source": "res1-conv1", "target": "res1-bn1", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-7", "source": "res1-bn1", "target": "res1-act1", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-8", "source": "res1-act1", "target": "res1-conv2", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-9", "source": "res1-conv2", "target": "res1-bn2", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-skip1a", "source": "stem-act", "target": "skip1-concat", "sourceHandle": "tensor", "targetHandle": "tensor_a" },
-    { "id": "e-skip1b", "source": "res1-bn2", "target": "skip1-concat", "sourceHandle": "tensor", "targetHandle": "tensor_b" },
-    { "id": "e-10", "source": "skip1-concat", "target": "res1-act2", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-11", "source": "res1-act2", "target": "res2-conv1", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-12", "source": "res2-conv1", "target": "res2-bn1", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-13", "source": "res2-bn1", "target": "res2-act1", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-14", "source": "res2-act1", "target": "res2-conv2", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-15", "source": "res2-conv2", "target": "res2-bn2", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-skip2a", "source": "res1-act2", "target": "skip2-concat", "sourceHandle": "tensor", "targetHandle": "tensor_a" },
-    { "id": "e-skip2b", "source": "res2-bn2", "target": "skip2-concat", "sourceHandle": "tensor", "targetHandle": "tensor_b" },
-    { "id": "e-16", "source": "skip2-concat", "target": "res2-act2", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-17", "source": "res2-act2", "target": "pool-final", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-18", "source": "pool-final", "target": "dropout-1", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-19", "source": "dropout-1", "target": "reshape-1", "sourceHandle": "tensor", "targetHandle": "tensor" }
+    {
+      "id": "e-1",
+      "source": "dataset-1",
+      "target": "transform-1",
+      "sourceHandle": "dataset",
+      "targetHandle": "dataset"
+    },
+    {
+      "id": "e-2",
+      "source": "transform-1",
+      "target": "dataloader-1",
+      "sourceHandle": "dataset",
+      "targetHandle": "dataset"
+    },
+    {
+      "id": "e-3",
+      "source": "stem-conv",
+      "target": "stem-bn",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-4",
+      "source": "stem-bn",
+      "target": "stem-act",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-5",
+      "source": "stem-act",
+      "target": "res1-conv1",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-6",
+      "source": "res1-conv1",
+      "target": "res1-bn1",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-7",
+      "source": "res1-bn1",
+      "target": "res1-act1",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-8",
+      "source": "res1-act1",
+      "target": "res1-conv2",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-9",
+      "source": "res1-conv2",
+      "target": "res1-bn2",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-skip1a",
+      "source": "stem-act",
+      "target": "skip1-concat",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor_a"
+    },
+    {
+      "id": "e-skip1b",
+      "source": "res1-bn2",
+      "target": "skip1-concat",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor_b"
+    },
+    {
+      "id": "e-10",
+      "source": "skip1-concat",
+      "target": "res1-act2",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-11",
+      "source": "res1-act2",
+      "target": "res2-conv1",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-12",
+      "source": "res2-conv1",
+      "target": "res2-bn1",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-13",
+      "source": "res2-bn1",
+      "target": "res2-act1",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-14",
+      "source": "res2-act1",
+      "target": "res2-conv2",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-15",
+      "source": "res2-conv2",
+      "target": "res2-bn2",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-skip2a",
+      "source": "res1-act2",
+      "target": "skip2-concat",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor_a"
+    },
+    {
+      "id": "e-skip2b",
+      "source": "res2-bn2",
+      "target": "skip2-concat",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor_b"
+    },
+    {
+      "id": "e-16",
+      "source": "skip2-concat",
+      "target": "res2-act2",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-17",
+      "source": "res2-act2",
+      "target": "pool-final",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-18",
+      "source": "pool-final",
+      "target": "dropout-1",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-19",
+      "source": "dropout-1",
+      "target": "reshape-1",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-auto-24",
+      "source": "seq-model",
+      "target": "train-loop",
+      "sourceHandle": "model",
+      "targetHandle": "model"
+    },
+    {
+      "id": "e-auto-25",
+      "source": "seq-model",
+      "target": "optimizer-1",
+      "sourceHandle": "model",
+      "targetHandle": "model"
+    },
+    {
+      "id": "e-auto-26",
+      "source": "optimizer-1",
+      "target": "train-loop",
+      "sourceHandle": "optimizer",
+      "targetHandle": "optimizer"
+    },
+    {
+      "id": "e-auto-27",
+      "source": "dataloader-1",
+      "target": "train-loop",
+      "sourceHandle": "dataloader",
+      "targetHandle": "dataloader"
+    },
+    {
+      "id": "e-auto-28",
+      "source": "loss-1",
+      "target": "train-loop",
+      "sourceHandle": "loss_fn",
+      "targetHandle": "loss_fn"
+    },
+    {
+      "id": "e-auto-29",
+      "source": "train-loop",
+      "target": "visualize-1",
+      "sourceHandle": "losses",
+      "targetHandle": "data"
+    }
   ]
 }

@@ -5,103 +5,358 @@
     {
       "id": "dataset-1",
       "type": "Dataset",
-      "position": { "x": 50, "y": 50 },
-      "data": { "params": { "name": "CIFAR10", "split": "train", "data_dir": "./data" } }
+      "position": {
+        "x": 50,
+        "y": 50
+      },
+      "data": {
+        "params": {
+          "name": "CIFAR10",
+          "split": "train",
+          "data_dir": "./data"
+        }
+      }
     },
     {
       "id": "transform-1",
       "type": "Transform",
-      "position": { "x": 350, "y": 50 },
-      "data": { "params": { "resize": 32, "normalize": true, "to_tensor": true } }
+      "position": {
+        "x": 400,
+        "y": 50
+      },
+      "data": {
+        "params": {
+          "resize": 32,
+          "normalize": true,
+          "to_tensor": true
+        }
+      }
     },
     {
       "id": "dataloader-1",
       "type": "DataLoader",
-      "position": { "x": 650, "y": 50 },
-      "data": { "params": { "batch_size": 64, "shuffle": true, "num_workers": 4 } }
+      "position": {
+        "x": 750,
+        "y": 50
+      },
+      "data": {
+        "params": {
+          "batch_size": 64,
+          "shuffle": true,
+          "num_workers": 4
+        }
+      }
     },
     {
       "id": "patch-embed",
       "type": "Conv2d",
-      "position": { "x": 50, "y": 300 },
-      "data": { "params": { "in_channels": 3, "out_channels": 512, "kernel_size": 4, "stride": 4, "padding": 0 } }
+      "position": {
+        "x": 50,
+        "y": 300
+      },
+      "data": {
+        "params": {
+          "in_channels": 3,
+          "out_channels": 512,
+          "kernel_size": 4,
+          "stride": 4,
+          "padding": 0
+        }
+      }
     },
     {
       "id": "reshape-patches",
       "type": "Reshape",
-      "position": { "x": 350, "y": 300 },
-      "data": { "params": { "shape": "-1,64,512" } }
+      "position": {
+        "x": 750,
+        "y": 300
+      },
+      "data": {
+        "params": {
+          "shape": "-1,64,512"
+        }
+      }
     },
     {
       "id": "print-noisy",
       "type": "Print",
-      "position": { "x": 350, "y": 460 },
-      "data": { "params": { "label": "Noisy patches + timestep embedding + class label" } }
+      "position": {
+        "x": 50,
+        "y": 700
+      },
+      "data": {
+        "params": {
+          "label": "Noisy patches + timestep embedding + class label"
+        }
+      }
     },
     {
       "id": "dit-block-1",
       "type": "TransformerEncoder",
-      "position": { "x": 700, "y": 300 },
-      "data": { "params": { "d_model": 512, "nhead": 8, "num_layers": 6, "dim_feedforward": 2048 } }
+      "position": {
+        "x": 50,
+        "y": 500
+      },
+      "data": {
+        "params": {
+          "d_model": 512,
+          "nhead": 8,
+          "num_layers": 6,
+          "dim_feedforward": 2048
+        }
+      }
     },
     {
       "id": "dit-block-2",
       "type": "TransformerEncoder",
-      "position": { "x": 1050, "y": 300 },
-      "data": { "params": { "d_model": 512, "nhead": 8, "num_layers": 6, "dim_feedforward": 2048 } }
+      "position": {
+        "x": 400,
+        "y": 500
+      },
+      "data": {
+        "params": {
+          "d_model": 512,
+          "nhead": 8,
+          "num_layers": 6,
+          "dim_feedforward": 2048
+        }
+      }
     },
     {
       "id": "dropout-1",
       "type": "Dropout",
-      "position": { "x": 1400, "y": 300 },
-      "data": { "params": { "p": 0.1 } }
+      "position": {
+        "x": 750,
+        "y": 500
+      },
+      "data": {
+        "params": {
+          "p": 0.1
+        }
+      }
     },
     {
       "id": "reshape-img",
       "type": "Reshape",
-      "position": { "x": 1400, "y": 460 },
-      "data": { "params": { "shape": "-1,3,32,32" } }
+      "position": {
+        "x": 1100,
+        "y": 500
+      },
+      "data": {
+        "params": {
+          "shape": "-1,3,32,32"
+        }
+      }
     },
     {
       "id": "print-denoised",
       "type": "Print",
-      "position": { "x": 1400, "y": 620 },
-      "data": { "params": { "label": "Predicted noise ε (for denoising step)" } }
+      "position": {
+        "x": 400,
+        "y": 700
+      },
+      "data": {
+        "params": {
+          "label": "Predicted noise ε (for denoising step)"
+        }
+      }
     },
     {
       "id": "loss-1",
       "type": "Loss",
-      "position": { "x": 50, "y": 620 },
-      "data": { "params": { "type": "MSELoss" } }
+      "position": {
+        "x": 50,
+        "y": 950
+      },
+      "data": {
+        "params": {
+          "type": "MSELoss"
+        }
+      }
     },
     {
       "id": "optimizer-1",
       "type": "Optimizer",
-      "position": { "x": 350, "y": 620 },
-      "data": { "params": { "type": "AdamW", "lr": 0.0001, "weight_decay": 0.0 } }
+      "position": {
+        "x": 400,
+        "y": 950
+      },
+      "data": {
+        "params": {
+          "type": "AdamW",
+          "lr": 0.0001,
+          "weight_decay": 0.0
+        }
+      }
     },
     {
       "id": "visualize-loss",
       "type": "Visualize",
-      "position": { "x": 700, "y": 620 },
-      "data": { "params": { "title": "Diffusion MSE Loss (noise prediction)", "plot_type": "line" } }
+      "position": {
+        "x": 50,
+        "y": 1150
+      },
+      "data": {
+        "params": {
+          "title": "Diffusion MSE Loss (noise prediction)",
+          "plot_type": "line"
+        }
+      }
     },
     {
       "id": "visualize-samples",
       "type": "Visualize",
-      "position": { "x": 1050, "y": 620 },
-      "data": { "params": { "title": "Generated Samples (FID tracking)", "plot_type": "histogram" } }
+      "position": {
+        "x": 400,
+        "y": 1150
+      },
+      "data": {
+        "params": {
+          "title": "Generated Samples (FID tracking)",
+          "plot_type": "histogram"
+        }
+      }
+    },
+    {
+      "id": "seq-model",
+      "type": "SequentialModel",
+      "position": {
+        "x": 400,
+        "y": 300
+      },
+      "data": {
+        "params": {
+          "layers": "[{\"type\": \"Conv2d\", \"in_channels\": 3, \"out_channels\": 512, \"kernel_size\": 4, \"stride\": 4}, {\"type\": \"Reshape\", \"shape\": \"64,512\"}, {\"type\": \"TransformerEncoder\", \"d_model\": 512, \"nhead\": 8, \"num_layers\": 12, \"dim_feedforward\": 2048}, {\"type\": \"Flatten\"}, {\"type\": \"Dropout\", \"p\": 0.1}, {\"type\": \"Linear\", \"in_features\": 32768, \"out_features\": 3072}]"
+        }
+      }
+    },
+    {
+      "id": "train-loop",
+      "type": "TrainingLoop",
+      "position": {
+        "x": 1100,
+        "y": 300
+      },
+      "data": {
+        "params": {
+          "epochs": 20,
+          "device": "cpu"
+        }
+      }
     }
   ],
   "edges": [
-    { "id": "e-1", "source": "dataset-1", "target": "transform-1", "sourceHandle": "dataset", "targetHandle": "dataset" },
-    { "id": "e-2", "source": "transform-1", "target": "dataloader-1", "sourceHandle": "dataset", "targetHandle": "dataset" },
-    { "id": "e-3", "source": "patch-embed", "target": "reshape-patches", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-4", "source": "reshape-patches", "target": "print-noisy", "sourceHandle": "tensor", "targetHandle": "value" },
-    { "id": "e-5", "source": "reshape-patches", "target": "dit-block-1", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-6", "source": "dit-block-1", "target": "dit-block-2", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-7", "source": "dit-block-2", "target": "dropout-1", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-8", "source": "dropout-1", "target": "reshape-img", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-9", "source": "reshape-img", "target": "print-denoised", "sourceHandle": "tensor", "targetHandle": "value" }
+    {
+      "id": "e-1",
+      "source": "dataset-1",
+      "target": "transform-1",
+      "sourceHandle": "dataset",
+      "targetHandle": "dataset"
+    },
+    {
+      "id": "e-2",
+      "source": "transform-1",
+      "target": "dataloader-1",
+      "sourceHandle": "dataset",
+      "targetHandle": "dataset"
+    },
+    {
+      "id": "e-3",
+      "source": "patch-embed",
+      "target": "reshape-patches",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-4",
+      "source": "reshape-patches",
+      "target": "print-noisy",
+      "sourceHandle": "tensor",
+      "targetHandle": "value"
+    },
+    {
+      "id": "e-5",
+      "source": "reshape-patches",
+      "target": "dit-block-1",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-6",
+      "source": "dit-block-1",
+      "target": "dit-block-2",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-7",
+      "source": "dit-block-2",
+      "target": "dropout-1",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-8",
+      "source": "dropout-1",
+      "target": "reshape-img",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-9",
+      "source": "reshape-img",
+      "target": "print-denoised",
+      "sourceHandle": "tensor",
+      "targetHandle": "value"
+    },
+    {
+      "id": "e-auto-10",
+      "source": "seq-model",
+      "target": "train-loop",
+      "sourceHandle": "model",
+      "targetHandle": "model"
+    },
+    {
+      "id": "e-auto-11",
+      "source": "seq-model",
+      "target": "optimizer-1",
+      "sourceHandle": "model",
+      "targetHandle": "model"
+    },
+    {
+      "id": "e-auto-12",
+      "source": "optimizer-1",
+      "target": "train-loop",
+      "sourceHandle": "optimizer",
+      "targetHandle": "optimizer"
+    },
+    {
+      "id": "e-auto-13",
+      "source": "dataloader-1",
+      "target": "train-loop",
+      "sourceHandle": "dataloader",
+      "targetHandle": "dataloader"
+    },
+    {
+      "id": "e-auto-14",
+      "source": "loss-1",
+      "target": "train-loop",
+      "sourceHandle": "loss_fn",
+      "targetHandle": "loss_fn"
+    },
+    {
+      "id": "e-auto-15",
+      "source": "train-loop",
+      "target": "visualize-loss",
+      "sourceHandle": "losses",
+      "targetHandle": "data"
+    },
+    {
+      "id": "e-auto-16",
+      "source": "train-loop",
+      "target": "visualize-samples",
+      "sourceHandle": "metrics",
+      "targetHandle": "data"
+    }
   ]
 }

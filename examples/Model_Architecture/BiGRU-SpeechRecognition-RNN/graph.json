@@ -5,104 +5,363 @@
     {
       "id": "dataset-1",
       "type": "Dataset",
-      "position": { "x": 50, "y": 50 },
-      "data": { "params": { "name": "MNIST", "split": "train", "data_dir": "./data" } }
+      "position": {
+        "x": 50,
+        "y": 50
+      },
+      "data": {
+        "params": {
+          "name": "MNIST",
+          "split": "train",
+          "data_dir": "./data"
+        }
+      }
     },
     {
       "id": "transform-1",
       "type": "Transform",
-      "position": { "x": 350, "y": 50 },
-      "data": { "params": { "resize": 0, "normalize": true, "to_tensor": true } }
+      "position": {
+        "x": 400,
+        "y": 50
+      },
+      "data": {
+        "params": {
+          "resize": 0,
+          "normalize": true,
+          "to_tensor": true
+        }
+      }
     },
     {
       "id": "dataloader-1",
       "type": "DataLoader",
-      "position": { "x": 650, "y": 50 },
-      "data": { "params": { "batch_size": 32, "shuffle": true, "num_workers": 2 } }
+      "position": {
+        "x": 750,
+        "y": 50
+      },
+      "data": {
+        "params": {
+          "batch_size": 32,
+          "shuffle": true,
+          "num_workers": 2
+        }
+      }
     },
     {
       "id": "reshape-mel",
       "type": "Reshape",
-      "position": { "x": 50, "y": 280 },
-      "data": { "params": { "shape": "-1,100,80" } }
+      "position": {
+        "x": 50,
+        "y": 300
+      },
+      "data": {
+        "params": {
+          "shape": "-1,100,80"
+        }
+      }
     },
     {
       "id": "print-mel",
       "type": "Print",
-      "position": { "x": 50, "y": 440 },
-      "data": { "params": { "label": "Input: Mel-Spectrogram (100 frames × 80 mel bins)" } }
+      "position": {
+        "x": 50,
+        "y": 700
+      },
+      "data": {
+        "params": {
+          "label": "Input: Mel-Spectrogram (100 frames × 80 mel bins)"
+        }
+      }
     },
     {
       "id": "bigru-1",
       "type": "GRU",
-      "position": { "x": 400, "y": 280 },
-      "data": { "params": { "input_size": 80, "hidden_size": 256, "num_layers": 3, "batch_first": true, "bidirectional": true } }
+      "position": {
+        "x": 750,
+        "y": 300
+      },
+      "data": {
+        "params": {
+          "input_size": 80,
+          "hidden_size": 256,
+          "num_layers": 3,
+          "batch_first": true,
+          "bidirectional": true
+        }
+      }
     },
     {
       "id": "dropout-1",
       "type": "Dropout",
-      "position": { "x": 750, "y": 280 },
-      "data": { "params": { "p": 0.3 } }
+      "position": {
+        "x": 50,
+        "y": 500
+      },
+      "data": {
+        "params": {
+          "p": 0.3
+        }
+      }
     },
     {
       "id": "bigru-2",
       "type": "GRU",
-      "position": { "x": 1100, "y": 280 },
-      "data": { "params": { "input_size": 512, "hidden_size": 256, "num_layers": 2, "batch_first": true, "bidirectional": true } }
+      "position": {
+        "x": 400,
+        "y": 500
+      },
+      "data": {
+        "params": {
+          "input_size": 512,
+          "hidden_size": 256,
+          "num_layers": 2,
+          "batch_first": true,
+          "bidirectional": true
+        }
+      }
     },
     {
       "id": "dropout-2",
       "type": "Dropout",
-      "position": { "x": 1100, "y": 440 },
-      "data": { "params": { "p": 0.2 } }
+      "position": {
+        "x": 750,
+        "y": 500
+      },
+      "data": {
+        "params": {
+          "p": 0.2
+        }
+      }
     },
     {
       "id": "reshape-out",
       "type": "Reshape",
-      "position": { "x": 1100, "y": 600 },
-      "data": { "params": { "shape": "-1,512" } }
+      "position": {
+        "x": 1100,
+        "y": 500
+      },
+      "data": {
+        "params": {
+          "shape": "-1,512"
+        }
+      }
     },
     {
       "id": "print-ctc",
       "type": "Print",
-      "position": { "x": 1400, "y": 600 },
-      "data": { "params": { "label": "CTC Output: character probabilities per frame" } }
+      "position": {
+        "x": 400,
+        "y": 700
+      },
+      "data": {
+        "params": {
+          "label": "CTC Output: character probabilities per frame"
+        }
+      }
     },
     {
       "id": "visualize-hidden",
       "type": "Visualize",
-      "position": { "x": 750, "y": 440 },
-      "data": { "params": { "title": "BiGRU Hidden States", "plot_type": "heatmap" } }
+      "position": {
+        "x": 50,
+        "y": 1150
+      },
+      "data": {
+        "params": {
+          "title": "BiGRU Hidden States",
+          "plot_type": "heatmap"
+        }
+      }
     },
     {
       "id": "loss-1",
       "type": "Loss",
-      "position": { "x": 50, "y": 600 },
-      "data": { "params": { "type": "CrossEntropyLoss" } }
+      "position": {
+        "x": 50,
+        "y": 950
+      },
+      "data": {
+        "params": {
+          "type": "CrossEntropyLoss"
+        }
+      }
     },
     {
       "id": "optimizer-1",
       "type": "Optimizer",
-      "position": { "x": 400, "y": 600 },
-      "data": { "params": { "type": "Adam", "lr": 0.0003, "weight_decay": 0.0 } }
+      "position": {
+        "x": 400,
+        "y": 950
+      },
+      "data": {
+        "params": {
+          "type": "Adam",
+          "lr": 0.0003,
+          "weight_decay": 0.0
+        }
+      }
     },
     {
       "id": "visualize-loss",
       "type": "Visualize",
-      "position": { "x": 400, "y": 440 },
-      "data": { "params": { "title": "CTC Loss", "plot_type": "line" } }
+      "position": {
+        "x": 400,
+        "y": 1150
+      },
+      "data": {
+        "params": {
+          "title": "CTC Loss",
+          "plot_type": "line"
+        }
+      }
+    },
+    {
+      "id": "seq-model",
+      "type": "SequentialModel",
+      "position": {
+        "x": 400,
+        "y": 300
+      },
+      "data": {
+        "params": {
+          "layers": "[{\"type\": \"GRU\", \"input_size\": 80, \"hidden_size\": 256, \"num_layers\": 3, \"batch_first\": true, \"bidirectional\": true}, {\"type\": \"Dropout\", \"p\": 0.3}, {\"type\": \"GRU\", \"input_size\": 512, \"hidden_size\": 256, \"num_layers\": 2, \"batch_first\": true, \"bidirectional\": true}, {\"type\": \"SelectIndex\", \"dim\": 1, \"index\": -1}, {\"type\": \"Dropout\", \"p\": 0.2}, {\"type\": \"Linear\", \"in_features\": 512, \"out_features\": 29}]"
+        }
+      }
+    },
+    {
+      "id": "train-loop",
+      "type": "TrainingLoop",
+      "position": {
+        "x": 1100,
+        "y": 300
+      },
+      "data": {
+        "params": {
+          "epochs": 20,
+          "device": "cpu"
+        }
+      }
     }
   ],
   "edges": [
-    { "id": "e-1", "source": "dataset-1", "target": "transform-1", "sourceHandle": "dataset", "targetHandle": "dataset" },
-    { "id": "e-2", "source": "transform-1", "target": "dataloader-1", "sourceHandle": "dataset", "targetHandle": "dataset" },
-    { "id": "e-3", "source": "reshape-mel", "target": "bigru-1", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-4", "source": "reshape-mel", "target": "print-mel", "sourceHandle": "tensor", "targetHandle": "value" },
-    { "id": "e-5", "source": "bigru-1", "target": "dropout-1", "sourceHandle": "output", "targetHandle": "tensor" },
-    { "id": "e-6", "source": "dropout-1", "target": "bigru-2", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-7", "source": "bigru-1", "target": "visualize-hidden", "sourceHandle": "hidden", "targetHandle": "data" },
-    { "id": "e-8", "source": "bigru-2", "target": "dropout-2", "sourceHandle": "output", "targetHandle": "tensor" },
-    { "id": "e-9", "source": "dropout-2", "target": "reshape-out", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-10", "source": "reshape-out", "target": "print-ctc", "sourceHandle": "tensor", "targetHandle": "value" }
+    {
+      "id": "e-1",
+      "source": "dataset-1",
+      "target": "transform-1",
+      "sourceHandle": "dataset",
+      "targetHandle": "dataset"
+    },
+    {
+      "id": "e-2",
+      "source": "transform-1",
+      "target": "dataloader-1",
+      "sourceHandle": "dataset",
+      "targetHandle": "dataset"
+    },
+    {
+      "id": "e-3",
+      "source": "reshape-mel",
+      "target": "bigru-1",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-4",
+      "source": "reshape-mel",
+      "target": "print-mel",
+      "sourceHandle": "tensor",
+      "targetHandle": "value"
+    },
+    {
+      "id": "e-5",
+      "source": "bigru-1",
+      "target": "dropout-1",
+      "sourceHandle": "output",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-6",
+      "source": "dropout-1",
+      "target": "bigru-2",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-7",
+      "source": "bigru-1",
+      "target": "visualize-hidden",
+      "sourceHandle": "hidden",
+      "targetHandle": "data"
+    },
+    {
+      "id": "e-8",
+      "source": "bigru-2",
+      "target": "dropout-2",
+      "sourceHandle": "output",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-9",
+      "source": "dropout-2",
+      "target": "reshape-out",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-10",
+      "source": "reshape-out",
+      "target": "print-ctc",
+      "sourceHandle": "tensor",
+      "targetHandle": "value"
+    },
+    {
+      "id": "e-auto-11",
+      "source": "seq-model",
+      "target": "train-loop",
+      "sourceHandle": "model",
+      "targetHandle": "model"
+    },
+    {
+      "id": "e-auto-12",
+      "source": "seq-model",
+      "target": "optimizer-1",
+      "sourceHandle": "model",
+      "targetHandle": "model"
+    },
+    {
+      "id": "e-auto-13",
+      "source": "optimizer-1",
+      "target": "train-loop",
+      "sourceHandle": "optimizer",
+      "targetHandle": "optimizer"
+    },
+    {
+      "id": "e-auto-14",
+      "source": "dataloader-1",
+      "target": "train-loop",
+      "sourceHandle": "dataloader",
+      "targetHandle": "dataloader"
+    },
+    {
+      "id": "e-auto-15",
+      "source": "loss-1",
+      "target": "train-loop",
+      "sourceHandle": "loss_fn",
+      "targetHandle": "loss_fn"
+    },
+    {
+      "id": "e-auto-16",
+      "source": "train-loop",
+      "target": "visualize-hidden",
+      "sourceHandle": "losses",
+      "targetHandle": "data"
+    },
+    {
+      "id": "e-auto-17",
+      "source": "train-loop",
+      "target": "visualize-loss",
+      "sourceHandle": "metrics",
+      "targetHandle": "data"
+    }
   ]
 }
