@@ -74,7 +74,15 @@ class HuggingFaceDatasetNode(BaseNode):
         ]
 
     def execute(self, inputs: dict[str, Any], params: dict[str, Any]) -> dict[str, Any]:
-        from datasets import load_dataset
+        try:
+            from datasets import load_dataset
+        except ImportError as e:
+            raise RuntimeError(
+                "HuggingFaceDataset requires the 'datasets' package. "
+                "Install with: pip install datasets "
+                "(or `uv sync --extra ml` from backend/)"
+            ) from e
+
         from torchvision import transforms as T
 
         from ._hf_adapter import HFTorchImageDataset

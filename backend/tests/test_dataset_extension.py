@@ -218,3 +218,30 @@ def test_hf_dataset_node_invalid_label_column_lists_available(monkeypatch):
     msg = str(exc_info.value)
     assert "label" in msg
     assert "target" in msg
+
+
+def test_hf_dataset_node_missing_package(monkeypatch):
+    import builtins
+    import sys
+
+    # Force any future `import datasets` to fail.
+    monkeypatch.delitem(sys.modules, "datasets", raising=False)
+
+    real_import = builtins.__import__
+
+    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "datasets" or name.startswith("datasets."):
+            raise ImportError("No module named 'datasets'")
+        return real_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+
+    from app.nodes.data.huggingface_dataset_node import HuggingFaceDatasetNode
+
+    node = HuggingFaceDatasetNode()
+    with pytest.raises(RuntimeError) as exc_info:
+        node.execute(inputs={}, params=_hf_node_default_params())
+
+    msg = str(exc_info.value)
+    assert "datasets" in msg
+    assert "pip install" in msg
