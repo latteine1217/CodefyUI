@@ -94,7 +94,25 @@ class HuggingFaceDatasetNode(BaseNode):
         label_column = params.get("label_column", "label")
         cache_dir = params.get("cache_dir", "") or None
 
-        ds = load_dataset(dataset_name, subset, split=split, cache_dir=cache_dir)
+        try:
+            ds = load_dataset(dataset_name, subset, split=split, cache_dir=cache_dir)
+        except Exception as e:
+            err_name = type(e).__name__
+            err_msg = str(e)
+            looks_like_auth = (
+                "GatedRepoError" in err_name
+                or "RepositoryNotFoundError" in err_name
+                or "401" in err_msg
+                or "unauthorized" in err_msg.lower()
+            )
+            if looks_like_auth:
+                raise RuntimeError(
+                    "HuggingFace authentication required to load "
+                    f"'{dataset_name}'. Set the HF_TOKEN environment "
+                    "variable to a token with read access. "
+                    "See https://huggingface.co/docs/hub/security-tokens"
+                ) from e
+            raise
 
         available = list(ds.features.keys()) if hasattr(ds, "features") else None
         if available is not None:

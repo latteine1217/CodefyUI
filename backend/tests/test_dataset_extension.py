@@ -245,3 +245,62 @@ def test_hf_dataset_node_missing_package(monkeypatch):
     msg = str(exc_info.value)
     assert "datasets" in msg
     assert "pip install" in msg
+
+
+def test_hf_dataset_node_gated_repo_maps_to_token_message(monkeypatch):
+    import datasets as hf_datasets
+
+    class GatedRepoError(Exception):
+        """Stand-in mimicking huggingface_hub.errors.GatedRepoError."""
+
+    def fake_load_dataset(*args, **kwargs):
+        raise GatedRepoError("Access to model X is gated")
+
+    monkeypatch.setattr(hf_datasets, "load_dataset", fake_load_dataset)
+
+    from app.nodes.data.huggingface_dataset_node import HuggingFaceDatasetNode
+
+    node = HuggingFaceDatasetNode()
+    with pytest.raises(RuntimeError) as exc_info:
+        node.execute(
+            inputs={},
+            params=_hf_node_default_params(dataset_name="private/gated"),
+        )
+
+    msg = str(exc_info.value)
+    assert "HF_TOKEN" in msg
+    assert "authentication" in msg.lower() or "auth" in msg.lower()
+
+
+def test_hf_dataset_node_401_error_maps_to_token_message(monkeypatch):
+    import datasets as hf_datasets
+
+    def fake_load_dataset(*args, **kwargs):
+        raise Exception("401 Client Error: Unauthorized")
+
+    monkeypatch.setattr(hf_datasets, "load_dataset", fake_load_dataset)
+
+    from app.nodes.data.huggingface_dataset_node import HuggingFaceDatasetNode
+
+    node = HuggingFaceDatasetNode()
+    with pytest.raises(RuntimeError) as exc_info:
+        node.execute(inputs={}, params=_hf_node_default_params())
+
+    msg = str(exc_info.value)
+    assert "HF_TOKEN" in msg
+
+
+def test_hf_dataset_node_other_errors_pass_through(monkeypatch):
+    """Non-auth errors must NOT be silently rewritten as auth errors."""
+    import datasets as hf_datasets
+
+    def fake_load_dataset(*args, **kwargs):
+        raise ValueError("dataset name is malformed")
+
+    monkeypatch.setattr(hf_datasets, "load_dataset", fake_load_dataset)
+
+    from app.nodes.data.huggingface_dataset_node import HuggingFaceDatasetNode
+
+    node = HuggingFaceDatasetNode()
+    with pytest.raises(ValueError, match="malformed"):
+        node.execute(inputs={}, params=_hf_node_default_params())
