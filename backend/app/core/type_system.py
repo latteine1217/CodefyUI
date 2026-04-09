@@ -12,11 +12,14 @@ _COMPAT: dict[DataType, set[DataType]] = {
     DataType.STRING: {DataType.STRING, DataType.ANY},
     DataType.IMAGE: {DataType.IMAGE, DataType.TENSOR, DataType.ANY},
     DataType.LIST: {DataType.LIST, DataType.ANY},
-    DataType.ANY: {dt for dt in DataType},
+    DataType.ANY: {dt for dt in DataType if dt is not DataType.TRIGGER},
+    DataType.TRIGGER: {DataType.TRIGGER},
 }
 
 
 def is_compatible(source: DataType, target: DataType) -> bool:
+    if source == DataType.TRIGGER or target == DataType.TRIGGER:
+        return source == DataType.TRIGGER and target == DataType.TRIGGER
     if target == DataType.ANY:
         return True
     return target in _COMPAT.get(source, set())
