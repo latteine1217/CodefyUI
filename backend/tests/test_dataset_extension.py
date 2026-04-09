@@ -304,3 +304,41 @@ def test_hf_dataset_node_other_errors_pass_through(monkeypatch):
     node = HuggingFaceDatasetNode()
     with pytest.raises(ValueError, match="malformed"):
         node.execute(inputs={}, params=_hf_node_default_params())
+
+
+# ---------------------------------------------------------------------------
+# KaggleDatasetNode
+# ---------------------------------------------------------------------------
+
+
+def _kaggle_node_default_params(**overrides: Any) -> dict[str, Any]:
+    base = {
+        "dataset_slug": "fake/dataset",
+        "subdir": "",
+        "cache_dir": "",
+    }
+    base.update(overrides)
+    return base
+
+
+def test_kaggle_dataset_node_happy_path(monkeypatch, tmp_path):
+    import torch
+    import kagglehub
+
+    _make_image_folder_layout(tmp_path)
+    monkeypatch.setattr(kagglehub, "dataset_download", lambda slug: str(tmp_path))
+
+    # Auth pre-check requires either env vars or kaggle.json
+    monkeypatch.setenv("KAGGLE_USERNAME", "tester")
+    monkeypatch.setenv("KAGGLE_KEY", "testkey")
+
+    from app.nodes.data.kaggle_dataset_node import KaggleDatasetNode
+
+    node = KaggleDatasetNode()
+    result = node.execute(inputs={}, params=_kaggle_node_default_params())
+
+    ds = result["dataset"]
+    assert len(ds) == 2  # cats + dogs, one image each
+    img, label = ds[0]
+    assert isinstance(img, torch.Tensor)
+    assert label in (0, 1)
