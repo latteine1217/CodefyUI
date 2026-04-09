@@ -444,3 +444,27 @@ def test_kaggle_dataset_node_flat_directory_raises_with_subdir_hint(monkeypatch,
     assert "subdir" in msg.lower()
     # The error should surface what was actually in the directory
     assert "image1.png" in msg or "metadata.csv" in msg
+
+
+# ---------------------------------------------------------------------------
+# Registry integration
+# ---------------------------------------------------------------------------
+
+
+def test_new_nodes_are_registered(registry_with_nodes):
+    """Auto-discovery (in conftest fixture) should pick up both new nodes."""
+    nodes = registry_with_nodes.nodes
+    assert "HuggingFaceDataset" in nodes
+    assert "KaggleDataset" in nodes
+
+    hf_cls = nodes["HuggingFaceDataset"]
+    kaggle_cls = nodes["KaggleDataset"]
+
+    assert hf_cls.CATEGORY == "Data"
+    assert kaggle_cls.CATEGORY == "Data"
+
+    hf_param_names = {p.name for p in hf_cls.define_params()}
+    assert {"dataset_name", "split", "image_column", "label_column"} <= hf_param_names
+
+    kaggle_param_names = {p.name for p in kaggle_cls.define_params()}
+    assert {"dataset_slug", "subdir", "cache_dir"} <= kaggle_param_names
