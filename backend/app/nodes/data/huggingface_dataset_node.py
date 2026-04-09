@@ -88,6 +88,19 @@ class HuggingFaceDatasetNode(BaseNode):
 
         ds = load_dataset(dataset_name, subset, split=split, cache_dir=cache_dir)
 
+        available = list(ds.features.keys()) if hasattr(ds, "features") else None
+        if available is not None:
+            if image_column not in available:
+                raise RuntimeError(
+                    f"Column '{image_column}' not found in dataset "
+                    f"'{dataset_name}'. Available columns: {available}"
+                )
+            if label_column not in available:
+                raise RuntimeError(
+                    f"Column '{label_column}' not found in dataset "
+                    f"'{dataset_name}'. Available columns: {available}"
+                )
+
         wrapped = HFTorchImageDataset(
             ds,
             image_column=image_column,

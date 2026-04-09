@@ -171,3 +171,50 @@ def test_hf_dataset_node_happy_path(monkeypatch):
     assert isinstance(img, torch.Tensor)  # default ToTensor() applied by node
     assert img.shape == (3, 8, 8)
     assert label == 0
+
+
+def test_hf_dataset_node_invalid_image_column_lists_available(monkeypatch):
+    import datasets as hf_datasets
+
+    fake = FakeHFDataset(
+        rows=[{"img": Image.new("RGB", (8, 8)), "label": 0}],
+        features={"img": None, "label": None},
+    )
+    monkeypatch.setattr(hf_datasets, "load_dataset", lambda *a, **k: fake)
+
+    from app.nodes.data.huggingface_dataset_node import HuggingFaceDatasetNode
+
+    node = HuggingFaceDatasetNode()
+    with pytest.raises(RuntimeError) as exc_info:
+        node.execute(
+            inputs={},
+            params=_hf_node_default_params(image_column="image"),  # dataset has 'img'
+        )
+
+    msg = str(exc_info.value)
+    assert "image" in msg
+    assert "img" in msg  # available columns are listed
+    assert "label" in msg
+
+
+def test_hf_dataset_node_invalid_label_column_lists_available(monkeypatch):
+    import datasets as hf_datasets
+
+    fake = FakeHFDataset(
+        rows=[{"image": Image.new("RGB", (8, 8)), "target": 0}],
+        features={"image": None, "target": None},
+    )
+    monkeypatch.setattr(hf_datasets, "load_dataset", lambda *a, **k: fake)
+
+    from app.nodes.data.huggingface_dataset_node import HuggingFaceDatasetNode
+
+    node = HuggingFaceDatasetNode()
+    with pytest.raises(RuntimeError) as exc_info:
+        node.execute(
+            inputs={},
+            params=_hf_node_default_params(label_column="label"),  # dataset has 'target'
+        )
+
+    msg = str(exc_info.value)
+    assert "label" in msg
+    assert "target" in msg
