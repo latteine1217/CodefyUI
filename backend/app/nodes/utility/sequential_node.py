@@ -250,33 +250,49 @@ class SequentialModelNode(BaseNode):
                 name="layers",
                 param_type=ParamType.STRING,
                 default=(
-                    '[{"type":"Conv2d","in_channels":1,"out_channels":32,"kernel_size":3,"padding":1},'
-                    '{"type":"ReLU"},'
-                    '{"type":"MaxPool2d","kernel_size":2,"stride":2},'
-                    '{"type":"Conv2d","in_channels":32,"out_channels":64,"kernel_size":3,"padding":1},'
-                    '{"type":"ReLU"},'
-                    '{"type":"MaxPool2d","kernel_size":2,"stride":2},'
-                    '{"type":"Flatten"},'
-                    '{"type":"Linear","in_features":3136,"out_features":128},'
-                    '{"type":"ReLU"},'
-                    '{"type":"Linear","in_features":128,"out_features":10}]'
+                    '{"version":2,'
+                    '"nodes":['
+                    '{"id":"in","type":"Input","ports":[{"id":"p_x","name":"x"}]},'
+                    '{"id":"c1","type":"Conv2d","params":{"in_channels":1,"out_channels":32,"kernel_size":3,"padding":1}},'
+                    '{"id":"r1","type":"ReLU"},'
+                    '{"id":"p1","type":"MaxPool2d","params":{"kernel_size":2,"stride":2}},'
+                    '{"id":"c2","type":"Conv2d","params":{"in_channels":32,"out_channels":64,"kernel_size":3,"padding":1}},'
+                    '{"id":"r2","type":"ReLU"},'
+                    '{"id":"p2","type":"MaxPool2d","params":{"kernel_size":2,"stride":2}},'
+                    '{"id":"f","type":"Flatten"},'
+                    '{"id":"l1","type":"Linear","params":{"in_features":3136,"out_features":128}},'
+                    '{"id":"r3","type":"ReLU"},'
+                    '{"id":"l2","type":"Linear","params":{"in_features":128,"out_features":10}},'
+                    '{"id":"out","type":"Output","ports":[{"id":"p_y","name":"y"}]}'
+                    '],'
+                    '"edges":['
+                    '{"id":"e1","source":"in","sourceHandle":"p_x","target":"c1"},'
+                    '{"id":"e2","source":"c1","target":"r1"},'
+                    '{"id":"e3","source":"r1","target":"p1"},'
+                    '{"id":"e4","source":"p1","target":"c2"},'
+                    '{"id":"e5","source":"c2","target":"r2"},'
+                    '{"id":"e6","source":"r2","target":"p2"},'
+                    '{"id":"e7","source":"p2","target":"f"},'
+                    '{"id":"e8","source":"f","target":"l1"},'
+                    '{"id":"e9","source":"l1","target":"r3"},'
+                    '{"id":"e10","source":"r3","target":"l2"},'
+                    '{"id":"e11","source":"l2","target":"out","targetHandle":"p_y"}'
+                    ']}'
                 ),
-                description="JSON array of layer dicts. Each dict needs a 'type' key plus constructor kwargs.",
+                description="DAG JSON (v2 schema) describing the model graph.",
             ),
         ]
 
     def execute(self, inputs: dict[str, Any], params: dict[str, Any]) -> dict[str, Any]:
         import json
+        from .graph_model import build_graph_model
 
-        import torch.nn as nn
-
-        layers_str = params.get("layers", "[]")
-        layer_defs = json.loads(layers_str)
-
-        modules = [_build_layer(cfg) for cfg in layer_defs]
-        model = nn.Sequential(*modules)
+        layers_str = params.get("layers", "{}")
+        spec = json.loads(layers_str)
+        model = build_graph_model(spec)
 
         total = sum(p.numel() for p in model.parameters())
-        logger.info("Built model with %d layers, %s parameters", len(modules), f"{total:,}")
+        layer_count = len(model.layers)
+        logger.info("Built graph model with %d layers, %s parameters", layer_count, f"{total:,}")
 
         return {"model": model}

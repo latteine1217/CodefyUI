@@ -229,3 +229,25 @@ def test_validation_plain_layer_multi_input():
     )
     with pytest.raises(ValueError, match="must have exactly 1 incoming edge"):
         build_graph_model(spec)
+
+
+def test_sequential_node_executes_v2_spec():
+    from app.nodes.utility.sequential_node import SequentialModelNode
+    import json as _json
+
+    spec = _spec(
+        nodes=[
+            {"id": "in", "type": "Input", "ports": [{"id": "p_x", "name": "x"}]},
+            {"id": "lin", "type": "Linear", "params": {"in_features": 4, "out_features": 2}},
+            {"id": "out", "type": "Output", "ports": [{"id": "p_y", "name": "y"}]},
+        ],
+        edges=[
+            {"id": "e1", "source": "in", "sourceHandle": "p_x", "target": "lin"},
+            {"id": "e2", "source": "lin", "target": "out", "targetHandle": "p_y"},
+        ],
+    )
+    node = SequentialModelNode()
+    result = node.execute(inputs={}, params={"layers": _json.dumps(spec)})
+    model = result["model"]
+    y = model(torch.randn(3, 4))
+    assert y.shape == (3, 2)
