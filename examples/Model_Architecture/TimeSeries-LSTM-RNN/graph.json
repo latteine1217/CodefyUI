@@ -194,7 +194,7 @@
       },
       "data": {
         "params": {
-          "layers": "[{\"type\": \"LSTM\", \"input_size\": 1, \"hidden_size\": 128, \"num_layers\": 3, \"batch_first\": true, \"bidirectional\": false}, {\"type\": \"SelectIndex\", \"dim\": 1, \"index\": -1}, {\"type\": \"Dropout\", \"p\": 0.2}, {\"type\": \"Linear\", \"in_features\": 128, \"out_features\": 24}]"
+          "layers": "{\"version\":2,\"nodes\":[{\"id\":\"in\",\"type\":\"Input\",\"ports\":[{\"id\":\"p_x\",\"name\":\"x\"}]},{\"id\":\"n0\",\"type\":\"LSTM\",\"params\":{\"input_size\":1,\"hidden_size\":128,\"num_layers\":3,\"batch_first\":true,\"bidirectional\":false}},{\"id\":\"n1\",\"type\":\"SelectIndex\",\"params\":{\"dim\":1,\"index\":-1}},{\"id\":\"n2\",\"type\":\"Dropout\",\"params\":{\"p\":0.2}},{\"id\":\"n3\",\"type\":\"Linear\",\"params\":{\"in_features\":128,\"out_features\":24}},{\"id\":\"out\",\"type\":\"Output\",\"ports\":[{\"id\":\"p_y\",\"name\":\"y\"}]}],\"edges\":[{\"id\":\"e0\",\"source\":\"in\",\"sourceHandle\":\"p_x\",\"target\":\"n0\"},{\"id\":\"e1\",\"source\":\"n0\",\"target\":\"n1\"},{\"id\":\"e2\",\"source\":\"n1\",\"target\":\"n2\"},{\"id\":\"e3\",\"source\":\"n2\",\"target\":\"n3\"},{\"id\":\"e4\",\"source\":\"n3\",\"target\":\"out\",\"targetHandle\":\"p_y\"}]}"
         }
       }
     },
