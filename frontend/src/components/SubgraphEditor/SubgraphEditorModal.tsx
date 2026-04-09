@@ -13,6 +13,7 @@ import {
   type NodeChange,
   type EdgeChange,
   type NodeTypes,
+  type Connection,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -349,7 +350,7 @@ function SubgraphFlowInner({
   );
 
   const isValidConnection = useCallback(
-    (conn: any) => {
+    (conn: Connection) => {
       // Plain layer input handle: reject if already has incoming
       const targetNode = nodes.find((n) => n.id === conn.target);
       if (!targetNode) return false;
@@ -368,7 +369,7 @@ function SubgraphFlowInner({
   );
 
   const onConnect = useCallback(
-    (params: any) => {
+    (params: Connection) => {
       setEdges((eds) => [
         ...eds,
         {
