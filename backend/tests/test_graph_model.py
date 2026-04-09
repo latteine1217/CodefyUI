@@ -58,3 +58,53 @@ def test_residual_block_with_add():
     # Skip means at least one parameter pathway exists; verify gradient flows
     y.sum().backward()
     assert any(p.grad is not None and p.grad.abs().sum() > 0 for p in model.parameters())
+
+
+def test_multi_input():
+    spec = _spec(
+        nodes=[
+            {"id": "in", "type": "Input", "ports": [
+                {"id": "p_a", "name": "a"},
+                {"id": "p_b", "name": "b"},
+            ]},
+            {"id": "add", "type": "Add"},
+            {"id": "out", "type": "Output", "ports": [{"id": "p_y", "name": "y"}]},
+        ],
+        edges=[
+            {"id": "e1", "source": "in", "sourceHandle": "p_a", "target": "add"},
+            {"id": "e2", "source": "in", "sourceHandle": "p_b", "target": "add"},
+            {"id": "e3", "source": "add", "target": "out", "targetHandle": "p_y"},
+        ],
+    )
+    model = build_graph_model(spec)
+    a = torch.tensor([1.0, 2.0])
+    b = torch.tensor([10.0, 20.0])
+    y = model(a=a, b=b)
+    assert torch.allclose(y, torch.tensor([11.0, 22.0]))
+
+
+def test_multi_output_returns_dict():
+    spec = _spec(
+        nodes=[
+            {"id": "in", "type": "Input", "ports": [{"id": "p_x", "name": "x"}]},
+            {"id": "lin", "type": "Linear", "params": {"in_features": 4, "out_features": 2}},
+            {"id": "relu", "type": "ReLU"},
+            {"id": "out", "type": "Output", "ports": [
+                {"id": "p_raw", "name": "raw"},
+                {"id": "p_act", "name": "activated"},
+            ]},
+        ],
+        edges=[
+            {"id": "e1", "source": "in", "sourceHandle": "p_x", "target": "lin"},
+            {"id": "e2", "source": "lin", "target": "relu"},
+            {"id": "e3", "source": "lin", "target": "out", "targetHandle": "p_raw"},
+            {"id": "e4", "source": "relu", "target": "out", "targetHandle": "p_act"},
+        ],
+    )
+    model = build_graph_model(spec)
+    x = torch.randn(3, 4)
+    out = model(x=x)
+    assert isinstance(out, dict)
+    assert set(out.keys()) == {"raw", "activated"}
+    assert out["raw"].shape == (3, 2)
+    assert out["activated"].shape == (3, 2)
