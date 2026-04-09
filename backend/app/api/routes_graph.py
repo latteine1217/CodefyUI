@@ -4,7 +4,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException
 
 from ..config import settings
-from ..core.graph_engine import validate_graph
+from ..core.graph_engine import GraphValidationError, validate_graph
 from ..core.node_registry import registry
 from ..schemas import GraphData, GraphValidationResponse
 
@@ -64,7 +64,12 @@ async def export_graph(graph: GraphData):
     if errors:
         raise HTTPException(status_code=400, detail=errors)
 
-    order = topological_sort(nodes, edges)
-    script = generate_python(nodes, edges, order, name=graph.name)
+    try:
+        order = topological_sort(nodes, edges)
+        script = generate_python(nodes, edges, order, name=graph.name)
+    except GraphValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
 
     return {"script": script}

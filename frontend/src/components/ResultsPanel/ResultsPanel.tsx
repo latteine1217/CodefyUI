@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTabStore } from '../../store/tabStore';
 import { useI18n } from '../../i18n';
+import { friendlyError } from '../../utils/errorMessages';
 import { LossChart } from './LossChart';
 import styles from './ResultsPanel.module.css';
 
@@ -35,11 +36,14 @@ export function ResultsPanel() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const { t } = useI18n();
 
+  const setSelectedNodeId = useTabStore((s) => s.setSelectedNodeId);
+
   const [collapsed, setCollapsed] = useState(false);
   const [panelHeight, setPanelHeight] = useState(DEFAULT_HEIGHT);
   const [panelTab, setPanelTab] = useState<PanelTab>('log');
   const [infoColWidth, setInfoColWidth] = useState(300);
   const [configHeight, setConfigHeight] = useState<number | null>(null);
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
   const heightBeforeCollapse = useRef(DEFAULT_HEIGHT);
   const isDragging = useRef(false);
   const startY = useRef(0);
@@ -245,39 +249,62 @@ export function ResultsPanel() {
           {filteredLogs.length === 0 ? (
             <div className={styles.emptyState}>{t('results.empty')}</div>
           ) : (
-            filteredLogs.map((entry, i) => (
-              <div
-                key={i}
-                className={styles.logEntry}
-                style={{
-                  background: LOG_TYPE_BG[entry.type],
-                  borderLeft: `2px solid ${LOG_TYPE_COLORS[entry.type]}`,
-                }}
-              >
-                <span className={styles.timestamp}>
-                  {formatTimestamp(entry.timestamp)}
-                </span>
-                {entry.nodeId && (
-                  <span className={styles.nodeIdBadge}>
-                    {String(entry.nodeId).slice(0, 8)}
-                  </span>
-                )}
-                {entry.message.startsWith('__IMAGE__:') ? (
-                  <img
-                    src={`data:image/png;base64,${entry.message.slice('__IMAGE__:'.length)}`}
-                    alt="output"
-                    className={styles.logImage}
-                  />
-                ) : (
-                  <span
-                    className={styles.logMessage}
-                    style={{ color: LOG_TYPE_COLORS[entry.type] }}
+            filteredLogs.map((entry, i) => {
+              const isError = entry.type === 'error';
+              const isExpanded = expandedIdx === i;
+              return (
+                <div key={i}>
+                  <div
+                    className={`${styles.logEntry} ${isError ? styles.logEntryClickable : ''}`}
+                    style={{
+                      background: LOG_TYPE_BG[entry.type],
+                      borderLeft: `2px solid ${LOG_TYPE_COLORS[entry.type]}`,
+                    }}
+                    onClick={isError ? () => setExpandedIdx(isExpanded ? null : i) : undefined}
+                    title={isError ? t('results.clickToExpand') : undefined}
                   >
-                    {entry.message}
-                  </span>
-                )}
-              </div>
-            ))
+                    {isError && (
+                      <span className={styles.expandIcon}>{isExpanded ? '\u25BE' : '\u25B8'}</span>
+                    )}
+                    <span className={styles.timestamp}>
+                      {formatTimestamp(entry.timestamp)}
+                    </span>
+                    {entry.nodeId && (
+                      <span
+                        className={styles.nodeIdBadge}
+                        style={{ cursor: 'pointer' }}
+                        title={t('results.clickToHighlight')}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedNodeId(entry.nodeId!);
+                        }}
+                      >
+                        {String(entry.nodeId).slice(0, 8)}
+                      </span>
+                    )}
+                    {entry.message.startsWith('__IMAGE__:') ? (
+                      <img
+                        src={`data:image/png;base64,${entry.message.slice('__IMAGE__:'.length)}`}
+                        alt="output"
+                        className={styles.logImage}
+                      />
+                    ) : (
+                      <span
+                        className={styles.logMessage}
+                        style={{ color: LOG_TYPE_COLORS[entry.type] }}
+                      >
+                        {entry.message}
+                      </span>
+                    )}
+                  </div>
+                  {isError && isExpanded && (
+                    <div className={styles.expandedDetail}>
+                      {friendlyError(entry.message)}
+                    </div>
+                  )}
+                </div>
+              );
+            })
           )}
           <div ref={bottomRef} />
         </div>
@@ -289,6 +316,37 @@ export function ResultsPanel() {
             <div className={styles.emptyState}>{t('results.trainingEmpty')}</div>
           ) : (
             <div className={styles.trainingContent}>
+              {/* Training summary stats */}
+              {trainingData.epochs.length > 0 && (
+                <div className={styles.trainingSummary}>
+                  <div className={styles.summaryItem}>
+                    <span className={styles.summaryLabel}>{t('results.epoch')}</span>
+                    <span className={styles.summaryValue}>
+                      {trainingData.epochs[trainingData.epochs.length - 1].epoch} / {trainingData.epochs[trainingData.epochs.length - 1].total}
+                    </span>
+                  </div>
+                  <div className={styles.summaryItem}>
+                    <span className={styles.summaryLabel}>{t('results.currentLoss')}</span>
+                    <span className={styles.summaryValue}>
+                      {trainingData.epochs[trainingData.epochs.length - 1].loss.toFixed(4)}
+                    </span>
+                  </div>
+                  <div className={styles.summaryItem}>
+                    <span className={styles.summaryLabel}>{t('results.bestLoss')}</span>
+                    <span className={styles.summaryValue} style={{ color: '#4CAF50' }}>
+                      {Math.min(...trainingData.epochs.map((e) => e.loss)).toFixed(4)}
+                    </span>
+                  </div>
+                  <div className={styles.summaryProgress}>
+                    <div
+                      className={styles.progressBar}
+                      style={{
+                        width: `${(trainingData.epochs[trainingData.epochs.length - 1].epoch / trainingData.epochs[trainingData.epochs.length - 1].total) * 100}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
               {/* Two-column layout: left = chart, right = config */}
               <div className={styles.trainingColumns}>
                 {/* Loss chart */}

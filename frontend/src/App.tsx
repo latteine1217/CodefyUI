@@ -7,6 +7,8 @@ import { NodeConfigPanel } from './components/ConfigPanel/NodeConfigPanel';
 import { ResultsPanel } from './components/ResultsPanel/ResultsPanel';
 import { PresetConfigModal } from './components/PresetModal/PresetConfigModal';
 import { SubgraphEditorModal } from './components/SubgraphEditor/SubgraphEditorModal';
+import { ToastContainer } from './components/shared/Toast';
+import { ShortcutsModal } from './components/shared/ShortcutsModal';
 import { useTabStore } from './store/tabStore';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import styles from './App.module.css';
@@ -64,6 +66,8 @@ function App() {
       ))}
       <PresetConfigModal />
       <SubgraphEditorModal />
+      <ToastContainer />
+      <ShortcutsModal />
     </div>
   );
 }

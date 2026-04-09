@@ -72,7 +72,8 @@ export function QuickNodeSearch({ screenPos, flowPos, onClose }: QuickNodeSearch
       } else {
         addPresetNode(result.preset, flowPos);
       }
-      onClose();
+      // Defer close so store update completes before component unmounts
+      queueMicrotask(onClose);
     },
     [addNode, addPresetNode, flowPos, onClose],
   );

@@ -17,6 +17,7 @@ import {
 import '@xyflow/react/dist/style.css';
 
 import { useTabStore } from '../../store/tabStore';
+import { useToastStore } from '../../store/toastStore';
 import { useI18n } from '../../i18n';
 import { generateId } from '../../utils';
 import { LayerNode } from './LayerNode';
@@ -396,6 +397,7 @@ function SubgraphFlowInner({
   const [edges, setEdges] = useState<Edge[]>(initial.edges);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
+  const [snapEnabled, setSnapEnabled] = useState(false);
 
   useEffect(() => {
     setTimeout(() => fitView({ padding: 0.3 }), 50);
@@ -550,7 +552,7 @@ function SubgraphFlowInner({
         setSelectedNodeId(null);
         setTimeout(() => fitView({ padding: 0.3 }), 50);
       } catch (err) {
-        alert(t('subgraph.import.fail', { error: String(err) }));
+        useToastStore.getState().addToast(t('subgraph.import.fail', { error: String(err) }), 'error');
       }
     };
     reader.readAsText(file);
@@ -593,9 +595,9 @@ function SubgraphFlowInner({
           background: '#1a1a1a',
           border: '1px solid #333',
           borderRadius: 12,
-          width: '85vw',
-          maxWidth: 1200,
-          height: '80vh',
+          width: '95vw',
+          maxWidth: 1700,
+          height: '90vh',
           display: 'flex',
           flexDirection: 'column',
           boxShadow: '0 20px 60px rgba(0,0,0,0.6)',
@@ -631,6 +633,22 @@ function SubgraphFlowInner({
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <button
+              onClick={() => setSnapEnabled((v) => !v)}
+              title={t('subgraph.snapTitle')}
+              style={{
+                padding: '5px 12px',
+                background: snapEnabled ? 'rgba(244,67,54,0.18)' : '#2a2a2a',
+                border: snapEnabled ? '1px solid #F44336' : '1px solid #444',
+                borderRadius: 5,
+                color: snapEnabled ? '#F44336' : '#aaa',
+                fontSize: '0.75rem',
+                cursor: 'pointer',
+                fontWeight: 600,
+              }}
+            >
+              {snapEnabled ? t('subgraph.snapOn') : t('subgraph.snapOff')}
+            </button>
             <button
               onClick={handleImport}
               title={t('subgraph.import.title')}
@@ -782,6 +800,8 @@ function SubgraphFlowInner({
               onDrop={handleDrop}
               nodeTypes={nodeTypes}
               fitView
+              snapToGrid={snapEnabled}
+              snapGrid={[20, 20]}
               proOptions={{ hideAttribution: true }}
               deleteKeyCode="Delete"
               onNodesDelete={(deleted) => {

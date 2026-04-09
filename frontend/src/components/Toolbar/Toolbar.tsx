@@ -8,6 +8,7 @@ import { useI18n, SUPPORTED_LOCALES } from '../../i18n';
 import { resolveSerializedNodes, resolveSerializedEdges } from '../../utils';
 import { SURFACE, TEXT, BRAND, STATUS_COLORS } from '../../styles/theme';
 import { CustomNodeManager } from '../CustomNodeManager/CustomNodeManager';
+import { useToastStore } from '../../store/toastStore';
 import styles from './Toolbar.module.css';
 
 /* ── Shared dropdown menu component ─────────────────────────────── */
@@ -203,6 +204,29 @@ function GridSnapToggle() {
   );
 }
 
+/* ── Beginner mode toggle button ─────────────────────────────── */
+
+function BeginnerModeToggle() {
+  const beginnerMode = useUIStore((s) => s.beginnerMode);
+  const toggle = useUIStore((s) => s.toggleBeginnerMode);
+  const { t } = useI18n();
+
+  return (
+    <button
+      onClick={toggle}
+      className={styles.tooltipToggle}
+      title={t('toolbar.beginnerMode.title')}
+      style={{
+        color: beginnerMode ? '#4CAF50' : TEXT.muted,
+        borderColor: beginnerMode ? '#4CAF50' : SURFACE.borderMedium,
+        background: beginnerMode ? 'rgba(76,175,80,0.1)' : 'transparent',
+      }}
+    >
+      {t(beginnerMode ? 'toolbar.beginnerMode.on' : 'toolbar.beginnerMode.off')}
+    </button>
+  );
+}
+
 /* ── Main Toolbar ──────────────────────────────────────────────── */
 
 export function Toolbar() {
@@ -212,6 +236,7 @@ export function Toolbar() {
   const status = activeTab.status;
   const { reload, fetchDefinitions } = useNodeDefStore();
   const { t, locale, setLocale } = useI18n();
+  const addToast = useToastStore((s) => s.addToast);
 
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
@@ -236,9 +261,9 @@ export function Toolbar() {
     try {
       const { nodes, edges, presets } = getSerializedGraph();
       await saveGraph({ nodes, edges, name: name.trim(), description: '', presets });
-      window.alert(t('toolbar.save.success', { name: name.trim() }));
+      addToast(t('toolbar.save.success', { name: name.trim() }), 'success');
     } catch (e) {
-      window.alert(t('toolbar.save.fail', { error: (e as Error).message }));
+      addToast(t('toolbar.save.fail', { error: (e as Error).message }), 'error');
     }
   }, [getSerializedGraph, t]);
 
@@ -266,7 +291,7 @@ export function Toolbar() {
           useNodeDefStore.setState({ presets: mergedPresets });
         }
       } catch (e) {
-        window.alert(t('toolbar.load.fail', { error: (e as Error).message }));
+        addToast(t('toolbar.load.fail', { error: (e as Error).message }), 'error');
       }
     },
     [setNodes, setEdges, t],
@@ -299,7 +324,7 @@ export function Toolbar() {
             useNodeDefStore.setState({ presets: mergedPresets });
           }
         } catch (err) {
-          window.alert(t('toolbar.import.fail', { error: (err as Error).message }));
+          addToast(t('toolbar.import.fail', { error: (err as Error).message }), 'error');
         }
       };
       reader.readAsText(file);
@@ -311,7 +336,7 @@ export function Toolbar() {
   const handleExportJson = useCallback(() => {
     const { nodes, edges, presets } = getSerializedGraph();
     if (nodes.length === 0) {
-      window.alert(t('toolbar.exportJson.empty'));
+      addToast(t('toolbar.exportJson.empty'), 'warning');
       return;
     }
     const name = activeTab.name || 'graph';
@@ -328,7 +353,7 @@ export function Toolbar() {
   const handleExportSubgraph = useCallback(async () => {
     const { nodes, edges } = getSerializedGraph();
     if (nodes.length === 0) {
-      window.alert(t('toolbar.export.empty'));
+      addToast(t('toolbar.export.empty'), 'warning');
       return;
     }
     const name = window.prompt(t('toolbar.export.prompt'));
@@ -336,16 +361,16 @@ export function Toolbar() {
     try {
       await createPreset({ name: name.trim(), nodes, edges });
       await fetchDefinitions();
-      window.alert(t('toolbar.export.success', { name: name.trim() }));
+      addToast(t('toolbar.export.success', { name: name.trim() }), 'success');
     } catch (e) {
-      window.alert(t('toolbar.export.fail', { error: (e as Error).message }));
+      addToast(t('toolbar.export.fail', { error: (e as Error).message }), 'error');
     }
   }, [getSerializedGraph, fetchDefinitions, t]);
 
   const handleExportPython = useCallback(async () => {
     const { nodes, edges } = getSerializedGraph();
     if (nodes.length === 0) {
-      window.alert(t('toolbar.exportPython.empty'));
+      addToast(t('toolbar.exportPython.empty'), 'warning');
       return;
     }
     try {
@@ -359,13 +384,13 @@ export function Toolbar() {
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      window.alert(t('toolbar.exportPython.fail', { error: (e as Error).message }));
+      addToast(t('toolbar.exportPython.fail', { error: (e as Error).message }), 'error');
     }
   }, [getSerializedGraph, activeTab.name, t]);
 
   const handleReloadNodes = useCallback(async () => {
     try { await reload(); }
-    catch (e) { window.alert(t('toolbar.reload.fail', { error: (e as Error).message })); }
+    catch (e) { addToast(t('toolbar.reload.fail', { error: (e as Error).message }), 'error'); }
   }, [reload, t]);
 
   /* ── Menu definitions ─────────────────────────────────────────── */
@@ -485,6 +510,15 @@ export function Toolbar() {
       <div className={styles.rightCluster}>
         <GridSnapToggle />
         <TooltipToggle />
+        <BeginnerModeToggle />
+        <button
+          onClick={() => useUIStore.getState().toggleShortcutsModal()}
+          className={styles.toggleButton}
+          title={t('shortcuts.title')}
+          style={{ fontWeight: 700, fontSize: '0.875rem' }}
+        >
+          ?
+        </button>
 
         <div className={styles.statusGroup}>
           <span

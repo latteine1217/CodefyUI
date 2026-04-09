@@ -24,7 +24,7 @@ async def list_examples():
                 "name": data.get("name", rel.name),
                 "description": data.get("description", ""),
                 "category": category,
-                "path": str(rel),
+                "path": rel.as_posix(),
                 "node_count": len(data.get("nodes", [])),
                 "edge_count": len(data.get("edges", [])),
             })

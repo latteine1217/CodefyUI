@@ -276,6 +276,16 @@
   transition: width 0.3s ease;
 }
 
+/* ── Port connection-drag highlighting ── */
+.portCompatible {
+  box-shadow: 0 0 6px 2px rgba(76, 175, 80, 0.6);
+  border-color: #4CAF50 !important;
+}
+
+.portIncompatible {
+  opacity: 0.3;
+}
+
 /* ── Pulse animation (re-declared here so it is self-contained) ── */
 @keyframes pulse {
   0%, 100% { opacity: 1; }

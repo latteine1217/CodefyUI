@@ -161,6 +161,28 @@
   margin-bottom: 1px;
 }
 
+.logEntryClickable {
+  cursor: pointer;
+}
+
+.logEntryClickable:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.expandedDetail {
+  padding: 4px 0 4px 80px;
+  font-size: 0.75rem;
+  color: #ccc;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.expandIcon {
+  margin-right: 4px;
+  font-size: 0.6875rem;
+  color: #666;
+}
+
 .timestamp {
   font-size: 0.75rem;
   color: #666;
@@ -401,4 +423,48 @@
   font-family: monospace;
   font-size: 0.75rem;
   text-align: right;
+}
+
+/* Training summary stats */
+.trainingSummary {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 12px;
+  background: #1a1a1a;
+  border-bottom: 1px solid #2a2a2a;
+  flex-shrink: 0;
+}
+
+.summaryItem {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+}
+
+.summaryLabel {
+  font-size: 0.6875rem;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.summaryValue {
+  font-size: 0.8125rem;
+  color: #eee;
+  font-family: monospace;
+}
+
+.summaryProgress {
+  flex: 1;
+  height: 4px;
+  background: #2a2a2a;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  background: #2196F3;
+  border-radius: 2px;
+  transition: width 0.3s ease;
 }

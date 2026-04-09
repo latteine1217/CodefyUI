@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { useTabStore } from '../store/tabStore';
+import { useUIStore } from '../store/uiStore';
 
 export function useKeyboardShortcuts() {
   useEffect(() => {
@@ -43,6 +44,13 @@ export function useKeyboardShortcuts() {
       if (mod && !e.shiftKey && e.key === 'v') {
         e.preventDefault();
         useTabStore.getState().pasteNodes();
+        return;
+      }
+
+      // ? — Toggle shortcuts help
+      if (e.key === '?' || (e.shiftKey && e.key === '/')) {
+        e.preventDefault();
+        useUIStore.getState().toggleShortcutsModal();
         return;
       }
     };

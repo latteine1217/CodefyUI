@@ -7,7 +7,7 @@ class Settings(BaseSettings):
     DEBUG: bool = False
     HOST: str = "127.0.0.1"
     PORT: int = 8000
-    CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000"]
+    CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"]
     MAX_UPLOAD_SIZE: int = 500 * 1024 * 1024  # 500 MB
 
     NODES_DIR: Path = Path(__file__).parent / "nodes"

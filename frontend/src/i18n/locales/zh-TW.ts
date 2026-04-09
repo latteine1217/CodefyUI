@@ -135,6 +135,9 @@ const zhTW: Record<TranslationKey, string> = {
   'subgraph.hint': '雙擊以編輯架構',
   'subgraph.import.fail': '匯入失敗：{error}',
   'subgraph.searchLayers': '搜尋層級...',
+  'subgraph.snapOn': '吸附 ON',
+  'subgraph.snapOff': '吸附 OFF',
+  'subgraph.snapTitle': '切換網格吸附',
 
   // Tooltips
   'toolbar.tooltips.on': '提示 ON',
@@ -157,6 +160,32 @@ const zhTW: Record<TranslationKey, string> = {
   'toolbar.gridSnap.on': '吸附 ON',
   'toolbar.gridSnap.off': '吸附 OFF',
   'toolbar.gridSnap.title': '切換節點網格吸附',
+
+  // Keyboard Shortcuts
+  'shortcuts.title': '鍵盤快捷鍵',
+  'shortcuts.undo': '復原',
+  'shortcuts.redo': '重做',
+  'shortcuts.redoAlt': '重做（替代）',
+  'shortcuts.copy': '複製選取的節點',
+  'shortcuts.paste': '貼上節點',
+  'shortcuts.delete': '刪除選取項目',
+  'shortcuts.quickSearch': '快速搜尋節點',
+  'shortcuts.help': '顯示此說明',
+  'shortcuts.doubleClickKey': '雙擊',
+
+  // Training Summary
+  'results.epoch': '輪次',
+  'results.currentLoss': '損失',
+  'results.bestLoss': '最佳',
+
+  // Beginner Mode
+  'toolbar.beginnerMode.on': '入門模式',
+  'toolbar.beginnerMode.off': '所有節點',
+  'toolbar.beginnerMode.title': '切換入門模式（僅顯示基本節點類別）',
+
+  // Results Panel — expandable errors
+  'results.clickToExpand': '點擊展開錯誤詳情',
+  'results.clickToHighlight': '點擊以高亮節點',
 
   // Language
   'lang.label': '中',

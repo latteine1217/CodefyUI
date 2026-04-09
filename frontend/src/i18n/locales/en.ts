@@ -133,6 +133,9 @@ const en = {
   'subgraph.hint': 'Double-click to edit architecture',
   'subgraph.import.fail': 'Import failed: {error}',
   'subgraph.searchLayers': 'Search layers...',
+  'subgraph.snapOn': 'Snap: ON',
+  'subgraph.snapOff': 'Snap: OFF',
+  'subgraph.snapTitle': 'Toggle grid snap',
 
   // Tooltips
   'toolbar.tooltips.on': 'Tips ON',
@@ -155,6 +158,32 @@ const en = {
   'toolbar.gridSnap.on': 'Snap ON',
   'toolbar.gridSnap.off': 'Snap OFF',
   'toolbar.gridSnap.title': 'Toggle grid snapping for node alignment',
+
+  // Keyboard Shortcuts
+  'shortcuts.title': 'Keyboard Shortcuts',
+  'shortcuts.undo': 'Undo',
+  'shortcuts.redo': 'Redo',
+  'shortcuts.redoAlt': 'Redo (alt)',
+  'shortcuts.copy': 'Copy selected nodes',
+  'shortcuts.paste': 'Paste nodes',
+  'shortcuts.delete': 'Delete selected',
+  'shortcuts.quickSearch': 'Quick node search',
+  'shortcuts.help': 'Show this help',
+  'shortcuts.doubleClickKey': 'Double-click',
+
+  // Training Summary
+  'results.epoch': 'Epoch',
+  'results.currentLoss': 'Loss',
+  'results.bestLoss': 'Best',
+
+  // Beginner Mode
+  'toolbar.beginnerMode.on': 'Beginner',
+  'toolbar.beginnerMode.off': 'All Nodes',
+  'toolbar.beginnerMode.title': 'Toggle beginner mode (show only basic node categories)',
+
+  // Results Panel — expandable errors
+  'results.clickToExpand': 'Click to expand error details',
+  'results.clickToHighlight': 'Click to highlight node',
 
   // Language
   'lang.label': 'EN',

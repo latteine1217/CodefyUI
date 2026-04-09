@@ -5,10 +5,12 @@ import { useI18n } from '../../i18n';
 import { resolveSerializedNodes, resolveSerializedEdges } from '../../utils';
 import { listExamples, loadExample } from '../../api/rest';
 import type { ExampleSummary } from '../../api/rest';
+import { useToastStore } from '../../store/toastStore';
 import styles from './EmptyCanvasOverlay.module.css';
 
 const CURATED_PATHS = [
   'Usage_Example/CNN-MNIST/TrainCNN-MNIST',
+  'Usage_Example/CNN-MNIST/InferenceCNN-MNIST',
   'Model_Architecture/ResNet-SkipConnection-CNN',
   'Model_Architecture/GPT-DecoderOnly-Transformer',
 ];
@@ -22,6 +24,7 @@ export function EmptyCanvasOverlay() {
   const setNodes = useTabStore((s) => s.setNodes);
   const setEdges = useTabStore((s) => s.setEdges);
   const { t } = useI18n();
+  const addToast = useToastStore((s) => s.addToast);
 
   const [examples, setExamples] = useState<ExampleSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,7 +35,7 @@ export function EmptyCanvasOverlay() {
         // Pick curated examples in order, fallback to first 3
         const curated: ExampleSummary[] = [];
         for (const path of CURATED_PATHS) {
-          const found = all.find((e) => e.path === path);
+          const found = all.find((e) => e.path.replace(/\\/g, '/') === path);
           if (found) curated.push(found);
         }
         setExamples(curated.length > 0 ? curated : all.slice(0, 3));
@@ -64,7 +67,7 @@ export function EmptyCanvasOverlay() {
           useNodeDefStore.setState({ presets: mergedPresets });
         }
       } catch {
-        window.alert(t('empty.loadError'));
+        addToast(t('empty.loadError'), 'error');
       }
     },
     [setNodes, setEdges, t],

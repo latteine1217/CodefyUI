@@ -2,7 +2,7 @@ import { memo, useState } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { NodeData } from '../../types';
-import { getPortColor } from '../../utils';
+import { getPortColor, isValidConnection } from '../../utils';
 import { useTabStore } from '../../store/tabStore';
 import { useUIStore } from '../../store/uiStore';
 import { useI18n } from '../../i18n';
@@ -12,6 +12,7 @@ import styles from './BaseNode.module.css';
 function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
   const openSubgraphModal = useTabStore((s) => s.openSubgraphModal);
   const tooltipsEnabled = useUIStore((s) => s.tooltipsEnabled);
+  const draggingSourceType = useUIStore((s) => s.draggingSourceType);
   const [hovered, setHovered] = useState(false);
   const def = data.definition;
   const category = def?.category ?? 'Utility';
@@ -94,7 +95,13 @@ function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
               type="target"
               position={Position.Left}
               id={input.name}
-              className={`${styles.portHandle} ${styles.portHandleInput}`}
+              className={`${styles.portHandle} ${styles.portHandleInput}${
+                draggingSourceType
+                  ? isValidConnection(draggingSourceType, input.data_type)
+                    ? ` ${styles.portCompatible}`
+                    : ` ${styles.portIncompatible}`
+                  : ''
+              }`}
               style={{ background: getPortColor(input.data_type) }}
             />
             <span

@@ -112,11 +112,76 @@ def validate_graph(nodes: list[dict], edges: list[dict]) -> list[str]:
     errors: list[str] = []
     node_map = {n["id"]: n for n in nodes}
 
+    # --- Node-level validation (standalone, before edge checks) ---
+    from .preset_registry import preset_registry
+
+    # 1. Node type existence check
+    valid_node_ids: set[str] = set()
+    preset_node_ids: set[str] = set()
+    for node in nodes:
+        node_type: str = node.get("type", "")
+        # Preset nodes are expanded at execution time; validate they exist in preset registry
+        if node_type.startswith("preset:"):
+            preset_name = node_type[len("preset:"):]
+            if not preset_registry.get(preset_name):
+                errors.append(f"Unknown preset: {preset_name} (node {node['id']})")
+            else:
+                preset_node_ids.add(node["id"])
+                valid_node_ids.add(node["id"])
+            continue
+        node_cls = registry.get(node_type)
+        if node_cls is None:
+            errors.append(f"Unknown node type: {node_type} (node {node['id']})")
+        else:
+            valid_node_ids.add(node["id"])
+
+    # 2. Required input connection check (skip preset nodes — they define ports dynamically)
+    connected_inputs = {
+        (edge["target"], edge.get("targetHandle", ""))
+        for edge in edges
+    }
+    for node in nodes:
+        if node["id"] not in valid_node_ids or node["id"] in preset_node_ids:
+            continue
+        node_cls = registry.get(node["type"])
+        for inp in node_cls.define_inputs():
+            if not inp.optional and (node["id"], inp.name) not in connected_inputs:
+                errors.append(
+                    f"Missing required input '{inp.name}' on node {node['id']} ({node['type']})"
+                )
+
+    # 3. Parameter range validation (skip preset nodes)
+    for node in nodes:
+        if node["id"] not in valid_node_ids or node["id"] in preset_node_ids:
+            continue
+        node_cls = registry.get(node["type"])
+        param_values = node.get("data", {}).get("params", {})
+        for param_def in node_cls.define_params():
+            if param_def.name not in param_values:
+                continue
+            value = param_values[param_def.name]
+            if param_def.min_value is not None and value < param_def.min_value:
+                errors.append(
+                    f"Parameter '{param_def.name}' on node {node['id']} ({node['type']}): "
+                    f"value {value} is below minimum {param_def.min_value}"
+                )
+            if param_def.max_value is not None and value > param_def.max_value:
+                errors.append(
+                    f"Parameter '{param_def.name}' on node {node['id']} ({node['type']}): "
+                    f"value {value} is above maximum {param_def.max_value}"
+                )
+
+    # --- Edge-level validation ---
+
     for edge in edges:
         src = node_map.get(edge["source"])
         tgt = node_map.get(edge["target"])
         if not src or not tgt:
             errors.append(f"Edge references missing node: {edge}")
+            continue
+
+        # Skip edge validation when either end is a preset node (ports are dynamic)
+        if src["id"] in preset_node_ids or tgt["id"] in preset_node_ids:
             continue
 
         src_cls = registry.get(src["type"])
@@ -282,6 +347,64 @@ async def execute_graph(
     node_cache_keys: dict[str, str] = {}  # node_id -> cache key
     force_rerun: set[str] = set(changed_nodes) if changed_nodes else set()
 
+    # Preset aggregation: emit "running" once at start, "completed" only when all internal nodes finish.
+    # preset_total[preset_id] = number of internal nodes belonging to that preset
+    # preset_done[preset_id] = number of internal nodes that have completed/cached/skipped
+    # preset_started[preset_id] = True once we've emitted "running" for the preset
+    preset_total: dict[str, int] = defaultdict(int)
+    for _internal_id, _preset_id in internal_to_preset.items():
+        preset_total[_preset_id] += 1
+    preset_done: dict[str, int] = defaultdict(int)
+    preset_started: set[str] = set()
+
+    async def _emit_preset_aware(
+        node_id: str,
+        status: str,
+        data: dict[str, Any] | None,
+    ) -> None:
+        """Emit status to on_progress, aggregating internal preset nodes.
+
+        Internal preset nodes (in internal_to_preset) roll up into a single preset status:
+        - First running/cached → emit preset 'running'
+        - Every completed/cached/skipped increments done count; emit 'completed' only on last
+        - 'error' emits immediately (preset failed)
+        - 'progress' passes through as-is with the preset ID (so live charts still work)
+        Non-preset nodes pass through unchanged.
+        """
+        if on_progress is None:
+            return
+        preset_id = internal_to_preset.get(node_id)
+        if preset_id is None:
+            # Regular node — pass through
+            await _maybe_await(on_progress(node_id, status, data))
+            return
+
+        # Internal preset node — aggregate
+        if status == "progress":
+            # Progress events (e.g. training epochs) should be visible live
+            await _maybe_await(on_progress(preset_id, "progress", data))
+            return
+
+        if status == "error":
+            # Any internal failure fails the whole preset immediately
+            await _maybe_await(on_progress(preset_id, "error", data))
+            return
+
+        if status == "running":
+            if preset_id not in preset_started:
+                preset_started.add(preset_id)
+                await _maybe_await(on_progress(preset_id, "running", None))
+            return
+
+        if status in ("completed", "cached", "skipped"):
+            preset_done[preset_id] += 1
+            # Make sure "running" was emitted at least once
+            if preset_id not in preset_started:
+                preset_started.add(preset_id)
+                await _maybe_await(on_progress(preset_id, "running", None))
+            if preset_done[preset_id] >= preset_total[preset_id]:
+                await _maybe_await(on_progress(preset_id, "completed", None))
+
     max_workers = context.max_workers if context else 4
     semaphore = asyncio.Semaphore(max_workers)
 
@@ -293,7 +416,6 @@ async def execute_graph(
         node_def = node_map[node_id]
         node_type = node_def["type"]
         params = node_def.get("data", {}).get("params", {})
-        progress_id = internal_to_preset.get(node_id, node_id)
 
         node_cls = registry.get(node_type)
         if not node_cls:
@@ -312,8 +434,7 @@ async def execute_graph(
         # Skip if upstream failed (in continue/retry mode)
         if has_failed_input:
             node_errors[node_id] = "skipped: upstream node failed"
-            if on_progress:
-                await _maybe_await(on_progress(progress_id, "skipped", None))
+            await _emit_preset_aware(node_id, "skipped", None)
             return
 
         # Check cache (skip for force-rerun nodes from partial re-execution)
@@ -328,12 +449,10 @@ async def execute_graph(
                 cached = cache.get(cache_key)
                 if cached is not None:
                     outputs[node_id] = cached
-                    if on_progress:
-                        await _maybe_await(on_progress(progress_id, "cached", cached))
+                    await _emit_preset_aware(node_id, "cached", cached)
                     return
 
-        if on_progress:
-            await _maybe_await(on_progress(progress_id, "running", None))
+        await _emit_preset_aware(node_id, "running", None)
 
         attempts = max_retries + 1 if error_mode == "retry" else 1
         last_error: Exception | None = None
@@ -350,7 +469,7 @@ async def execute_graph(
                     def _progress_bridge(data: dict) -> None:
                         if on_progress:
                             future = asyncio.run_coroutine_threadsafe(
-                                _maybe_await(on_progress(progress_id, "progress", data)),
+                                _emit_preset_aware(node_id, "progress", data),
                                 loop,
                             )
                             try:
@@ -371,8 +490,7 @@ async def execute_graph(
                 outputs[node_id] = result
                 if cache is not None and node_id in node_cache_keys:
                     cache.put(node_cache_keys[node_id], result)
-                if on_progress:
-                    await _maybe_await(on_progress(progress_id, "completed", result))
+                await _emit_preset_aware(node_id, "completed", result)
                 return
             except Exception as e:
                 last_error = e
@@ -381,25 +499,16 @@ async def execute_graph(
 
         # All attempts failed
         assert last_error is not None
+        error_detail: dict[str, str] = {"error": str(last_error)}
+        if settings.DEBUG:
+            error_detail["traceback"] = traceback.format_exc()
         if error_mode == "fail_fast":
-            if on_progress:
-                error_detail: dict[str, str] = {"error": str(last_error)}
-                if settings.DEBUG:
-                    error_detail["traceback"] = traceback.format_exc()
-                await _maybe_await(
-                    on_progress(progress_id, "error", error_detail)
-                )
+            await _emit_preset_aware(node_id, "error", error_detail)
             raise last_error
         else:
             # continue or retry-exhausted
             node_errors[node_id] = str(last_error)
-            if on_progress:
-                error_detail = {"error": str(last_error)}
-                if settings.DEBUG:
-                    error_detail["traceback"] = traceback.format_exc()
-                await _maybe_await(
-                    on_progress(progress_id, "error", error_detail)
-                )
+            await _emit_preset_aware(node_id, "error", error_detail)
 
     # Execute level by level
     for level in levels:

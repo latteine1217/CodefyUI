@@ -4,6 +4,33 @@ import pytest
 
 from app.core.cache import ExecutionCache
 from app.core.graph_engine import execute_graph
+from app.core.node_base import BaseNode, DataType, PortDefinition
+from app.core.node_registry import registry
+
+
+class _CacheTestNode(BaseNode):
+    """Lightweight node for cache tests (no torch dependency)."""
+    NODE_NAME = "_CacheTest"
+    CATEGORY = "Test"
+    DESCRIPTION = "Returns a constant"
+
+    @classmethod
+    def define_inputs(cls):
+        return []
+
+    @classmethod
+    def define_outputs(cls):
+        return [PortDefinition(name="out", data_type=DataType.ANY)]
+
+    def execute(self, inputs, params):
+        return {"out": params.get("val", "default")}
+
+
+@pytest.fixture(autouse=True)
+def _register_cache_test_node():
+    registry._nodes["_CacheTest"] = _CacheTestNode
+    yield
+    registry._nodes.pop("_CacheTest", None)
 
 
 def test_cache_compute_key_deterministic():
@@ -56,7 +83,7 @@ async def test_cache_hit_skips_execution():
         if status == "completed":
             run_count += 1
 
-    nodes = [{"id": "1", "type": "Print", "data": {"params": {"label": "test"}}}]
+    nodes = [{"id": "1", "type": "_CacheTest", "data": {"params": {"val": "test"}}}]
     edges = []
 
     await execute_graph(nodes, edges, on_progress=count_runs, cache=cache)
@@ -79,8 +106,8 @@ async def test_cache_invalidation_on_param_change():
     """Changing params should cause a cache miss."""
     cache = ExecutionCache()
 
-    nodes_v1 = [{"id": "1", "type": "Print", "data": {"params": {"label": "v1"}}}]
-    nodes_v2 = [{"id": "1", "type": "Print", "data": {"params": {"label": "v2"}}}]
+    nodes_v1 = [{"id": "1", "type": "_CacheTest", "data": {"params": {"val": "v1"}}}]
+    nodes_v2 = [{"id": "1", "type": "_CacheTest", "data": {"params": {"val": "v2"}}}]
 
     await execute_graph(nodes_v1, [], cache=cache)
 

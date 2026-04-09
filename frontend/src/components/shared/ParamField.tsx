@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ParamDefinition } from '../../types';
 import { listModelFiles, uploadModelFile } from '../../api/rest';
+import { useToastStore } from '../../store/toastStore';
 import styles from './ParamField.module.css';
 
 interface ParamFieldProps {
@@ -42,7 +43,7 @@ function ModelFileField({
       refresh();
       onChange(param.name, result.filename);
     } catch (err: any) {
-      alert(err.message ?? 'Upload failed');
+      useToastStore.getState().addToast(err.message ?? 'Upload failed', 'error');
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -145,24 +146,15 @@ export function ParamField({ param, value, onChange, label }: ParamFieldProps) {
     );
   }
 
-  if (param.param_type === 'int') {
-    return (
-      <div>
-        <label className={styles.label}>{displayLabel}</label>
-        <input
-          type="number"
-          value={value ?? param.default ?? 0}
-          min={param.min_value ?? undefined}
-          max={param.max_value ?? undefined}
-          step={1}
-          onChange={(e) => onChange(param.name, parseInt(e.target.value, 10))}
-          className={styles.input}
-        />
-      </div>
-    );
-  }
+  if (param.param_type === 'int' || param.param_type === 'float') {
+    const numVal = Number(value ?? param.default ?? 0);
+    const hasMin = param.min_value != null;
+    const hasMax = param.max_value != null;
+    const outOfRange =
+      !isNaN(numVal) &&
+      ((hasMin && numVal < param.min_value!) || (hasMax && numVal > param.max_value!));
+    const isInt = param.param_type === 'int';
 
-  if (param.param_type === 'float') {
     return (
       <div>
         <label className={styles.label}>{displayLabel}</label>
@@ -171,10 +163,21 @@ export function ParamField({ param, value, onChange, label }: ParamFieldProps) {
           value={value ?? param.default ?? 0}
           min={param.min_value ?? undefined}
           max={param.max_value ?? undefined}
-          step="any"
-          onChange={(e) => onChange(param.name, parseFloat(e.target.value))}
-          className={styles.input}
+          step={isInt ? 1 : 'any'}
+          onChange={(e) =>
+            onChange(param.name, isInt ? parseInt(e.target.value, 10) : parseFloat(e.target.value))
+          }
+          className={`${styles.input} ${outOfRange ? styles.inputError : ''}`}
         />
+        {outOfRange && (hasMin || hasMax) && (
+          <span className={styles.errorHint}>
+            {hasMin && hasMax
+              ? `Range: ${param.min_value} — ${param.max_value}`
+              : hasMin
+                ? `Min: ${param.min_value}`
+                : `Max: ${param.max_value}`}
+          </span>
+        )}
       </div>
     );
   }

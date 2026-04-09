@@ -1,10 +1,20 @@
 from fastapi import APIRouter
 
+from ..core.device_utils import get_available_devices
 from ..core.node_base import BaseNode
 from ..core.node_registry import registry
 from ..schemas import NodeDefinition, ParamDefinitionSchema, PortDefinitionSchema
 
 router = APIRouter(prefix="/api/nodes", tags=["nodes"])
+
+
+def _filter_device_options(param_name: str, options: list[str]) -> list[str]:
+    """For params named 'device', remove backends that aren't available in this environment."""
+    if param_name != "device" or not options:
+        return options
+    available = set(get_available_devices())
+    filtered = [o for o in options if o in available]
+    return filtered if filtered else ["cpu"]
 
 
 def _node_to_definition(cls: type[BaseNode]) -> NodeDefinition:
@@ -34,9 +44,9 @@ def _node_to_definition(cls: type[BaseNode]) -> NodeDefinition:
             ParamDefinitionSchema(
                 name=p.name,
                 param_type=p.param_type.value,
-                default=p.default,
+                default=p.default if p.name != "device" or p.default in get_available_devices() else "cpu",
                 description=p.description,
-                options=p.options,
+                options=_filter_device_options(p.name, p.options),
                 min_value=p.min_value,
                 max_value=p.max_value,
             )

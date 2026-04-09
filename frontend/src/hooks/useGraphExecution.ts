@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useTabStore } from '../store/tabStore';
+import { useToastStore } from '../store/toastStore';
+import { validateGraph } from '../api/rest';
 
 export function useGraphExecution() {
   const activeTabId = useTabStore((s) => s.activeTabId);
@@ -45,9 +47,16 @@ export function useGraphExecution() {
 
       // Don't log running/cached status to reduce noise
       if (data.status !== 'running' && data.status !== 'cached') {
+        const currentTab = useTabStore.getState().tabs.find(
+          (t) => t.id === useTabStore.getState().activeTabId,
+        );
+        const nodeLabel =
+          currentTab?.nodes.find((n) => n.id === data.node_id)?.data?.label ??
+          String(data.node_id).slice(0, 8);
+
         addTabLog(tabId, {
           nodeId: data.node_id,
-          message: `Node ${String(data.node_id).slice(0, 8)}... ${data.status}`,
+          message: `Node ${nodeLabel} ${data.status}${data.error ? ': ' + data.error : ''}`,
           type: data.status === 'error' ? 'error' : data.status === 'completed' ? 'success' : 'info',
         });
       }
@@ -108,11 +117,24 @@ export function useGraphExecution() {
       }
     }
 
+    const graph = getSerializedGraph();
+
+    // Pre-execution validation
+    try {
+      const validation = await validateGraph(graph.nodes, graph.edges);
+      if (!validation.valid) {
+        const { addToast } = useToastStore.getState();
+        validation.errors.forEach((err: string) => addToast(err, 'error'));
+        return;
+      }
+    } catch {
+      // If validation endpoint is unreachable, proceed anyway
+    }
+
     clearLogs();
     clearExecutionStatus();
     clearOutputSummaries();
     setTabStatus(tab.id, 'running');
-    const graph = getSerializedGraph();
 
     // Partial re-execution: pass changed_nodes hint to backend
     const { getDirtyWithDownstream, clearDirty } = useTabStore.getState();

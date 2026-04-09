@@ -22,7 +22,7 @@ async def test_ws_connect_and_execute():
             await ws.send_text(json.dumps({
                 "action": "execute",
                 "nodes": [
-                    {"id": "1", "type": "Print", "data": {"params": {"label": "a"}}},
+                    {"id": "1", "type": "_TestSource", "data": {"params": {}}},
                     {"id": "2", "type": "Print", "data": {"params": {"label": "b"}}},
                 ],
                 "edges": [

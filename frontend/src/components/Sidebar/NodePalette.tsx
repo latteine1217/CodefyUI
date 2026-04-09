@@ -9,6 +9,7 @@ import { CATEGORY_COLORS, DIFFICULTY_COLORS } from '../../styles/theme';
 import styles from './NodePalette.module.css';
 
 const CATEGORY_ORDER = ['Data', 'IO', 'CNN', 'Normalization', 'RNN', 'Transformer', 'RL', 'Training', 'Tensor Operations', 'Control', 'Utility'];
+const BEGINNER_CATEGORIES = new Set(['Data', 'CNN', 'Training', 'IO']);
 
 // ── Operation Node Item ──
 
@@ -210,10 +211,11 @@ export function NodePalette() {
     ...Object.keys(categorized),
     ...Object.keys(presetCategorized),
   ]);
+  const beginnerMode = useUIStore((s) => s.beginnerMode);
   const orderedCategories = [
     ...CATEGORY_ORDER.filter((c) => allCategoryKeys.has(c)),
     ...[...allCategoryKeys].filter((c) => !CATEGORY_ORDER.includes(c)).sort(),
-  ];
+  ].filter((c) => !beginnerMode || BEGINNER_CATEGORIES.has(c));
 
   // Unified filtering
   const q = searchQuery.trim().toLowerCase();

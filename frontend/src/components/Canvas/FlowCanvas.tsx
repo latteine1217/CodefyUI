@@ -17,6 +17,7 @@ import { CATEGORY_COLORS } from '../../styles/theme';
 
 import BaseNode from '../Nodes/BaseNode';
 import PresetNode from '../Nodes/PresetNode';
+import { CustomConnectionLine } from './CustomConnectionLine';
 import { EmptyCanvasOverlay } from './EmptyCanvasOverlay';
 import { EdgeDataTooltip } from './EdgeDataTooltip';
 import { QuickNodeSearch } from './QuickNodeSearch';
@@ -28,7 +29,8 @@ import {
 import { useTabStore } from '../../store/tabStore';
 import { useUIStore } from '../../store/uiStore';
 import { useDragAndDrop } from '../../hooks/useDragAndDrop';
-import { isValidConnection } from '../../utils';
+import { isValidConnection, getPortColor } from '../../utils';
+import { useNodeDefStore } from '../../store/nodeDefStore';
 import { useI18n } from '../../i18n';
 import type { OutputSummary } from '../../types';
 import styles from './FlowCanvas.module.css';
@@ -85,8 +87,40 @@ export function FlowCanvas() {
   const handleConnect: OnConnect = useCallback(
     (connection) => {
       storeOnConnect(connection);
+
+      // Color the new edge by source port data type
+      if (connection.source && connection.sourceHandle) {
+        const defs = useNodeDefStore.getState().definitions;
+        const currentTab = useTabStore.getState().tabs.find(
+          (t) => t.id === useTabStore.getState().activeTabId,
+        );
+        const srcNode = currentTab?.nodes.find((n) => n.id === connection.source);
+        if (srcNode) {
+          const def = defs.find((d) => d.node_name === srcNode.type);
+          const output = def?.outputs.find((o) => o.name === connection.sourceHandle);
+          if (output) {
+            const color = getPortColor(output.data_type);
+            const { setEdges } = useTabStore.getState();
+            const tab = useTabStore.getState().tabs.find(
+              (t) => t.id === useTabStore.getState().activeTabId,
+            );
+            if (tab) {
+              setEdges(
+                tab.edges.map((e) =>
+                  e.source === connection.source &&
+                  e.sourceHandle === connection.sourceHandle &&
+                  e.target === connection.target &&
+                  e.targetHandle === connection.targetHandle
+                    ? { ...e, style: { ...e.style, stroke: color, strokeWidth: 2 } }
+                    : e,
+                ),
+              );
+            }
+          }
+        }
+      }
     },
-    [storeOnConnect]
+    [storeOnConnect],
   );
 
   const handleIsValidConnection: IsValidConnection = useCallback(
@@ -117,6 +151,28 @@ export function FlowCanvas() {
     },
     []
   );
+
+  const onConnectStart = useCallback(
+    (_: any, params: { nodeId: string | null; handleId: string | null; handleType: string | null }) => {
+      if (params.nodeId && params.handleId && params.handleType === 'source') {
+        const { tabs, activeTabId } = useTabStore.getState();
+        const tab = tabs.find((t) => t.id === activeTabId);
+        const node = tab?.nodes.find((n) => n.id === params.nodeId);
+        if (node) {
+          const def = node.data.definition;
+          const output = def?.outputs.find((o) => o.name === params.handleId);
+          if (output) {
+            useUIStore.getState().setDraggingSourceType(output.data_type);
+          }
+        }
+      }
+    },
+    []
+  );
+
+  const onConnectEnd = useCallback(() => {
+    useUIStore.getState().setDraggingSourceType(null);
+  }, []);
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: { id: string }) => {
@@ -223,7 +279,10 @@ export function FlowCanvas() {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         onConnect={handleConnect}
+        onConnectStart={onConnectStart}
+        onConnectEnd={onConnectEnd}
         isValidConnection={handleIsValidConnection}
+        connectionLineComponent={CustomConnectionLine}
         onNodeClick={handleNodeClick}
         onEdgeClick={handleEdgeClick}
         onNodeContextMenu={handleNodeContextMenu}

@@ -32,6 +32,8 @@ class ReshapeNode(BaseNode):
         ]
 
     def execute(self, inputs: dict[str, Any], params: dict[str, Any]) -> dict[str, Any]:
+        if "tensor" not in inputs:
+            raise ValueError("Reshape node requires a 'tensor' input. Please connect a tensor source to this node.")
         tensor = inputs["tensor"]
         shape_str = params.get("shape", "-1,784")
 
