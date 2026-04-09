@@ -96,4 +96,16 @@ class KaggleDatasetNode(BaseNode):
         download_path = kagglehub.dataset_download(dataset_slug)
         root = os.path.join(download_path, subdir) if subdir else download_path
 
+        class_dirs = [
+            entry for entry in os.listdir(root)
+            if os.path.isdir(os.path.join(root, entry))
+        ]
+        if not class_dirs:
+            found = sorted(os.listdir(root))[:10]
+            raise RuntimeError(
+                f"Path '{root}' does not contain class subdirectories. "
+                f"Set 'subdir' to point at the folder that holds your "
+                f"per-class subfolders. Found at this path: {found}"
+            )
+
         return {"dataset": ImageFolder(root, transform=T.ToTensor())}

@@ -420,3 +420,27 @@ def test_kaggle_dataset_node_missing_auth(monkeypatch, tmp_path):
     msg = str(exc_info.value)
     assert "Kaggle" in msg
     assert ("KAGGLE_USERNAME" in msg) or ("kaggle.json" in msg)
+
+
+def test_kaggle_dataset_node_flat_directory_raises_with_subdir_hint(monkeypatch, tmp_path):
+    import kagglehub
+
+    # Flat: just files, no class subdirs
+    (tmp_path / "image1.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+    (tmp_path / "image2.png").write_bytes(b"\x89PNG\r\n\x1a\n")
+    (tmp_path / "metadata.csv").write_text("id,label\n")
+
+    monkeypatch.setattr(kagglehub, "dataset_download", lambda slug: str(tmp_path))
+    monkeypatch.setenv("KAGGLE_USERNAME", "tester")
+    monkeypatch.setenv("KAGGLE_KEY", "testkey")
+
+    from app.nodes.data.kaggle_dataset_node import KaggleDatasetNode
+
+    node = KaggleDatasetNode()
+    with pytest.raises(RuntimeError) as exc_info:
+        node.execute(inputs={}, params=_kaggle_node_default_params())
+
+    msg = str(exc_info.value)
+    assert "subdir" in msg.lower()
+    # The error should surface what was actually in the directory
+    assert "image1.png" in msg or "metadata.csv" in msg
