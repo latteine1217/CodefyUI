@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Any
 
 from ...core.node_base import (
@@ -12,6 +13,15 @@ from ...core.node_base import (
     ParamType,
     PortDefinition,
 )
+
+
+def _kaggle_credentials_present() -> bool:
+    """True if either env-var creds or ~/.kaggle/kaggle.json is present."""
+    if os.environ.get("KAGGLE_USERNAME") and os.environ.get("KAGGLE_KEY"):
+        return True
+    if (Path.home() / ".kaggle" / "kaggle.json").exists():
+        return True
+    return False
 
 
 class KaggleDatasetNode(BaseNode):
@@ -65,6 +75,13 @@ class KaggleDatasetNode(BaseNode):
                 "Install with: pip install kagglehub "
                 "(or `uv sync --extra ml` from backend/)"
             ) from e
+
+        if not _kaggle_credentials_present():
+            raise RuntimeError(
+                "Kaggle authentication required. Set KAGGLE_USERNAME and "
+                "KAGGLE_KEY environment variables, or place kaggle.json at "
+                "~/.kaggle/kaggle.json. See https://www.kaggle.com/docs/api"
+            )
 
         from torchvision import transforms as T
         from torchvision.datasets import ImageFolder

@@ -395,3 +395,28 @@ def test_kaggle_dataset_node_missing_package(monkeypatch):
     msg = str(exc_info.value)
     assert "kagglehub" in msg
     assert "pip install" in msg
+
+
+def test_kaggle_dataset_node_missing_auth(monkeypatch, tmp_path):
+    import kagglehub
+
+    # Make sure neither env vars nor ~/.kaggle/kaggle.json exist
+    monkeypatch.delenv("KAGGLE_USERNAME", raising=False)
+    monkeypatch.delenv("KAGGLE_KEY", raising=False)
+    monkeypatch.setattr(Path, "home", lambda: tmp_path)
+
+    # Even if dataset_download were called, fail loudly so the test catches it
+    def should_not_be_called(slug):
+        raise AssertionError("dataset_download was called despite missing auth")
+
+    monkeypatch.setattr(kagglehub, "dataset_download", should_not_be_called)
+
+    from app.nodes.data.kaggle_dataset_node import KaggleDatasetNode
+
+    node = KaggleDatasetNode()
+    with pytest.raises(RuntimeError) as exc_info:
+        node.execute(inputs={}, params=_kaggle_node_default_params())
+
+    msg = str(exc_info.value)
+    assert "Kaggle" in msg
+    assert ("KAGGLE_USERNAME" in msg) or ("kaggle.json" in msg)
