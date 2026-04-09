@@ -7,6 +7,7 @@ plain layers, and merge layers (Add, Concat, Multiply, Subtract, Mean, Stack).
 from __future__ import annotations
 
 import logging
+from collections import deque
 from typing import Any
 
 import torch
@@ -34,6 +35,7 @@ class GraphModelModule(nn.Module):
         output_node_id: str,
         input_ports: list[tuple[str, str]],
         output_ports: list[tuple[str, str]],
+        output_incoming: list[tuple[str, str | None, str | None]],
     ):
         super().__init__()
         self.layers = nn.ModuleDict(layers)
@@ -44,6 +46,7 @@ class GraphModelModule(nn.Module):
         self.output_node_id = output_node_id
         self.input_ports = input_ports
         self.output_ports = output_ports
+        self.output_incoming = output_incoming
 
     def forward(self, *args, **kwargs):
         # Resolve named inputs
@@ -59,6 +62,10 @@ class GraphModelModule(nn.Module):
             for _, port_name in self.input_ports:
                 if port_name not in kwargs:
                     raise ValueError(f"GraphModel.forward: missing required input '{port_name}'")
+            expected = {port_name for _, port_name in self.input_ports}
+            extra = set(kwargs.keys()) - expected
+            if extra:
+                raise ValueError(f"GraphModel.forward: unexpected input(s): {sorted(extra)}")
             named = {port_name: kwargs[port_name] for _, port_name in self.input_ports}
 
         values: dict[tuple[str, str | None], torch.Tensor] = {}
@@ -70,9 +77,8 @@ class GraphModelModule(nn.Module):
             if node_id == self.input_node_id:
                 continue
             if node_id == self.output_node_id:
-                full = getattr(self, "_output_incoming_full", [])
                 for port_id, port_name in self.output_ports:
-                    incoming_edges = [(src, sh) for (src, sh, th) in full if th == port_id]
+                    incoming_edges = [(src, sh) for (src, sh, th) in self.output_incoming if th == port_id]
                     if len(incoming_edges) != 1:
                         raise ValueError(
                             f"Output port '{port_name}' must have exactly one incoming edge, got {len(incoming_edges)}"
@@ -190,10 +196,10 @@ def build_graph_model(spec: dict[str, Any]) -> GraphModelModule:
 
     # Topological sort (Kahn's algorithm)
     in_degree = {nid: len(incoming[nid]) for nid in nodes_by_id}
-    queue = [nid for nid, d in in_degree.items() if d == 0]
+    queue = deque(nid for nid, d in in_degree.items() if d == 0)
     topo_order: list[str] = []
     while queue:
-        nid = queue.pop(0)
+        nid = queue.popleft()
         topo_order.append(nid)
         for tgt in outgoing[nid]:
             in_degree[tgt] -= 1
@@ -248,7 +254,6 @@ def build_graph_model(spec: dict[str, Any]) -> GraphModelModule:
         output_node_id=output_node["id"],
         input_ports=input_ports,
         output_ports=output_ports,
+        output_incoming=incoming[output_node["id"]],
     )
-    # Stash full incoming (with target handles) for the Output node only
-    model._output_incoming_full = incoming[output_node["id"]]  # type: ignore[attr-defined]
     return model
