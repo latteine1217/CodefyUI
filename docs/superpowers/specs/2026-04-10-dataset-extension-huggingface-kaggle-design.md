@@ -50,8 +50,9 @@ No abstraction layer (Route 2) and no refactor of existing `DatasetNode` (Route 
 
 - `backend/pyproject.toml` — add `datasets>=2.14` and `kagglehub>=0.3` to
   `[project.optional-dependencies].ml`.
-- `frontend/src/i18n/nodeLocales/zh-TW.ts` — add Chinese descriptions for the two new nodes.
-- `frontend/src/i18n/nodeLocales/en.ts` — same in English (if the file exists).
+- `frontend/src/i18n/nodeLocales/zh-TW.ts` — add Chinese descriptions and per-param
+  translations for the two new nodes. (English descriptions come from each node's
+  backend `DESCRIPTION` string; there is no `nodeLocales/en.ts`.)
 
 ### Untouched (verified during brainstorming)
 
