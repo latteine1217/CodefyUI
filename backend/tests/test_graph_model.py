@@ -108,3 +108,32 @@ def test_multi_output_returns_dict():
     assert set(out.keys()) == {"raw", "activated"}
     assert out["raw"].shape == (3, 2)
     assert out["activated"].shape == (3, 2)
+
+
+def test_unet_skip_with_concat():
+    spec = _spec(
+        nodes=[
+            {"id": "in", "type": "Input", "ports": [{"id": "p_x", "name": "x"}]},
+            {"id": "down1", "type": "Conv2d", "params": {"in_channels": 1, "out_channels": 4, "kernel_size": 3, "padding": 1}},
+            {"id": "pool", "type": "MaxPool2d", "params": {"kernel_size": 2, "stride": 2}},
+            {"id": "deep", "type": "Conv2d", "params": {"in_channels": 4, "out_channels": 4, "kernel_size": 3, "padding": 1}},
+            {"id": "up", "type": "ConvTranspose2d", "params": {"in_channels": 4, "out_channels": 4, "kernel_size": 2, "stride": 2}},
+            {"id": "concat", "type": "Concat", "params": {"dim": 1}},
+            {"id": "final", "type": "Conv2d", "params": {"in_channels": 8, "out_channels": 1, "kernel_size": 1}},
+            {"id": "out", "type": "Output", "ports": [{"id": "p_y", "name": "y"}]},
+        ],
+        edges=[
+            {"id": "e1", "source": "in", "sourceHandle": "p_x", "target": "down1"},
+            {"id": "e2", "source": "down1", "target": "pool"},
+            {"id": "e3", "source": "pool", "target": "deep"},
+            {"id": "e4", "source": "deep", "target": "up"},
+            {"id": "e5", "source": "up", "target": "concat"},
+            {"id": "e6", "source": "down1", "target": "concat"},  # skip
+            {"id": "e7", "source": "concat", "target": "final"},
+            {"id": "e8", "source": "final", "target": "out", "targetHandle": "p_y"},
+        ],
+    )
+    model = build_graph_model(spec)
+    x = torch.randn(2, 1, 16, 16)
+    y = model(x)
+    assert y.shape == (2, 1, 16, 16)
