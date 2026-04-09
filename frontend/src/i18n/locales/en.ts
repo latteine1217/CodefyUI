@@ -136,6 +136,16 @@ const en = {
   'subgraph.snapOn': 'Snap: ON',
   'subgraph.snapOff': 'Snap: OFF',
   'subgraph.snapTitle': 'Toggle grid snap',
+  'subgraph.category.io': 'I/O',
+  'subgraph.category.merge': 'Merge',
+  'subgraph.validation.cycle': 'Graph contains a cycle',
+  'subgraph.validation.noInput': 'Graph must have exactly one Input node',
+  'subgraph.validation.noOutput': 'Graph must have exactly one Output node',
+  'subgraph.port.add': '+ Add port',
+  'subgraph.port.remove': 'Remove',
+  'subgraph.port.namePlaceholder': 'port name',
+  'subgraph.port.duplicate': 'Duplicate port name',
+  'subgraph.port.list': 'Ports',
 
   // Tooltips
   'toolbar.tooltips.on': 'Tips ON',
