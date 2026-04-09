@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -36,6 +36,7 @@ class NodeData(BaseModel):
     type: str
     position: dict[str, float] = {"x": 0, "y": 0}
     data: dict[str, Any] = {}
+    isEntryPoint: bool = False
 
 
 class EdgeData(BaseModel):
@@ -44,6 +45,7 @@ class EdgeData(BaseModel):
     target: str
     sourceHandle: str = ""
     targetHandle: str = ""
+    type: Literal["data", "trigger"] = "data"
 
 
 class GraphData(BaseModel):
