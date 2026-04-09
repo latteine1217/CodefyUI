@@ -91,8 +91,31 @@ class TrainingLoopNode(BaseNode):
         model = model.to(device)
         loss_fn = loss_fn.to(device)
 
-        for param_group in optimizer.param_groups:
-            param_group["params"] = list(model.parameters())
+        # Recreate the optimizer so its param list, momentum buffers and state are
+        # freshly bound to the moved model parameters. The Optimizer node runs before
+        # TrainingLoop with the model still on CPU, so any optimizer created there
+        # holds stale references / state. Preserving the original class + defaults
+        # keeps the user's choices (Adam/SGD/..., lr, weight_decay, etc.) intact.
+        optimizer_cls = type(optimizer)
+        optimizer_kwargs = dict(optimizer.defaults)
+        optimizer = optimizer_cls(model.parameters(), **optimizer_kwargs)
+
+        # If an LR scheduler was passed in, rebind it to the new optimizer using
+        # the same class and non-optimizer init arguments.
+        if lr_scheduler is not None:
+            scheduler_cls = type(lr_scheduler)
+            # Only keep primitive/scalar state to re-init the scheduler cleanly
+            scheduler_init_kwargs: dict[str, Any] = {}
+            for key, value in lr_scheduler.state_dict().items():
+                if key in ("base_lrs", "_last_lr", "last_epoch", "_step_count", "verbose", "_get_lr_called_within_step"):
+                    continue
+                if isinstance(value, (int, float, str, bool, list, tuple)):
+                    scheduler_init_kwargs[key] = value
+            try:
+                lr_scheduler = scheduler_cls(optimizer, **scheduler_init_kwargs)
+            except TypeError:
+                # Couldn't reconstruct — fall back to manual optimizer attachment.
+                lr_scheduler.optimizer = optimizer
 
         # Training config for frontend display
         param_count = sum(p.numel() for p in model.parameters())

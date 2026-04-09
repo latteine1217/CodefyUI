@@ -1,6 +1,6 @@
 {
   "name": "Train CNN on MNIST",
-  "description": "Complete end-to-end CNN training on MNIST. SequentialModel builds an nn.Module from JSON layer config, then connects to the Training Pipeline preset (Dataset → DataLoader → Optimizer → Loss → TrainingLoop). This is a fully executable graph.",
+  "description": "Complete end-to-end CNN training on MNIST. SequentialModel builds an nn.Module from JSON layer config, then connects to the Training Pipeline preset (Dataset → DataLoader → Optimizer → Loss → TrainingLoop). After training, ModelSaver writes the weights to backend/app/data/models/model_weights.pt so the inference example can load them.",
   "nodes": [
     {
       "id": "model-builder",
@@ -34,16 +34,36 @@
       "data": { "params": { "title": "MNIST Training Loss Curve", "plot_type": "line" } }
     },
     {
+      "id": "model-saver",
+      "type": "ModelSaver",
+      "position": { "x": 950, "y": 380 },
+      "data": {
+        "params": {
+          "path": "model_weights.pt",
+          "save_mode": "state_dict",
+          "format": "pytorch"
+        }
+      }
+    },
+    {
       "id": "print-model",
       "type": "Print",
-      "position": { "x": 950, "y": 370 },
+      "position": { "x": 1350, "y": 380 },
       "data": { "params": { "label": "Trained CNN Model" } }
+    },
+    {
+      "id": "print-saved-path",
+      "type": "Print",
+      "position": { "x": 1350, "y": 540 },
+      "data": { "params": { "label": "Saved weights path" } }
     }
   ],
   "edges": [
     { "id": "e-1", "source": "model-builder", "target": "train-pipeline", "sourceHandle": "model", "targetHandle": "model" },
     { "id": "e-2", "source": "model-builder", "target": "train-pipeline", "sourceHandle": "model", "targetHandle": "model_for_opt" },
     { "id": "e-3", "source": "train-pipeline", "target": "visualize-loss", "sourceHandle": "losses", "targetHandle": "data" },
-    { "id": "e-4", "source": "train-pipeline", "target": "print-model", "sourceHandle": "model", "targetHandle": "value" }
+    { "id": "e-4", "source": "train-pipeline", "target": "model-saver", "sourceHandle": "model", "targetHandle": "model" },
+    { "id": "e-5", "source": "model-saver", "target": "print-model", "sourceHandle": "model", "targetHandle": "value" },
+    { "id": "e-6", "source": "model-saver", "target": "print-saved-path", "sourceHandle": "path", "targetHandle": "value" }
   ]
 }
