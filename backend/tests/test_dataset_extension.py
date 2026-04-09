@@ -74,3 +74,54 @@ def test_helpers_smoke(tmp_path):
     assert (tmp_path / "cats").is_dir()
     assert (tmp_path / "dogs").is_dir()
     assert any(p.suffix == ".png" for p in (tmp_path / "cats").iterdir())
+
+
+# ---------------------------------------------------------------------------
+# HFTorchImageDataset adapter
+# ---------------------------------------------------------------------------
+
+
+def test_hf_adapter_returns_pil_when_no_transform():
+    from app.nodes.data._hf_adapter import HFTorchImageDataset
+
+    fake = _make_two_row_hf_image_dataset()
+    ds = HFTorchImageDataset(fake, image_column="image", label_column="label")
+
+    assert len(ds) == 2
+    img, label = ds[0]
+    assert isinstance(img, Image.Image)
+    assert label == 0
+    assert ds[1][1] == 1
+
+
+def test_hf_adapter_applies_transform_in_constructor():
+    import torch
+    from torchvision import transforms
+
+    from app.nodes.data._hf_adapter import HFTorchImageDataset
+
+    fake = _make_two_row_hf_image_dataset()
+    ds = HFTorchImageDataset(
+        fake,
+        image_column="image",
+        label_column="label",
+        transform=transforms.ToTensor(),
+    )
+
+    img, label = ds[0]
+    assert isinstance(img, torch.Tensor)
+    assert img.shape == (3, 8, 8)
+    assert label == 0
+
+
+def test_hf_adapter_transform_is_mutable_after_init():
+    """TransformNode interop: setting `dataset.transform` later must take effect."""
+    from app.nodes.data._hf_adapter import HFTorchImageDataset
+
+    fake = _make_two_row_hf_image_dataset()
+    ds = HFTorchImageDataset(fake, image_column="image", label_column="label")
+
+    sentinel = object()
+    ds.transform = lambda _img: sentinel
+    img, _ = ds[0]
+    assert img is sentinel
