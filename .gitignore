@@ -46,3 +46,6 @@ backend/data/graphs/*.json
 *.pt
 *.pth
 *.onnx
+
+# Worktrees
+.worktrees/
