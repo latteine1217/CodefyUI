@@ -229,5 +229,43 @@ export function validateGraph(nodes: Node<LayerNodeData>[], edges: Edge[]): Vali
   }
   if (visited !== nodes.length) return { message: 'Graph contains a cycle' };
 
+  // Forward reachability: every node must be reachable from the Input node
+  const reachableFromInput = new Set<string>();
+  const stack = [input.id];
+  while (stack.length) {
+    const id = stack.pop()!;
+    if (reachableFromInput.has(id)) continue;
+    reachableFromInput.add(id);
+    for (const e of edges) {
+      if (e.source === id && !reachableFromInput.has(e.target)) {
+        stack.push(e.target);
+      }
+    }
+  }
+  for (const n of nodes) {
+    if (!reachableFromInput.has(n.id)) {
+      return { message: `Node '${n.data.layerType}' is not reachable from Input` };
+    }
+  }
+
+  // Backward reachability: every node must be able to reach the Output node
+  const canReachOutput = new Set<string>();
+  const backStack = [output.id];
+  while (backStack.length) {
+    const id = backStack.pop()!;
+    if (canReachOutput.has(id)) continue;
+    canReachOutput.add(id);
+    for (const e of edges) {
+      if (e.target === id && !canReachOutput.has(e.source)) {
+        backStack.push(e.source);
+      }
+    }
+  }
+  for (const n of nodes) {
+    if (!canReachOutput.has(n.id)) {
+      return { message: `Node '${n.data.layerType}' cannot reach Output` };
+    }
+  }
+
   return null;
 }
