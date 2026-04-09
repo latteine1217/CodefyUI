@@ -137,3 +137,95 @@ def test_unet_skip_with_concat():
     x = torch.randn(2, 1, 16, 16)
     y = model(x)
     assert y.shape == (2, 1, 16, 16)
+
+
+def test_validation_cycle():
+    spec = _spec(
+        nodes=[
+            {"id": "in", "type": "Input", "ports": [{"id": "p_x", "name": "x"}]},
+            {"id": "a", "type": "Linear", "params": {"in_features": 4, "out_features": 4}},
+            {"id": "b", "type": "Linear", "params": {"in_features": 4, "out_features": 4}},
+            {"id": "out", "type": "Output", "ports": [{"id": "p_y", "name": "y"}]},
+        ],
+        edges=[
+            {"id": "e1", "source": "in", "sourceHandle": "p_x", "target": "a"},
+            {"id": "e2", "source": "a", "target": "b"},
+            {"id": "e3", "source": "b", "target": "a"},  # cycle
+            {"id": "e4", "source": "b", "target": "out", "targetHandle": "p_y"},
+        ],
+    )
+    with pytest.raises(ValueError, match="cycle"):
+        build_graph_model(spec)
+
+
+def test_validation_no_input():
+    spec = _spec(
+        nodes=[
+            {"id": "out", "type": "Output", "ports": [{"id": "p_y", "name": "y"}]},
+        ],
+        edges=[],
+    )
+    with pytest.raises(ValueError, match="exactly one Input"):
+        build_graph_model(spec)
+
+
+def test_validation_no_output():
+    spec = _spec(
+        nodes=[
+            {"id": "in", "type": "Input", "ports": [{"id": "p_x", "name": "x"}]},
+        ],
+        edges=[],
+    )
+    with pytest.raises(ValueError, match="exactly one Output"):
+        build_graph_model(spec)
+
+
+def test_validation_duplicate_input_port_names():
+    spec = _spec(
+        nodes=[
+            {"id": "in", "type": "Input", "ports": [
+                {"id": "p1", "name": "x"},
+                {"id": "p2", "name": "x"},
+            ]},
+            {"id": "out", "type": "Output", "ports": [{"id": "p_y", "name": "y"}]},
+        ],
+        edges=[],
+    )
+    with pytest.raises(ValueError, match="Input port names must be unique"):
+        build_graph_model(spec)
+
+
+def test_validation_unconnected_output_port():
+    spec = _spec(
+        nodes=[
+            {"id": "in", "type": "Input", "ports": [{"id": "p_x", "name": "x"}]},
+            {"id": "lin", "type": "Linear", "params": {"in_features": 4, "out_features": 2}},
+            {"id": "out", "type": "Output", "ports": [{"id": "p_y", "name": "y"}]},
+        ],
+        edges=[
+            {"id": "e1", "source": "in", "sourceHandle": "p_x", "target": "lin"},
+            # no edge into output
+        ],
+    )
+    with pytest.raises(ValueError, match="Output port 'y' must have exactly one incoming edge"):
+        build_graph_model(spec)
+
+
+def test_validation_plain_layer_multi_input():
+    spec = _spec(
+        nodes=[
+            {"id": "in", "type": "Input", "ports": [
+                {"id": "p_a", "name": "a"},
+                {"id": "p_b", "name": "b"},
+            ]},
+            {"id": "lin", "type": "Linear", "params": {"in_features": 4, "out_features": 2}},
+            {"id": "out", "type": "Output", "ports": [{"id": "p_y", "name": "y"}]},
+        ],
+        edges=[
+            {"id": "e1", "source": "in", "sourceHandle": "p_a", "target": "lin"},
+            {"id": "e2", "source": "in", "sourceHandle": "p_b", "target": "lin"},  # plain layer can't take 2 inputs
+            {"id": "e3", "source": "lin", "target": "out", "targetHandle": "p_y"},
+        ],
+    )
+    with pytest.raises(ValueError, match="must have exactly 1 incoming edge"):
+        build_graph_model(spec)
