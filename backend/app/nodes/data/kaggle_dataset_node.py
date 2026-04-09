@@ -90,10 +90,17 @@ class KaggleDatasetNode(BaseNode):
         subdir = params.get("subdir", "")
         cache_dir = params.get("cache_dir", "")
 
-        if cache_dir:
-            os.environ["KAGGLEHUB_CACHE"] = cache_dir
+        previous_cache = os.environ.get("KAGGLEHUB_CACHE")
+        try:
+            if cache_dir:
+                os.environ["KAGGLEHUB_CACHE"] = cache_dir
 
-        download_path = kagglehub.dataset_download(dataset_slug)
+            download_path = kagglehub.dataset_download(dataset_slug)
+        finally:
+            if previous_cache is None:
+                os.environ.pop("KAGGLEHUB_CACHE", None)
+            else:
+                os.environ["KAGGLEHUB_CACHE"] = previous_cache
         root = os.path.join(download_path, subdir) if subdir else download_path
 
         class_dirs = [

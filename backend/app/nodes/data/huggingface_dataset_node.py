@@ -89,7 +89,7 @@ class HuggingFaceDatasetNode(BaseNode):
 
         dataset_name = params.get("dataset_name", "ylecun/mnist")
         subset = params.get("subset", "") or None
-        split = params.get("split", "train")
+        split = params.get("split", "train") or "train"
         image_column = params.get("image_column", "image")
         label_column = params.get("label_column", "label")
         cache_dir = params.get("cache_dir", "") or None

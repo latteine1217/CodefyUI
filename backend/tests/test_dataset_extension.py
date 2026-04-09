@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 from typing import Any
 
@@ -468,3 +469,49 @@ def test_new_nodes_are_registered(registry_with_nodes):
 
     kaggle_param_names = {p.name for p in kaggle_cls.define_params()}
     assert {"dataset_slug", "subdir", "cache_dir"} <= kaggle_param_names
+
+
+def test_kaggle_dataset_node_cache_dir_does_not_leak_across_calls(monkeypatch, tmp_path):
+    """KAGGLEHUB_CACHE env var must be restored after execute() returns."""
+    import kagglehub
+
+    _make_image_folder_layout(tmp_path)
+    monkeypatch.setattr(kagglehub, "dataset_download", lambda slug: str(tmp_path))
+    monkeypatch.setenv("KAGGLE_USERNAME", "tester")
+    monkeypatch.setenv("KAGGLE_KEY", "testkey")
+
+    # Establish a baseline value for KAGGLEHUB_CACHE
+    monkeypatch.setenv("KAGGLEHUB_CACHE", "/baseline/cache")
+
+    from app.nodes.data.kaggle_dataset_node import KaggleDatasetNode
+
+    node = KaggleDatasetNode()
+    node.execute(
+        inputs={},
+        params=_kaggle_node_default_params(cache_dir="/temporary/override"),
+    )
+
+    # After execute() the env var must be restored to the baseline,
+    # not stuck on the temporary override.
+    assert os.environ.get("KAGGLEHUB_CACHE") == "/baseline/cache"
+
+
+def test_hf_dataset_node_empty_split_falls_back_to_train(monkeypatch):
+    """An empty `split` param must default to 'train', not be passed through."""
+    import datasets as hf_datasets
+
+    fake = _make_two_row_hf_image_dataset()
+    captured = {}
+
+    def fake_load_dataset(name, subset=None, split=None, cache_dir=None):
+        captured["split"] = split
+        return fake
+
+    monkeypatch.setattr(hf_datasets, "load_dataset", fake_load_dataset)
+
+    from app.nodes.data.huggingface_dataset_node import HuggingFaceDatasetNode
+
+    node = HuggingFaceDatasetNode()
+    node.execute(inputs={}, params=_hf_node_default_params(split=""))
+
+    assert captured["split"] == "train"
