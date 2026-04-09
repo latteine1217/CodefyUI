@@ -369,3 +369,29 @@ def test_kaggle_dataset_node_uses_subdir(monkeypatch, tmp_path):
     assert len(ds) == 2
     img, _label = ds[0]
     assert isinstance(img, torch.Tensor)
+
+
+def test_kaggle_dataset_node_missing_package(monkeypatch):
+    import builtins
+    import sys
+
+    monkeypatch.delitem(sys.modules, "kagglehub", raising=False)
+
+    real_import = builtins.__import__
+
+    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "kagglehub" or name.startswith("kagglehub."):
+            raise ImportError("No module named 'kagglehub'")
+        return real_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+
+    from app.nodes.data.kaggle_dataset_node import KaggleDatasetNode
+
+    node = KaggleDatasetNode()
+    with pytest.raises(RuntimeError) as exc_info:
+        node.execute(inputs={}, params=_kaggle_node_default_params())
+
+    msg = str(exc_info.value)
+    assert "kagglehub" in msg
+    assert "pip install" in msg

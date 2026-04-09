@@ -57,7 +57,15 @@ class KaggleDatasetNode(BaseNode):
         ]
 
     def execute(self, inputs: dict[str, Any], params: dict[str, Any]) -> dict[str, Any]:
-        import kagglehub
+        try:
+            import kagglehub
+        except ImportError as e:
+            raise RuntimeError(
+                "KaggleDataset requires the 'kagglehub' package. "
+                "Install with: pip install kagglehub "
+                "(or `uv sync --extra ml` from backend/)"
+            ) from e
+
         from torchvision import transforms as T
         from torchvision.datasets import ImageFolder
 
