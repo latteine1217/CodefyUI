@@ -125,3 +125,49 @@ def test_hf_adapter_transform_is_mutable_after_init():
     ds.transform = lambda _img: sentinel
     img, _ = ds[0]
     assert img is sentinel
+
+
+# ---------------------------------------------------------------------------
+# HuggingFaceDatasetNode
+# ---------------------------------------------------------------------------
+
+
+def _hf_node_default_params(**overrides: Any) -> dict[str, Any]:
+    base = {
+        "dataset_name": "fake/dataset",
+        "subset": "",
+        "split": "train",
+        "image_column": "image",
+        "label_column": "label",
+        "cache_dir": "",
+    }
+    base.update(overrides)
+    return base
+
+
+def test_hf_dataset_node_happy_path(monkeypatch):
+    import torch
+    import datasets as hf_datasets
+
+    fake = _make_two_row_hf_image_dataset()
+
+    def fake_load_dataset(name, subset=None, split=None, cache_dir=None):
+        assert name == "fake/dataset"
+        assert subset is None
+        assert split == "train"
+        assert cache_dir is None
+        return fake
+
+    monkeypatch.setattr(hf_datasets, "load_dataset", fake_load_dataset)
+
+    from app.nodes.data.huggingface_dataset_node import HuggingFaceDatasetNode
+
+    node = HuggingFaceDatasetNode()
+    result = node.execute(inputs={}, params=_hf_node_default_params())
+
+    ds = result["dataset"]
+    assert len(ds) == 2
+    img, label = ds[0]
+    assert isinstance(img, torch.Tensor)  # default ToTensor() applied by node
+    assert img.shape == (3, 8, 8)
+    assert label == 0
