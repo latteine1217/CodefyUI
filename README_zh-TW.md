@@ -20,21 +20,30 @@
 
 ## 快速開始
 
+以下快速開始假設使用 **NVIDIA 顯卡 + CUDA 12.4**。若使用 CPU、Apple Silicon、AMD 或需要更詳細的疑難排解，請參考[完整安裝指南](./SETUP_zh-TW.md)。
+
 ```bash
-# 後端
+# ── 後端（終端機 1）──────────────────────
 cd backend
-python3 -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"       # 核心 + 測試相依套件
-pip install -e ".[ml]"        # PyTorch、torchvision、gymnasium（執行管線時需要）
+uv venv --python 3.11
+.venv\Scripts\activate                              # Windows
+# source .venv/bin/activate                         # macOS / Linux
+
+uv pip install -e ".[dev]"
+uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+uv pip install gymnasium safetensors
+
 uvicorn app.main:app --reload
 
-# 前端（另開終端）
+# ── 前端（終端機 2）──────────────────────
 cd frontend
 pnpm install
 pnpm dev
 ```
 
 開啟 [http://localhost:5173](http://localhost:5173)。前端會將 API/WS 請求代理到後端的 `:8000` 埠。
+
+> **沒有 NVIDIA 顯卡？** 請參考 [SETUP_zh-TW.md](./SETUP_zh-TW.md) 查看 CPU、Apple Silicon (MPS) 與 AMD 的安裝方式。
 
 ## 架構
 

@@ -25,21 +25,30 @@ A visual, node-based deep learning pipeline builder. Design CNN, RNN, Transforme
 
 ## Quick Start
 
+This quick start assumes an **NVIDIA GPU with CUDA 12.4**. For CPU, Apple Silicon, AMD, or detailed troubleshooting, see the [full setup guide](./SETUP.md).
+
 ```bash
-# Backend
+# ── Backend (terminal 1) ──────────────────────
 cd backend
-python3 -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev]"       # Core + test deps
-pip install -e ".[ml]"        # PyTorch, torchvision, gymnasium (needed for execution)
+uv venv --python 3.11
+.venv\Scripts\activate                              # Windows
+# source .venv/bin/activate                         # macOS / Linux
+
+uv pip install -e ".[dev]"
+uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
+uv pip install gymnasium safetensors
+
 uvicorn app.main:app --reload
 
-# Frontend (separate terminal)
+# ── Frontend (terminal 2) ─────────────────────
 cd frontend
 pnpm install
 pnpm dev
 ```
 
 Open [http://localhost:5173](http://localhost:5173). The frontend proxies API/WS requests to the backend at `:8000`.
+
+> **No NVIDIA GPU?** See [SETUP.md](./SETUP.md) for CPU, Apple Silicon (MPS), and AMD instructions.
 
 ### CLI Execution
 
