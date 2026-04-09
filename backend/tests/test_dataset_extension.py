@@ -342,3 +342,30 @@ def test_kaggle_dataset_node_happy_path(monkeypatch, tmp_path):
     img, label = ds[0]
     assert isinstance(img, torch.Tensor)
     assert label in (0, 1)
+
+
+def test_kaggle_dataset_node_uses_subdir(monkeypatch, tmp_path):
+    import torch
+    import kagglehub
+
+    # Layout: tmp_path/train/<class>/<image>.png
+    _make_image_folder_layout(tmp_path / "train")
+    # Distractor at the top level (no class structure)
+    (tmp_path / "README.md").write_text("not an image folder")
+
+    monkeypatch.setattr(kagglehub, "dataset_download", lambda slug: str(tmp_path))
+    monkeypatch.setenv("KAGGLE_USERNAME", "tester")
+    monkeypatch.setenv("KAGGLE_KEY", "testkey")
+
+    from app.nodes.data.kaggle_dataset_node import KaggleDatasetNode
+
+    node = KaggleDatasetNode()
+    result = node.execute(
+        inputs={},
+        params=_kaggle_node_default_params(subdir="train"),
+    )
+
+    ds = result["dataset"]
+    assert len(ds) == 2
+    img, _label = ds[0]
+    assert isinstance(img, torch.Tensor)
