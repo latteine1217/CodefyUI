@@ -185,6 +185,25 @@ const zhTW: NodeTranslations = {
       data_dir: '下載/儲存資料集的目錄',
     },
   },
+  HuggingFaceDataset: {
+    description: '從 HuggingFace Hub 載入影像分類資料集（透過 datasets 套件）',
+    params: {
+      dataset_name: 'HuggingFace Hub 上的 repo id（例：cifar10、ylecun/mnist、uoft-cs/cifar100）',
+      subset: '多 config 資料集的 config 名稱（空字串=不指定）',
+      split: '資料分割：train/test/validation，亦支援切片語法（如 train[:1000]）',
+      image_column: '影像欄位名（不同資料集可能是 image、img、pixel_values）',
+      label_column: '標籤欄位名',
+      cache_dir: '覆寫 HuggingFace 快取位置（空=用 ~/.cache/huggingface）',
+    },
+  },
+  KaggleDataset: {
+    description: '從 Kaggle 下載資料集，並以 ImageFolder 結構載入',
+    params: {
+      dataset_slug: 'Kaggle dataset 的 owner/slug（例：puneet6060/intel-image-classification）',
+      subdir: '下載後資料夾內，包含 class 子資料夾的相對路徑',
+      cache_dir: '覆寫 kagglehub 快取位置（空=用預設）',
+    },
+  },
   DataLoader: {
     description: '將資料集包裝為 DataLoader 以進行批次迭代',
     params: {
