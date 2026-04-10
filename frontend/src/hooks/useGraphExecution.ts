@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { useTabStore } from '../store/tabStore';
 import { useToastStore } from '../store/toastStore';
 import { validateGraph } from '../api/rest';
+import { findEntryPoints } from '../utils/findEntryPoints';
 
 export function useGraphExecution() {
   const activeTabId = useTabStore((s) => s.activeTabId);
@@ -106,6 +107,20 @@ export function useGraphExecution() {
 
   const execute = useCallback(async () => {
     const tab = getActiveTab();
+
+    // Block execution when the graph has no entry points. This mirrors the
+    // backend `find_entry_points` so we fail fast with a toast instead of
+    // sending a graph that will be rejected server-side.
+    // TODO(task-20): replace hard-coded English with `t('execution.error.noEntryPoints')`.
+    const entryIds = findEntryPoints(tab.nodes, tab.edges);
+    if (entryIds.length === 0) {
+      useToastStore.getState().addToast(
+        'Graph has no entry points. Mark a root node as an entry point or add a Start node.',
+        'error',
+      );
+      return;
+    }
+
     const ws = tab.ws;
 
     if (!ws.connected) {
