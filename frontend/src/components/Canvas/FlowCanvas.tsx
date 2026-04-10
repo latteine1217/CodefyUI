@@ -7,6 +7,7 @@ import {
   BackgroundVariant,
   useReactFlow,
   type NodeTypes,
+  type EdgeTypes,
   type OnConnect,
   type IsValidConnection,
   type Connection,
@@ -17,7 +18,9 @@ import { CATEGORY_COLORS } from '../../styles/theme';
 
 import BaseNode from '../Nodes/BaseNode';
 import PresetNode from '../Nodes/PresetNode';
+import { StartNode } from '../Nodes/StartNode';
 import { CustomConnectionLine } from './CustomConnectionLine';
+import { TriggerEdge } from './TriggerEdge';
 import { EmptyCanvasOverlay } from './EmptyCanvasOverlay';
 import { EdgeDataTooltip } from './EdgeDataTooltip';
 import { QuickNodeSearch } from './QuickNodeSearch';
@@ -38,6 +41,11 @@ import styles from './FlowCanvas.module.css';
 const nodeTypes: NodeTypes = {
   baseNode: BaseNode,
   presetNode: PresetNode,
+  start: StartNode,
+};
+
+const edgeTypes: EdgeTypes = {
+  triggerEdge: TriggerEdge,
 };
 
 const minimapNodeColor = (node: any) => {
@@ -87,6 +95,25 @@ export function FlowCanvas() {
   const handleConnect: OnConnect = useCallback(
     (connection) => {
       storeOnConnect(connection);
+
+      if (connection.sourceHandle === 'trigger') {
+        const { setEdges } = useTabStore.getState();
+        const tab = useTabStore.getState().tabs.find(
+          (t) => t.id === useTabStore.getState().activeTabId,
+        );
+        if (tab) {
+          setEdges(
+            tab.edges.map((e) =>
+              e.source === connection.source &&
+              e.target === connection.target &&
+              e.sourceHandle === connection.sourceHandle
+                ? { ...e, type: 'triggerEdge', data: { ...(e.data ?? {}), type: 'trigger' } }
+                : e,
+            ),
+          );
+        }
+        return; // skip the data-edge color logic
+      }
 
       // Color the new edge by source port data type
       if (connection.source && connection.sourceHandle) {
@@ -292,6 +319,7 @@ export function FlowCanvas() {
         onMoveStart={() => setCanvasPanning(true)}
         onMoveEnd={() => setCanvasPanning(false)}
         nodeTypes={nodeTypes}
+        edgeTypes={edgeTypes}
         fitView
         proOptions={proOptions}
         deleteKeyCode="Delete"
