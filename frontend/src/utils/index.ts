@@ -82,6 +82,22 @@ export function resolveSerializedNodes(
       };
     }
 
+    // Start node
+    if (nodeType === 'Start') {
+      return {
+        id: raw.id,
+        type: 'start',
+        position,
+        data: {
+          label: 'Start',
+          type: 'Start',
+          params,
+          definition: defMap.get('Start') ?? { node_name: 'Start', category: 'Control', description: '', inputs: [], outputs: [{ name: 'trigger', data_type: 'TRIGGER', description: '', optional: false }], params: [] },
+          executionStatus: 'idle' as const,
+        },
+      };
+    }
+
     // Regular node
     const def = defMap.get(nodeType);
     return {
@@ -100,18 +116,25 @@ export function resolveSerializedNodes(
 }
 
 export function resolveSerializedEdges(rawEdges: any[]): import('@xyflow/react').Edge[] {
-  return rawEdges.map((e) => ({
-    id: e.id ?? generateId(),
-    source: e.source,
-    target: e.target,
-    sourceHandle: e.sourceHandle || undefined,
-    targetHandle: e.targetHandle || undefined,
-    animated: false,
-    style: { stroke: '#555', strokeWidth: 2 },
-  }));
+  return rawEdges.map((e) => {
+    const isTrigger = e.type === 'trigger' || e.sourceHandle === 'trigger';
+    return {
+      id: e.id ?? generateId(),
+      source: e.source,
+      target: e.target,
+      sourceHandle: e.sourceHandle || undefined,
+      targetHandle: isTrigger ? '__trigger' : (e.targetHandle || undefined),
+      animated: false,
+      ...(isTrigger
+        ? { type: 'triggerEdge', data: { type: 'trigger' } }
+        : { style: { stroke: '#555', strokeWidth: 2 } }),
+    };
+  });
 }
 
 export function isValidConnection(sourceType: string, targetType: string): boolean {
+  // Trigger type uses a dedicated __trigger handle, not regular data ports
+  if (sourceType === 'TRIGGER' || targetType === 'TRIGGER') return false;
   if (sourceType === 'ANY' || targetType === 'ANY') return true;
   if (sourceType === targetType) return true;
 

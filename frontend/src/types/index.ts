@@ -70,7 +70,6 @@ export interface NodeData {
   isPreset?: boolean;
   presetDefinition?: PresetDefinition;
   internalParams?: Record<string, Record<string, any>>;
-  isEntryPoint?: boolean;
   [key: string]: unknown;
 }
 

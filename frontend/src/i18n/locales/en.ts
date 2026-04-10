@@ -177,19 +177,8 @@ const en = {
   'toolbar.autoLayout.all': 'Layout All',
   'toolbar.autoLayout.selected': 'Layout Selected ({count})',
 
-  // Node context menu — entry points
-  'node.contextMenu.setAsEntryPoint': 'Set as Entry Point',
-  'node.contextMenu.removeEntryPoint': 'Remove Entry Point',
-
-  // Migration modal — entry points
-  'migration.noEntryPoints.title': 'No Entry Points Defined',
-  'migration.noEntryPoints.body': 'This graph has no entry points. Without entry points, the graph cannot be executed. Choose how to handle it:',
-  'migration.autoMark': 'Auto-mark all root nodes as entry points',
-  'migration.openAsDraft': 'Open as draft (I\'ll mark them later)',
-  'migration.cancel': 'Cancel',
-
   // Execution errors
-  'execution.error.noEntryPoints': 'No entry points defined. Right-click a root node and select "Set as Entry Point", or drag a Start node from the palette.',
+  'execution.error.noEntryPoints': 'No entry points defined. Drag a Start node from the palette and connect it to the node you want to start execution from.',
 
   // Node palette — control category / start node
   'palette.category.control': 'Control',

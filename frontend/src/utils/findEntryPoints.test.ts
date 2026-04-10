@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest';
 import { findEntryPoints } from './findEntryPoints';
 import type { Node, Edge } from '@xyflow/react';
 
-const node = (id: string, opts: { type?: string; isEntry?: boolean } = {}): Node => ({
+const node = (id: string, opts: { type?: string } = {}): Node => ({
   id,
   position: { x: 0, y: 0 },
-  data: { id, type: opts.type ?? 'Dataset', isEntryPoint: opts.isEntry ?? false },
+  data: { id, type: opts.type ?? 'Dataset' },
   type: 'baseNode',
 });
 
@@ -17,24 +17,29 @@ const edge = (id: string, src: string, tgt: string, type: 'data' | 'trigger' = '
 });
 
 describe('findEntryPoints', () => {
-  it('returns explicit entry-pointed nodes', () => {
-    const nodes = [node('a', { isEntry: true }), node('b')];
-    expect(findEntryPoints(nodes, [])).toEqual(['a']);
-  });
-
-  it('returns Start nodes by type', () => {
-    const nodes = [node('s', { type: 'Start' }), node('b')];
-    expect(findEntryPoints(nodes, [])).toEqual(['s']);
-  });
-
   it('returns nodes with incoming trigger edge', () => {
     const nodes = [node('s', { type: 'Start' }), node('ds')];
     const edges = [edge('e1', 's', 'ds', 'trigger')];
-    const result = new Set(findEntryPoints(nodes, edges));
-    expect(result).toEqual(new Set(['s', 'ds']));
+    expect(findEntryPoints(nodes, edges)).toEqual(['ds']);
   });
 
-  it('returns empty when nothing is marked', () => {
+  it('does NOT include Start node itself as entry point', () => {
+    const nodes = [node('s', { type: 'Start' }), node('ds')];
+    const edges = [edge('e1', 's', 'ds', 'trigger')];
+    const result = findEntryPoints(nodes, edges);
+    expect(result).not.toContain('s');
+  });
+
+  it('returns multiple trigger targets from one Start', () => {
+    const nodes = [node('s', { type: 'Start' }), node('a'), node('b')];
+    const edges = [
+      edge('e1', 's', 'a', 'trigger'),
+      edge('e2', 's', 'b', 'trigger'),
+    ];
+    expect(new Set(findEntryPoints(nodes, edges))).toEqual(new Set(['a', 'b']));
+  });
+
+  it('returns empty when nothing has a trigger edge', () => {
     const nodes = [node('a'), node('b')];
     const edges = [edge('e1', 'a', 'b', 'data')];
     expect(findEntryPoints(nodes, edges)).toEqual([]);

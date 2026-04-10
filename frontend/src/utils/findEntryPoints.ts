@@ -3,12 +3,9 @@ import type { Node, Edge } from '@xyflow/react';
 /**
  * Return ids of nodes that are entry points.
  *
- * A node is an entry point if any of:
- *   1. Its `isEntryPoint` field is true.
- *   2. It is of type "Start" (Start nodes are always entry points).
- *   3. It has at least one incoming edge of type "trigger".
- *
- * The order of returned ids matches the order in `nodes` for determinism.
+ * A node is an entry point if it has at least one incoming trigger edge
+ * (i.e. it is connected from a Start node). Start nodes themselves are
+ * NOT entry points — they are markers.
  *
  * Mirrors the backend `find_entry_points` in
  * `backend/app/core/graph_engine.py`.
@@ -20,14 +17,5 @@ export function findEntryPoints(nodes: Node[], edges: Edge[]): string[] {
       triggerTargets.add(e.target);
     }
   }
-  const result: string[] = [];
-  for (const n of nodes) {
-    const isMarker = Boolean((n.data as any)?.isEntryPoint);
-    const isStartType = (n.data as any)?.type === 'Start' || n.type === 'start';
-    const hasTriggerIn = triggerTargets.has(n.id);
-    if (isMarker || isStartType || hasTriggerIn) {
-      result.push(n.id);
-    }
-  }
-  return result;
+  return nodes.filter((n) => triggerTargets.has(n.id)).map((n) => n.id);
 }

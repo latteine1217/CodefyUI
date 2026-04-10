@@ -98,8 +98,6 @@ interface TabStoreState {
   deleteNode: (nodeId: string) => void;
   duplicateNode: (nodeId: string) => void;
   renameNode: (nodeId: string, newLabel: string) => void;
-  toggleEntryPoint: (nodeId: string) => void;
-  markAllRootsAsEntryPoints: () => void;
   applyLayout: (mode: LayoutMode) => void;
 
   // undo/redo
@@ -303,7 +301,7 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
     }
     const node: Node<NodeData> = {
       id: generateId(),
-      type: 'baseNode',
+      type: definition.node_name === 'Start' ? 'start' : 'baseNode',
       position,
       data: {
         label: definition.node_name,
@@ -482,20 +480,23 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
         data: {
           params: n.data.params,
           ...(n.data.isPreset ? { internalParams: n.data.internalParams } : {}),
-          ...(n.data.isEntryPoint ? { isEntryPoint: true } : {}),
         },
       };
     });
 
     return {
       nodes,
-      edges: tab.edges.map((e) => ({
-        id: e.id,
-        source: e.source,
-        target: e.target,
-        sourceHandle: e.sourceHandle ?? '',
-        targetHandle: e.targetHandle ?? '',
-      })),
+      edges: tab.edges.map((e) => {
+        const isTrigger = e.type === 'triggerEdge' || (e.data as any)?.type === 'trigger';
+        return {
+          id: e.id,
+          source: e.source,
+          target: e.target,
+          sourceHandle: e.sourceHandle ?? '',
+          targetHandle: e.targetHandle ?? '',
+          ...(isTrigger ? { type: 'trigger' } : {}),
+        };
+      }),
       presets,
     };
   },
@@ -539,51 +540,6 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
         ),
       })),
     });
-  },
-
-  toggleEntryPoint: (nodeId) => {
-    const tabId = get().activeTabId;
-    if (!tabId) return;
-    get().pushUndoSnapshot();
-    set((state) => ({
-      tabs: state.tabs.map((tab) => {
-        if (tab.id !== tabId) return tab;
-        return {
-          ...tab,
-          nodes: tab.nodes.map((n) =>
-            n.id === nodeId
-              ? {
-                  ...n,
-                  data: { ...n.data, isEntryPoint: !n.data.isEntryPoint },
-                }
-              : n,
-          ),
-        };
-      }),
-    }));
-  },
-
-  markAllRootsAsEntryPoints: () => {
-    const tabId = get().activeTabId;
-    if (!tabId) return;
-    set((state) => ({
-      tabs: state.tabs.map((tab) => {
-        if (tab.id !== tabId) return tab;
-        // Find data-roots: nodes with no incoming data edge
-        const targetIds = new Set(
-          tab.edges
-            .filter((e) => ((e.data as any)?.type ?? 'data') === 'data')
-            .map((e) => e.target),
-        );
-        return {
-          ...tab,
-          nodes: tab.nodes.map((n) => {
-            if (targetIds.has(n.id)) return n;
-            return { ...n, data: { ...n.data, isEntryPoint: true } };
-          }),
-        };
-      }),
-    }));
   },
 
   applyLayout: (mode) => {

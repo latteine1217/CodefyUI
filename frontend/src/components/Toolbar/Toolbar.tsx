@@ -6,7 +6,6 @@ import { useUIStore } from '../../store/uiStore';
 import { saveGraph, loadGraph, listGraphs, createPreset, exportGraph } from '../../api/rest';
 import { useI18n, SUPPORTED_LOCALES } from '../../i18n';
 import { resolveSerializedNodes, resolveSerializedEdges } from '../../utils';
-import { findEntryPoints } from '../../utils/findEntryPoints';
 import { SURFACE, TEXT, BRAND, STATUS_COLORS } from '../../styles/theme';
 import { CustomNodeManager } from '../CustomNodeManager/CustomNodeManager';
 import { useToastStore } from '../../store/toastStore';
@@ -312,11 +311,6 @@ export function Toolbar() {
         if (savedPresets.length > 0) {
           useNodeDefStore.setState({ presets: mergedPresets });
         }
-        // Migration: if loaded graph has no entry points, prompt the user
-        const entries = findEntryPoints(resolvedNodes, resolvedEdges);
-        if (entries.length === 0 && resolvedNodes.length > 0) {
-          useUIStore.getState().setMigrationModalOpen(true);
-        }
       } catch (e) {
         addToast(t('toolbar.load.fail', { error: (e as Error).message }), 'error');
       }
@@ -351,11 +345,6 @@ export function Toolbar() {
           setEdges(resolvedEdges);
           if (importedPresets.length > 0) {
             useNodeDefStore.setState({ presets: mergedPresets });
-          }
-          // Migration: if imported graph has no entry points, prompt the user
-          const entries = findEntryPoints(resolvedNodes, resolvedEdges);
-          if (entries.length === 0 && resolvedNodes.length > 0) {
-            useUIStore.getState().setMigrationModalOpen(true);
           }
         } catch (err) {
           addToast(t('toolbar.import.fail', { error: (err as Error).message }), 'error');

@@ -9,10 +9,7 @@ import { PresetConfigModal } from './components/PresetModal/PresetConfigModal';
 import { SubgraphEditorModal } from './components/SubgraphEditor/SubgraphEditorModal';
 import { ToastContainer } from './components/shared/Toast';
 import { ShortcutsModal } from './components/shared/ShortcutsModal';
-import { MigrationModal } from './components/shared/MigrationModal';
 import { useTabStore } from './store/tabStore';
-import { useUIStore } from './store/uiStore';
-import { useI18n } from './i18n';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import styles from './App.module.css';
 
@@ -59,10 +56,6 @@ function TabContent({ tabId }: { tabId: string }) {
 function App() {
   useKeyboardShortcuts();
   const tabs = useTabStore((s) => s.tabs);
-  const migrationOpen = useUIStore((s) => s.migrationModalOpen);
-  const setMigrationOpen = useUIStore((s) => s.setMigrationModalOpen);
-  const markAllRoots = useTabStore((s) => s.markAllRootsAsEntryPoints);
-  const { t } = useI18n();
 
   return (
     <div className={styles.root}>
@@ -75,16 +68,6 @@ function App() {
       <SubgraphEditorModal />
       <ToastContainer />
       <ShortcutsModal />
-      <MigrationModal
-        open={migrationOpen}
-        onAutoMark={() => {
-          markAllRoots();
-          setMigrationOpen(false);
-        }}
-        onOpenAsDraft={() => setMigrationOpen(false)}
-        onCancel={() => setMigrationOpen(false)}
-        t={t}
-      />
     </div>
   );
 }

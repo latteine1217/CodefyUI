@@ -9,8 +9,8 @@ const NODESEP = 40;
 const RANKSEP = 80;
 const LANE_GAP = 60;
 
-function isEntryPoint(node: Node): boolean {
-  return Boolean((node.data as any)?.isEntryPoint) || node.type === 'start';
+function isEntryPointOrStart(node: Node): boolean {
+  return node.type === 'start' || (node.data as any)?.type === 'Start';
 }
 
 function findConnectedComponents(targetIds: Set<string>, edges: Edge[]): string[][] {
@@ -136,7 +136,7 @@ function pickTargetIds(
   const targets = new Set<string>();
   for (const comp of allComponents) {
     const compNodes = comp.map((id) => nodes.find((n) => n.id === id)!);
-    if (compNodes.some(isEntryPoint)) {
+    if (compNodes.some(isEntryPointOrStart)) {
       for (const id of comp) targets.add(id);
     }
   }
@@ -175,7 +175,7 @@ export function autoLayout(
     return {
       ids,
       positions,
-      hasEntryPoint: compNodes.some(isEntryPoint),
+      hasEntryPoint: compNodes.some(isEntryPointOrStart),
       bounds: { minY, maxY },
     };
   });

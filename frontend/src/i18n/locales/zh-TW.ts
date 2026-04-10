@@ -179,19 +179,8 @@ const zhTW: Record<TranslationKey, string> = {
   'toolbar.autoLayout.all': '排版全部',
   'toolbar.autoLayout.selected': '排版選取 ({count})',
 
-  // Node context menu — entry points
-  'node.contextMenu.setAsEntryPoint': '設為起始節點',
-  'node.contextMenu.removeEntryPoint': '取消起始節點',
-
-  // Migration modal — entry points
-  'migration.noEntryPoints.title': '尚未定義起始節點',
-  'migration.noEntryPoints.body': '此圖沒有定義任何起始節點。沒有起始節點就無法執行。請選擇處理方式：',
-  'migration.autoMark': '自動將所有根節點標記為起始節點',
-  'migration.openAsDraft': '當作草稿開啟（稍後再標記）',
-  'migration.cancel': '取消',
-
   // Execution errors
-  'execution.error.noEntryPoints': '尚未定義起始節點。請在根節點上按右鍵選擇「設為起始節點」，或從面板拖曳一個 Start 節點。',
+  'execution.error.noEntryPoints': '尚未定義起始節點。請從節點面板拖曳一個 Start 節點，並連接到要開始執行的節點。',
 
   // Node palette — control category / start node
   'palette.category.control': '控制',

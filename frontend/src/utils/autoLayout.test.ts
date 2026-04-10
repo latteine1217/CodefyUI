@@ -2,11 +2,22 @@ import { describe, it, expect } from 'vitest';
 import { autoLayout, type LayoutMode } from './autoLayout';
 import type { Node, Edge } from '@xyflow/react';
 
-function makeNode(id: string, x = 0, y = 0, isEntry = false): Node {
+function makeStartNode(id: string, x = 0, y = 0): Node {
   return {
     id,
     position: { x, y },
-    data: { id, type: 'Dataset', isEntryPoint: isEntry },
+    data: { id, type: 'Start' },
+    type: 'start',
+    width: 80,
+    height: 40,
+  };
+}
+
+function makeNode(id: string, x = 0, y = 0): Node {
+  return {
+    id,
+    position: { x, y },
+    data: { id, type: 'Dataset' },
     type: 'baseNode',
     width: 200,
     height: 80,
@@ -20,12 +31,14 @@ function makeEdge(id: string, source: string, target: string, type: 'data' | 'tr
 describe('autoLayout', () => {
   it('linear chain: A→B→C→D produces strictly increasing X at same Y', () => {
     const nodes = [
-      makeNode('A', 0, 0, true),
-      makeNode('B', 0, 0),
-      makeNode('C', 0, 0),
-      makeNode('D', 0, 0),
+      makeStartNode('s'),
+      makeNode('A'),
+      makeNode('B'),
+      makeNode('C'),
+      makeNode('D'),
     ];
     const edges = [
+      makeEdge('et', 's', 'A', 'trigger'),
       makeEdge('e1', 'A', 'B'),
       makeEdge('e2', 'B', 'C'),
       makeEdge('e3', 'C', 'D'),
@@ -42,7 +55,7 @@ describe('autoLayout', () => {
   });
 
   it('diamond: A→B,A→C,B→D,C→D — B and C stack vertically at same X', () => {
-    const nodes = ['A', 'B', 'C', 'D'].map((id) => makeNode(id, 0, 0, id === 'A'));
+    const nodes = ['A', 'B', 'C', 'D'].map((id) => makeNode(id));
     const edges = [
       makeEdge('e1', 'A', 'B'),
       makeEdge('e2', 'A', 'C'),
@@ -60,13 +73,17 @@ describe('autoLayout', () => {
 
   it('two disconnected components → distinct Y bands', () => {
     const nodes = [
-      makeNode('A1', 0, 0, true),
-      makeNode('A2', 0, 0),
-      makeNode('B1', 0, 0, true),
-      makeNode('B2', 0, 0),
+      makeStartNode('s1'),
+      makeNode('A1'),
+      makeNode('A2'),
+      makeStartNode('s2'),
+      makeNode('B1'),
+      makeNode('B2'),
     ];
     const edges = [
+      makeEdge('et1', 's1', 'A1', 'trigger'),
       makeEdge('e1', 'A1', 'A2'),
+      makeEdge('et2', 's2', 'B1', 'trigger'),
       makeEdge('e2', 'B1', 'B2'),
     ];
     const result = autoLayout(nodes, edges, 'all');
@@ -76,7 +93,7 @@ describe('autoLayout', () => {
   });
 
   it('cycle A→B→C→A does not crash and produces valid coordinates', () => {
-    const nodes = ['A', 'B', 'C'].map((id) => makeNode(id, 0, 0, id === 'A'));
+    const nodes = ['A', 'B', 'C'].map((id) => makeNode(id));
     const edges = [
       makeEdge('e1', 'A', 'B'),
       makeEdge('e2', 'B', 'C'),
@@ -91,12 +108,14 @@ describe('autoLayout', () => {
 
   it('mode=experiments leaves draft components untouched', () => {
     const nodes = [
-      makeNode('live1', 100, 100, true),
+      makeStartNode('s'),
+      makeNode('live1', 100, 100),
       makeNode('live2', 200, 100),
       makeNode('draft1', 500, 500),
       makeNode('draft2', 700, 500),
     ];
     const edges = [
+      makeEdge('et', 's', 'live1', 'trigger'),
       makeEdge('e1', 'live1', 'live2'),
       makeEdge('e2', 'draft1', 'draft2'),
     ];
@@ -109,7 +128,7 @@ describe('autoLayout', () => {
 
   it('mode=selected only moves selected nodes and preserves centroid', () => {
     const nodes = [
-      makeNode('A', 100, 100, true),
+      makeNode('A', 100, 100),
       makeNode('B', 200, 100),
       makeNode('C', 300, 100),
       makeNode('untouched', 999, 999),
