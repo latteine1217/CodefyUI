@@ -330,6 +330,27 @@ function SubgraphFlowInner({
   const [search, setSearch] = useState('');
   const [snapEnabled, setSnapEnabled] = useState(false);
 
+  // Snap all existing nodes to grid when snap is enabled
+  useEffect(() => {
+    if (!snapEnabled) return;
+    const GRID = 20;
+    setNodes((prev) => {
+      const snapped = prev.map((node) => ({
+        ...node,
+        position: {
+          x: Math.round(node.position.x / GRID) * GRID,
+          y: Math.round(node.position.y / GRID) * GRID,
+        },
+      }));
+      const changed = snapped.some(
+        (n, i) =>
+          n.position.x !== prev[i].position.x ||
+          n.position.y !== prev[i].position.y
+      );
+      return changed ? snapped : prev;
+    });
+  }, [snapEnabled]);
+
   useEffect(() => {
     setTimeout(() => fitView({ padding: 0.3 }), 50);
   }, [fitView]);

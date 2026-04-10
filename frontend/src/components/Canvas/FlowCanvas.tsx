@@ -68,7 +68,29 @@ export function FlowCanvas() {
   const { t } = useI18n();
   const gridSnapEnabled = useUIStore((s) => s.gridSnapEnabled);
   const setCanvasPanning = useUIStore((s) => s.setCanvasPanning);
+  const setNodes = useTabStore((s) => s.setNodes);
   const { screenToFlowPosition } = useReactFlow();
+
+  // Snap all existing nodes to grid when grid snap is enabled
+  useEffect(() => {
+    if (!gridSnapEnabled) return;
+    const GRID = 24;
+    const snapped = activeTab.nodes.map((node) => ({
+      ...node,
+      position: {
+        x: Math.round(node.position.x / GRID) * GRID,
+        y: Math.round(node.position.y / GRID) * GRID,
+      },
+    }));
+    const changed = snapped.some(
+      (n, i) =>
+        n.position.x !== activeTab.nodes[i].position.x ||
+        n.position.y !== activeTab.nodes[i].position.y
+    );
+    if (changed) {
+      setNodes(snapped);
+    }
+  }, [gridSnapEnabled]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const reactFlowId = useId();

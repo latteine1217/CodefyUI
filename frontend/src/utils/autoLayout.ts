@@ -59,8 +59,8 @@ function layoutComponentWithDagre(
   const idSet = new Set(componentNodeIds);
   for (const id of componentNodeIds) {
     const node = allNodes.find((n) => n.id === id)!;
-    const w = node.width ?? NODE_W;
-    const h = node.height ?? NODE_H;
+    const w = node.measured?.width ?? node.width ?? NODE_W;
+    const h = node.measured?.height ?? node.height ?? NODE_H;
     g.setNode(id, { width: w, height: h });
   }
   for (const e of allEdges) {
@@ -159,8 +159,8 @@ export function autoLayout(
   if (mode === 'selected' && selectedIds) {
     const sel = nodes.filter((n) => selectedIds.has(n.id));
     originalCentroid = {
-      x: sel.reduce((s, n) => s + n.position.x + (n.width ?? NODE_W) / 2, 0) / sel.length,
-      y: sel.reduce((s, n) => s + n.position.y + (n.height ?? NODE_H) / 2, 0) / sel.length,
+      x: sel.reduce((s, n) => s + n.position.x + (n.measured?.width ?? n.width ?? NODE_W) / 2, 0) / sel.length,
+      y: sel.reduce((s, n) => s + n.position.y + (n.measured?.height ?? n.height ?? NODE_H) / 2, 0) / sel.length,
     };
   }
 
@@ -185,9 +185,10 @@ export function autoLayout(
   // Selected mode: shift result so the centroid matches the original
   if (mode === 'selected' && originalCentroid) {
     const sel = Array.from(finalPositions.entries());
+    const nodeMap = new Map(nodes.map((n) => [n.id, n]));
     const newCentroid = {
-      x: sel.reduce((s, [, p]) => s + p.x + NODE_W / 2, 0) / sel.length,
-      y: sel.reduce((s, [, p]) => s + p.y + NODE_H / 2, 0) / sel.length,
+      x: sel.reduce((s, [id, p]) => s + p.x + (nodeMap.get(id)?.measured?.width ?? nodeMap.get(id)?.width ?? NODE_W) / 2, 0) / sel.length,
+      y: sel.reduce((s, [id, p]) => s + p.y + (nodeMap.get(id)?.measured?.height ?? nodeMap.get(id)?.height ?? NODE_H) / 2, 0) / sel.length,
     };
     const dx = originalCentroid.x - newCentroid.x;
     const dy = originalCentroid.y - newCentroid.y;
