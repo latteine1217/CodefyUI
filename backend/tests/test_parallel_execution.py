@@ -57,7 +57,7 @@ async def test_parallel_execution_diamond():
     registry._nodes["_TestSlow"] = SlowNode
     try:
         nodes = [
-            {"id": "a", "type": "_TestSlow", "isEntryPoint": True, "data": {"params": {"id": "a"}}},
+            {"id": "a", "type": "_TestSlow", "data": {"params": {"id": "a"}, "isEntryPoint": True}},
             {"id": "b", "type": "_TestSlow", "data": {"params": {"id": "b"}}},
             {"id": "c", "type": "_TestSlow", "data": {"params": {"id": "c"}}},
             {"id": "d", "type": "_TestSlow", "data": {"params": {"id": "d"}}},

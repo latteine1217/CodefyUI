@@ -278,7 +278,7 @@ def find_entry_points(
     """Return ids of nodes that are entry points.
 
     A node is an entry point if any of:
-      1. Its `isEntryPoint` field is True.
+      1. Its `data.isEntryPoint` field is True.
       2. It is of type "Start" (Start nodes are always entry points).
       3. It has at least one incoming edge of type "trigger".
 
@@ -292,7 +292,7 @@ def find_entry_points(
     }
     for node in nodes:
         nid = node["id"]
-        is_marker = bool(node.get("isEntryPoint", False))
+        is_marker = bool(node.get("data", {}).get("isEntryPoint", False))
         is_start_type = node.get("type") == "Start"
         has_trigger_in = nid in nodes_with_trigger_in
         if is_marker or is_start_type or has_trigger_in:

@@ -36,7 +36,6 @@ class NodeData(BaseModel):
     type: str
     position: dict[str, float] = {"x": 0, "y": 0}
     data: dict[str, Any] = {}
-    isEntryPoint: bool = False
 
 
 class EdgeData(BaseModel):

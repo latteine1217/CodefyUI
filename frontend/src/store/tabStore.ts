@@ -482,6 +482,7 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
         data: {
           params: n.data.params,
           ...(n.data.isPreset ? { internalParams: n.data.internalParams } : {}),
+          ...(n.data.isEntryPoint ? { isEntryPoint: true } : {}),
         },
       };
     });

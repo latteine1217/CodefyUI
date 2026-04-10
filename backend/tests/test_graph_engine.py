@@ -50,7 +50,7 @@ def test_cycle_detection():
 def test_validate_graph_valid():
     """_TestSource has no required inputs, Print's required input is satisfied by the edge."""
     nodes = [
-        {"id": "1", "type": "_TestSource", "isEntryPoint": True, "data": {"params": {}}},
+        {"id": "1", "type": "_TestSource", "data": {"params": {}, "isEntryPoint": True}},
         {"id": "2", "type": "Print", "data": {"params": {}}},
     ]
     edges = [
@@ -61,7 +61,7 @@ def test_validate_graph_valid():
 
 
 def test_validate_graph_unknown_node():
-    nodes = [{"id": "1", "type": "NonExistentNode", "isEntryPoint": True}]
+    nodes = [{"id": "1", "type": "NonExistentNode", "data": {"isEntryPoint": True}}]
     edges = []
     errors = validate_graph(nodes, edges)
     assert len(errors) == 1
@@ -87,7 +87,7 @@ def test_validate_graph_type_mismatch():
 async def test_execute_print_nodes():
     """Use _TestSource (registered in conftest, no torch) to feed Print."""
     nodes = [
-        {"id": "1", "type": "_TestSource", "isEntryPoint": True, "data": {"params": {}}},
+        {"id": "1", "type": "_TestSource", "data": {"params": {}, "isEntryPoint": True}},
         {"id": "2", "type": "Print", "data": {"params": {"label": "second"}}},
     ]
     edges = [
@@ -187,9 +187,9 @@ from app.core.graph_engine import find_entry_points, reachable_from_entry_points
 
 def test_find_entry_points_explicit_marker():
     nodes = [
-        {"id": "a", "isEntryPoint": True},
-        {"id": "b", "isEntryPoint": False},
-        {"id": "c", "isEntryPoint": False},
+        {"id": "a", "data": {"isEntryPoint": True}},
+        {"id": "b", "data": {"isEntryPoint": False}},
+        {"id": "c", "data": {"isEntryPoint": False}},
     ]
     edges = []
     assert find_entry_points(nodes, edges) == ["a"]
@@ -197,8 +197,8 @@ def test_find_entry_points_explicit_marker():
 
 def test_find_entry_points_via_trigger_edge():
     nodes = [
-        {"id": "start", "type": "Start", "isEntryPoint": False},
-        {"id": "ds", "type": "Dataset", "isEntryPoint": False},
+        {"id": "start", "type": "Start", "data": {"isEntryPoint": False}},
+        {"id": "ds", "type": "Dataset", "data": {"isEntryPoint": False}},
     ]
     edges = [
         {"id": "e1", "source": "start", "target": "ds", "type": "trigger"},
@@ -208,18 +208,19 @@ def test_find_entry_points_via_trigger_edge():
     assert "ds" in find_entry_points(nodes, edges)
     # Start node itself is also an entry (it has isEntryPoint by virtue
     # of being a Start? — no: Start nodes are entry points because they're
-    # always treated as such; we'll handle that via isEntryPoint=True being
-    # set when the StartNode is instantiated on the canvas, OR by treating
-    # Start type as implicit entry. We'll go with implicit-by-type below.)
+    # always treated as such; we'll handle that via data.isEntryPoint=True
+    # being set when the StartNode is instantiated on the canvas, OR by
+    # treating Start type as implicit entry. We'll go with implicit-by-type
+    # below.)
     assert "start" in find_entry_points(nodes, edges)
 
 
 def test_find_entry_points_combined():
     nodes = [
-        {"id": "a", "type": "Dataset", "isEntryPoint": True},
-        {"id": "start", "type": "Start", "isEntryPoint": False},
-        {"id": "b", "type": "Dataset", "isEntryPoint": False},
-        {"id": "c", "type": "Conv", "isEntryPoint": False},
+        {"id": "a", "type": "Dataset", "data": {"isEntryPoint": True}},
+        {"id": "start", "type": "Start", "data": {"isEntryPoint": False}},
+        {"id": "b", "type": "Dataset", "data": {"isEntryPoint": False}},
+        {"id": "c", "type": "Conv", "data": {"isEntryPoint": False}},
     ]
     edges = [
         {"id": "e1", "source": "start", "target": "b", "type": "trigger"},
@@ -271,8 +272,7 @@ def _make_node(nid, ntype="Dataset", is_entry=False):
     return {
         "id": nid,
         "type": ntype,
-        "isEntryPoint": is_entry,
-        "data": {"params": {}},
+        "data": {"params": {}, "isEntryPoint": is_entry},
     }
 
 
@@ -304,7 +304,7 @@ def test_validate_accepts_single_entry_point():
 
 
 def test_validate_rejects_entry_with_incoming_data_edge():
-    """A node marked isEntryPoint=True must not have incoming data edges."""
+    """A node marked data.isEntryPoint=True must not have incoming data edges."""
     nodes = [_make_node("a"), _make_node("b", is_entry=True)]
     edges = [_make_edge("e1", "a", "b", etype="data")]
     errors = validate_graph(nodes, edges)
@@ -366,9 +366,9 @@ def test_validate_rejects_cycle_in_entry_pointed_component():
 def test_topological_levels_excludes_trigger_from_in_degree():
     """A Dataset receiving a trigger from a Start should still be at level 0."""
     nodes = [
-        {"id": "start", "type": "Start", "isEntryPoint": False, "data": {"params": {}}},
-        {"id": "ds", "type": "Dataset", "isEntryPoint": False, "data": {"params": {}}},
-        {"id": "dl", "type": "DataLoader", "isEntryPoint": False, "data": {"params": {}}},
+        {"id": "start", "type": "Start", "data": {"params": {}, "isEntryPoint": False}},
+        {"id": "ds", "type": "Dataset", "data": {"params": {}, "isEntryPoint": False}},
+        {"id": "dl", "type": "DataLoader", "data": {"params": {}, "isEntryPoint": False}},
     ]
     edges = [
         {"id": "e1", "source": "start", "target": "ds", "sourceHandle": "trigger", "targetHandle": "trigger", "type": "trigger"},
@@ -388,8 +388,8 @@ async def test_execute_graph_skips_draft_components():
     # We need real registered nodes for execute_graph to actually run.
     # _TestSource is registered in conftest.py and takes no inputs.
     nodes = [
-        {"id": "live", "type": "_TestSource", "isEntryPoint": True, "data": {"params": {"val": 42}}},
-        {"id": "draft", "type": "_TestSource", "isEntryPoint": False, "data": {"params": {"val": 99}}},
+        {"id": "live", "type": "_TestSource", "data": {"params": {"val": 42}, "isEntryPoint": True}},
+        {"id": "draft", "type": "_TestSource", "data": {"params": {"val": 99}, "isEntryPoint": False}},
     ]
     edges = []
     results = await execute_graph(nodes, edges)

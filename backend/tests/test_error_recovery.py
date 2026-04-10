@@ -35,7 +35,7 @@ def _register_failing_node():
 async def test_fail_fast_raises():
     """Default fail_fast mode should raise on first error."""
     nodes = [
-        {"id": "1", "type": "_TestFailing", "isEntryPoint": True, "data": {"params": {}}},
+        {"id": "1", "type": "_TestFailing", "data": {"params": {}, "isEntryPoint": True}},
         {"id": "2", "type": "Print", "data": {"params": {}}},
     ]
     edges = [{"source": "1", "target": "2", "sourceHandle": "output", "targetHandle": "value"}]
@@ -53,7 +53,7 @@ async def test_continue_mode_skips_downstream():
         statuses[node_id] = status
 
     nodes = [
-        {"id": "1", "type": "_TestFailing", "isEntryPoint": True, "data": {"params": {}}},
+        {"id": "1", "type": "_TestFailing", "data": {"params": {}, "isEntryPoint": True}},
         {"id": "2", "type": "Print", "data": {"params": {}}},
     ]
     edges = [{"source": "1", "target": "2", "sourceHandle": "output", "targetHandle": "value"}]
@@ -93,7 +93,7 @@ async def test_retry_mode():
 
     registry._nodes["_TestRetry"] = RetryNode
     try:
-        nodes = [{"id": "1", "type": "_TestRetry", "isEntryPoint": True, "data": {"params": {}}}]
+        nodes = [{"id": "1", "type": "_TestRetry", "data": {"params": {}, "isEntryPoint": True}}]
         results = await execute_graph(nodes, [], error_mode="retry", max_retries=3)
         assert results["1"]["out"] == "ok"
         assert call_count == 3
