@@ -97,6 +97,7 @@ interface TabStoreState {
   deleteNode: (nodeId: string) => void;
   duplicateNode: (nodeId: string) => void;
   renameNode: (nodeId: string, newLabel: string) => void;
+  toggleEntryPoint: (nodeId: string) => void;
 
   // undo/redo
   pushUndoSnapshot: () => void;
@@ -534,6 +535,28 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
         ),
       })),
     });
+  },
+
+  toggleEntryPoint: (nodeId) => {
+    const tabId = get().activeTabId;
+    if (!tabId) return;
+    get().pushUndoSnapshot();
+    set((state) => ({
+      tabs: state.tabs.map((tab) => {
+        if (tab.id !== tabId) return tab;
+        return {
+          ...tab,
+          nodes: tab.nodes.map((n) =>
+            n.id === nodeId
+              ? {
+                  ...n,
+                  data: { ...n.data, isEntryPoint: !n.data.isEntryPoint },
+                }
+              : n,
+          ),
+        };
+      }),
+    }));
   },
 
   // ── Undo/Redo ──
