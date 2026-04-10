@@ -13,11 +13,20 @@ interface UIState {
   setDraggingSourceType: (type: string | null) => void;
   beginnerMode: boolean;
   toggleBeginnerMode: () => void;
+  lastLayoutMode: 'experiments' | 'all' | 'selected';
+  setLastLayoutMode: (mode: 'experiments' | 'all' | 'selected') => void;
 }
 
 const TOOLTIPS_KEY = 'codefyui-tooltips';
 const GRIDSNAP_KEY = 'codefyui-gridsnap';
 const BEGINNER_KEY = 'codefyui-beginner-mode';
+const LAYOUT_MODE_KEY = 'codefyui-last-layout-mode';
+
+const loadLayoutMode = (): 'experiments' | 'all' | 'selected' => {
+  const saved = localStorage.getItem(LAYOUT_MODE_KEY);
+  if (saved === 'experiments' || saved === 'all' || saved === 'selected') return saved;
+  return 'experiments';
+};
 
 export const useUIStore = create<UIState>((set) => ({
   tooltipsEnabled: localStorage.getItem(TOOLTIPS_KEY) !== 'false',
@@ -47,4 +56,9 @@ export const useUIStore = create<UIState>((set) => ({
       localStorage.setItem(BEGINNER_KEY, String(next));
       return { beginnerMode: next };
     }),
+  lastLayoutMode: loadLayoutMode(),
+  setLastLayoutMode: (mode) => {
+    localStorage.setItem(LAYOUT_MODE_KEY, mode);
+    set({ lastLayoutMode: mode });
+  },
 }));
