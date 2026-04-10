@@ -237,6 +237,61 @@ def _has_cycle(nodes: list[dict], edges: list[dict]) -> bool:
     return visited != len(nodes)
 
 
+def find_entry_points(
+    nodes: list[dict],
+    edges: list[dict],
+) -> list[str]:
+    """Return ids of nodes that are entry points.
+
+    A node is an entry point if any of:
+      1. Its `isEntryPoint` field is True.
+      2. It is of type "Start" (Start nodes are always entry points).
+      3. It has at least one incoming edge of type "trigger".
+
+    The order of returned ids matches the order in `nodes` for determinism.
+    """
+    entry_ids: list[str] = []
+    nodes_with_trigger_in: set[str] = {
+        e["target"]
+        for e in edges
+        if e.get("type", "data") == "trigger"
+    }
+    for node in nodes:
+        nid = node["id"]
+        is_marker = bool(node.get("isEntryPoint", False))
+        is_start_type = node.get("type") == "Start"
+        has_trigger_in = nid in nodes_with_trigger_in
+        if is_marker or is_start_type or has_trigger_in:
+            entry_ids.append(nid)
+    return entry_ids
+
+
+def reachable_from_entry_points(
+    entry_ids: list[str],
+    edges: list[dict],
+) -> set[str]:
+    """BFS forward from entry_ids through DATA edges only.
+
+    Trigger edges are markers, not data dependencies, and are not
+    traversed. The seed entry_ids themselves are always included in the
+    result, regardless of edge types.
+    """
+    reachable: set[str] = set(entry_ids)
+    frontier: list[str] = list(entry_ids)
+    # Build adjacency list of data edges only.
+    adj: dict[str, list[str]] = {}
+    for e in edges:
+        if e.get("type", "data") == "data":
+            adj.setdefault(e["source"], []).append(e["target"])
+    while frontier:
+        node = frontier.pop()
+        for next_node in adj.get(node, []):
+            if next_node not in reachable:
+                reachable.add(next_node)
+                frontier.append(next_node)
+    return reachable
+
+
 def topological_sort(nodes: list[dict], edges: list[dict]) -> list[str]:
     """Kahn's algorithm. Returns ordered node IDs."""
     in_degree: dict[str, int] = {n["id"]: 0 for n in nodes}

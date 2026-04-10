@@ -179,3 +179,88 @@ def test_validate_graph_required_input_satisfied_by_edge():
     # Node 1 still has a missing required input, but node 2's 'tensor' is satisfied
     node2_missing = [e for e in errors if "node 2" in e and "Missing required input" in e]
     assert node2_missing == [], f"Node 2's input should be satisfied: {node2_missing}"
+
+
+from app.core.graph_engine import find_entry_points, reachable_from_entry_points
+
+
+def test_find_entry_points_explicit_marker():
+    nodes = [
+        {"id": "a", "isEntryPoint": True},
+        {"id": "b", "isEntryPoint": False},
+        {"id": "c", "isEntryPoint": False},
+    ]
+    edges = []
+    assert find_entry_points(nodes, edges) == ["a"]
+
+
+def test_find_entry_points_via_trigger_edge():
+    nodes = [
+        {"id": "start", "type": "Start", "isEntryPoint": False},
+        {"id": "ds", "type": "Dataset", "isEntryPoint": False},
+    ]
+    edges = [
+        {"id": "e1", "source": "start", "target": "ds", "type": "trigger"},
+    ]
+    # The DOWNSTREAM node (ds) is the entry point because it has an
+    # incoming trigger edge.
+    assert "ds" in find_entry_points(nodes, edges)
+    # Start node itself is also an entry (it has isEntryPoint by virtue
+    # of being a Start? — no: Start nodes are entry points because they're
+    # always treated as such; we'll handle that via isEntryPoint=True being
+    # set when the StartNode is instantiated on the canvas, OR by treating
+    # Start type as implicit entry. We'll go with implicit-by-type below.)
+    assert "start" in find_entry_points(nodes, edges)
+
+
+def test_find_entry_points_combined():
+    nodes = [
+        {"id": "a", "type": "Dataset", "isEntryPoint": True},
+        {"id": "start", "type": "Start", "isEntryPoint": False},
+        {"id": "b", "type": "Dataset", "isEntryPoint": False},
+        {"id": "c", "type": "Conv", "isEntryPoint": False},
+    ]
+    edges = [
+        {"id": "e1", "source": "start", "target": "b", "type": "trigger"},
+        {"id": "e2", "source": "a", "target": "c", "type": "data"},
+    ]
+    result = set(find_entry_points(nodes, edges))
+    assert result == {"a", "b", "start"}
+
+
+def test_find_entry_points_none():
+    nodes = [{"id": "a"}, {"id": "b"}]
+    edges = [{"id": "e1", "source": "a", "target": "b", "type": "data"}]
+    assert find_entry_points(nodes, edges) == []
+
+
+def test_reachable_traverses_data_edges_only():
+    nodes = [{"id": n} for n in ["start", "ds", "dl", "model"]]
+    edges = [
+        {"id": "e1", "source": "start", "target": "ds", "type": "trigger"},
+        {"id": "e2", "source": "ds", "target": "dl", "type": "data"},
+        {"id": "e3", "source": "dl", "target": "model", "type": "data"},
+    ]
+    # Starting from `ds` (data root that received a trigger), BFS through
+    # data edges should reach ds, dl, model — but NOT start (it's upstream
+    # via a trigger edge, which is not traversed).
+    reachable = reachable_from_entry_points(["ds"], edges)
+    assert reachable == {"ds", "dl", "model"}
+
+
+def test_reachable_includes_start_when_explicitly_in_seed():
+    nodes = [{"id": n} for n in ["start", "ds"]]
+    edges = [{"id": "e1", "source": "start", "target": "ds", "type": "trigger"}]
+    # If we seed BFS with start AND ds, both are in the result; trigger
+    # edges are still not traversed, but the seeds themselves are included.
+    reachable = reachable_from_entry_points(["start", "ds"], edges)
+    assert reachable == {"start", "ds"}
+
+
+def test_reachable_handles_disconnected_components():
+    nodes = [{"id": n} for n in ["a", "b", "x", "y"]]
+    edges = [
+        {"id": "e1", "source": "a", "target": "b", "type": "data"},
+        {"id": "e2", "source": "x", "target": "y", "type": "data"},
+    ]
+    assert reachable_from_entry_points(["a"], edges) == {"a", "b"}
