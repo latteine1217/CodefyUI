@@ -99,6 +99,7 @@ interface TabStoreState {
   duplicateNode: (nodeId: string) => void;
   renameNode: (nodeId: string, newLabel: string) => void;
   toggleEntryPoint: (nodeId: string) => void;
+  markAllRootsAsEntryPoints: () => void;
   applyLayout: (mode: LayoutMode) => void;
 
   // undo/redo
@@ -556,6 +557,29 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
                 }
               : n,
           ),
+        };
+      }),
+    }));
+  },
+
+  markAllRootsAsEntryPoints: () => {
+    const tabId = get().activeTabId;
+    if (!tabId) return;
+    set((state) => ({
+      tabs: state.tabs.map((tab) => {
+        if (tab.id !== tabId) return tab;
+        // Find data-roots: nodes with no incoming data edge
+        const targetIds = new Set(
+          tab.edges
+            .filter((e) => ((e.data as any)?.type ?? 'data') === 'data')
+            .map((e) => e.target),
+        );
+        return {
+          ...tab,
+          nodes: tab.nodes.map((n) => {
+            if (targetIds.has(n.id)) return n;
+            return { ...n, data: { ...n.data, isEntryPoint: true } };
+          }),
         };
       }),
     }));

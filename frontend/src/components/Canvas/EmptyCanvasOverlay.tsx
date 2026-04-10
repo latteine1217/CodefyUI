@@ -1,8 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNodeDefStore } from '../../store/nodeDefStore';
 import { useTabStore } from '../../store/tabStore';
+import { useUIStore } from '../../store/uiStore';
 import { useI18n } from '../../i18n';
 import { resolveSerializedNodes, resolveSerializedEdges } from '../../utils';
+import { findEntryPoints } from '../../utils/findEntryPoints';
 import { listExamples, loadExample } from '../../api/rest';
 import type { ExampleSummary } from '../../api/rest';
 import { useToastStore } from '../../store/toastStore';
@@ -60,11 +62,19 @@ export function EmptyCanvasOverlay() {
           }
         }
 
-        setNodes(resolveSerializedNodes(rawNodes, store.definitions, mergedPresets));
-        setEdges(resolveSerializedEdges(edges));
+        const resolvedNodes = resolveSerializedNodes(rawNodes, store.definitions, mergedPresets);
+        const resolvedEdges = resolveSerializedEdges(edges);
+        setNodes(resolvedNodes);
+        setEdges(resolvedEdges);
 
         if (importedPresets.length > 0) {
           useNodeDefStore.setState({ presets: mergedPresets });
+        }
+
+        // Migration: if loaded example has no entry points, prompt the user
+        const entries = findEntryPoints(resolvedNodes, resolvedEdges);
+        if (entries.length === 0 && resolvedNodes.length > 0) {
+          useUIStore.getState().setMigrationModalOpen(true);
         }
       } catch {
         addToast(t('empty.loadError'), 'error');

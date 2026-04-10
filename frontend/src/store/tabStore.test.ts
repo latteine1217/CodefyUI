@@ -59,6 +59,104 @@ describe('toggleEntryPoint', () => {
   });
 });
 
+describe('markAllRootsAsEntryPoints', () => {
+  beforeEach(() => {
+    // Reset store to known state
+    useTabStore.setState({ tabs: [], activeTabId: null as unknown as string });
+    useTabStore.getState().addTab('test');
+  });
+
+  it('marks data-roots as entry points and leaves non-roots untouched', () => {
+    const tabId = useTabStore.getState().activeTabId!;
+    useTabStore.setState((state) => ({
+      tabs: state.tabs.map((t) =>
+        t.id === tabId
+          ? {
+              ...t,
+              nodes: [
+                {
+                  id: 'a',
+                  type: 'baseNode',
+                  position: { x: 0, y: 0 },
+                  data: { id: 'a', type: 'Dataset', isEntryPoint: false },
+                },
+                {
+                  id: 'b',
+                  type: 'baseNode',
+                  position: { x: 0, y: 0 },
+                  data: { id: 'b', type: 'Dataset', isEntryPoint: false },
+                },
+                {
+                  id: 'c',
+                  type: 'baseNode',
+                  position: { x: 0, y: 0 },
+                  data: { id: 'c', type: 'Dataset', isEntryPoint: false },
+                },
+              ] as any,
+              // a and b are roots (no incoming edges); c has a -> c and b -> c
+              edges: [
+                { id: 'e1', source: 'a', target: 'c' },
+                { id: 'e2', source: 'b', target: 'c' },
+              ] as any,
+            }
+          : t,
+      ),
+    }));
+
+    useTabStore.getState().markAllRootsAsEntryPoints();
+    const tab = useTabStore.getState().tabs.find((t) => t.id === tabId)!;
+    const a = tab.nodes.find((n) => n.id === 'a')!;
+    const b = tab.nodes.find((n) => n.id === 'b')!;
+    const c = tab.nodes.find((n) => n.id === 'c')!;
+
+    // Roots a and b should be marked
+    expect(a.data.isEntryPoint).toBe(true);
+    expect(b.data.isEntryPoint).toBe(true);
+    // Non-root c should remain untouched
+    expect(c.data.isEntryPoint).toBe(false);
+  });
+
+  it('ignores trigger edges when determining roots', () => {
+    const tabId = useTabStore.getState().activeTabId!;
+    useTabStore.setState((state) => ({
+      tabs: state.tabs.map((t) =>
+        t.id === tabId
+          ? {
+              ...t,
+              nodes: [
+                {
+                  id: 'a',
+                  type: 'baseNode',
+                  position: { x: 0, y: 0 },
+                  data: { id: 'a', type: 'Dataset', isEntryPoint: false },
+                },
+                {
+                  id: 'b',
+                  type: 'baseNode',
+                  position: { x: 0, y: 0 },
+                  data: { id: 'b', type: 'Dataset', isEntryPoint: false },
+                },
+              ] as any,
+              // Trigger edge a -> b should NOT disqualify b from being a data-root
+              edges: [
+                { id: 'e1', source: 'a', target: 'b', data: { type: 'trigger' } },
+              ] as any,
+            }
+          : t,
+      ),
+    }));
+
+    useTabStore.getState().markAllRootsAsEntryPoints();
+    const tab = useTabStore.getState().tabs.find((t) => t.id === tabId)!;
+    const a = tab.nodes.find((n) => n.id === 'a')!;
+    const b = tab.nodes.find((n) => n.id === 'b')!;
+
+    // Both should be marked because trigger edges are ignored for root detection
+    expect(a.data.isEntryPoint).toBe(true);
+    expect(b.data.isEntryPoint).toBe(true);
+  });
+});
+
 describe('applyLayout', () => {
   beforeEach(() => {
     // Reset store to known state
