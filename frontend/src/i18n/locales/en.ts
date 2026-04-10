@@ -136,6 +136,8 @@ const en = {
   'subgraph.snapOn': 'Snap: ON',
   'subgraph.snapOff': 'Snap: OFF',
   'subgraph.snapTitle': 'Toggle grid snap',
+  'subgraph.autoLayout': 'Auto Layout',
+  'subgraph.autoLayoutTitle': 'Arrange nodes top-to-bottom by connection order',
   'subgraph.category.io': 'I/O',
   'subgraph.category.merge': 'Merge',
   'subgraph.validation.cycle': 'Graph contains a cycle',

@@ -62,6 +62,80 @@ export function flowToGraphJson(nodes: Node<LayerNodeData>[], edges: Edge[]): st
   return JSON.stringify(spec);
 }
 
+const LAYOUT_Y_STEP = 100;
+
+/**
+ * Topological-sort ids and return the order.
+ */
+function topoSort(
+  nodeIds: string[],
+  edges: Array<{ source: string; target: string }>,
+): string[] {
+  const inDegree: Record<string, number> = {};
+  const adj: Record<string, string[]> = {};
+  for (const id of nodeIds) {
+    inDegree[id] = 0;
+    adj[id] = [];
+  }
+  const idSet = new Set(nodeIds);
+  for (const e of edges) {
+    if (!idSet.has(e.source) || !idSet.has(e.target)) continue;
+    inDegree[e.target] = (inDegree[e.target] ?? 0) + 1;
+    adj[e.source] = [...(adj[e.source] ?? []), e.target];
+  }
+
+  const queue: string[] = Object.keys(inDegree).filter((k) => inDegree[k] === 0);
+  const sorted: string[] = [];
+  while (queue.length) {
+    const id = queue.shift()!;
+    sorted.push(id);
+    for (const t of adj[id]) {
+      inDegree[t]--;
+      if (inDegree[t] === 0) queue.push(t);
+    }
+  }
+  // Append any nodes not reached (e.g. cycles / isolated)
+  for (const id of nodeIds) {
+    if (!sorted.includes(id)) sorted.push(id);
+  }
+  return sorted;
+}
+
+/**
+ * Topological-sort nodes in a GraphSpec and assign vertical positions.
+ */
+function assignPositionsFromTopology(spec: GraphSpec): void {
+  const sorted = topoSort(
+    spec.nodes.map((n) => n.id),
+    spec.edges,
+  );
+  sorted.forEach((id, i) => {
+    const node = spec.nodes.find((n) => n.id === id);
+    if (node) node.position = { x: 50, y: 50 + i * LAYOUT_Y_STEP };
+  });
+}
+
+/**
+ * Auto-layout React Flow nodes top-to-bottom by topological order.
+ */
+export function autoLayoutSubgraph(
+  nodes: Node<LayerNodeData>[],
+  edges: Edge[],
+): Node<LayerNodeData>[] {
+  const sorted = topoSort(
+    nodes.map((n) => n.id),
+    edges,
+  );
+  const posMap = new Map<string, { x: number; y: number }>();
+  sorted.forEach((id, i) => {
+    posMap.set(id, { x: 50, y: 50 + i * LAYOUT_Y_STEP });
+  });
+  return nodes.map((n) => {
+    const pos = posMap.get(n.id);
+    return pos ? { ...n, position: pos } : n;
+  });
+}
+
 export function graphToFlow(json: string): { nodes: Node<LayerNodeData>[]; edges: Edge[] } {
   let spec: GraphSpec;
   try {
@@ -71,6 +145,13 @@ export function graphToFlow(json: string): { nodes: Node<LayerNodeData>[]; edges
   }
   if (spec.version !== 2 || !Array.isArray(spec.nodes) || !Array.isArray(spec.edges)) {
     return emptyGraph();
+  }
+
+  // Auto-assign positions when nodes lack them (all at origin or missing)
+  const needsLayout = spec.nodes.length > 1 &&
+    spec.nodes.every((n) => !n.position || (n.position.x === 0 && n.position.y === 0));
+  if (needsLayout) {
+    assignPositionsFromTopology(spec);
   }
 
   const nodes: Node<LayerNodeData>[] = spec.nodes.map((n) => {

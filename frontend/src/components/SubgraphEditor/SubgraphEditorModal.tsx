@@ -31,6 +31,7 @@ import {
   emptyGraph,
   validateGraph,
   isMergeType,
+  autoLayoutSubgraph,
   type LayerNodeData as GraphLayerNodeData,
   type PortDef,
 } from './graphSerialization';
@@ -477,6 +478,11 @@ function SubgraphFlowInner({
     URL.revokeObjectURL(url);
   };
 
+  const handleAutoLayout = useCallback(() => {
+    setNodes((prev) => autoLayoutSubgraph(prev, edges));
+    setTimeout(() => fitView({ padding: 0.3 }), 50);
+  }, [edges, fitView]);
+
   const handleImport = () => {
     fileInputRef.current?.click();
   };
@@ -597,6 +603,21 @@ function SubgraphFlowInner({
               }}
             >
               {snapEnabled ? t('subgraph.snapOn') : t('subgraph.snapOff')}
+            </button>
+            <button
+              onClick={handleAutoLayout}
+              title={t('subgraph.autoLayoutTitle')}
+              style={{
+                padding: '5px 12px',
+                background: '#2a2a2a',
+                border: '1px solid #444',
+                borderRadius: 5,
+                color: '#aaa',
+                fontSize: '0.75rem',
+                cursor: 'pointer',
+              }}
+            >
+              {t('subgraph.autoLayout')}
             </button>
             <button
               onClick={handleImport}

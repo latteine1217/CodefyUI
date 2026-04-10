@@ -138,6 +138,8 @@ const zhTW: Record<TranslationKey, string> = {
   'subgraph.snapOn': '吸附 ON',
   'subgraph.snapOff': '吸附 OFF',
   'subgraph.snapTitle': '切換網格吸附',
+  'subgraph.autoLayout': '自動排列',
+  'subgraph.autoLayoutTitle': '依連接順序從上到下排列節點',
   'subgraph.category.io': '輸入/輸出',
   'subgraph.category.merge': '合併',
   'subgraph.validation.cycle': '圖形包含循環',
