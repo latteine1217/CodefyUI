@@ -208,8 +208,40 @@ def validate_graph(nodes: list[dict], edges: list[dict]) -> list[str]:
                 f"-> {tgt['type']}.{tgt_port} ({tgt_inputs[tgt_port].data_type})"
             )
 
-    # Cycle detection via topological sort
-    if _has_cycle(nodes, edges):
+    # NEW: Entry-point rules
+    entry_ids = find_entry_points(nodes, edges)
+    if not entry_ids:
+        errors.append(
+            "Graph has no entry points. Mark a root node as an entry "
+            "point or add a Start node."
+        )
+        # Still run remaining checks so user sees all problems at once
+        executable_node_ids = {n["id"] for n in nodes}
+    else:
+        executable_node_ids = reachable_from_entry_points(entry_ids, edges)
+
+    # NEW: Entry-point nodes must have no incoming DATA edges
+    for entry_id in entry_ids:
+        incoming_data = [
+            e for e in edges
+            if e["target"] == entry_id and e.get("type", "data") == "data"
+        ]
+        if incoming_data:
+            errors.append(
+                f"Node '{entry_id}' is an entry point but has incoming "
+                f"data edges. Entry points must be data-roots."
+            )
+
+    # MODIFIED: Run cycle detection on the EXECUTABLE subgraph only.
+    # Drafts (nodes outside executable_node_ids) are skipped.
+    executable_nodes = [n for n in nodes if n["id"] in executable_node_ids]
+    executable_edges = [
+        e for e in edges
+        if e["source"] in executable_node_ids
+        and e["target"] in executable_node_ids
+        and e.get("type", "data") == "data"
+    ]
+    if _has_cycle(executable_nodes, executable_edges):
         errors.append("Graph contains a cycle")
 
     return errors
