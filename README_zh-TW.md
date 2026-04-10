@@ -9,13 +9,18 @@
 ## 功能特色
 
 - **視覺化圖形編輯器** — 拖放節點、型別安全的連線、即時驗證
-- **33 個內建節點**，涵蓋 9 大類別（CNN、RNN、Transformer、RL、資料、訓練、IO、控制、工具）
-- **預設模組系統** — 內建模型模板（簡易 CNN、LSTM 序列、訓練管線）快速開始；可將畫布匯出為可重用的預設模組
-- **多分頁工作區** — 多個獨立畫布，各自擁有獨立的執行環境；切換分頁不會中斷正在執行的管線
+- **62 個內建節點**，涵蓋 12 大類別（CNN、RNN、Transformer、RL、資料、資料流、訓練、IO、控制、工具、正規化、張量運算）
+- **預設模組系統** — 內建模型模板快速開始；可將子圖匯出為可重用的預設模組
+- **多分頁工作區** — 多個獨立畫布，各自擁有獨立的執行環境
 - **WebSocket 即時執行** — 即時顯示每個節點的進度，Print 節點的輸出會顯示在執行紀錄面板
+- **部分重新執行** — 髒節點追蹤：僅重新執行已變更的節點及其下游依賴
+- **快速搜尋節點** — 在畫布上雙擊開啟即時搜尋面板，快速新增節點與預設模組
+- **自訂節點管理器** — 上傳、啟用/停用、刪除自訂節點的 GUI 介面
+- **模型檔案管理** — 透過 REST API 上傳、列出、刪除模型權重檔（.pt、.pth、.safetensors、.ckpt、.bin）
+- **CLI 圖形執行器** — 使用 `run_graph.py` 直接從命令列執行 graph.json
+- **結果面板** — 分頁面板（執行紀錄 / 訓練），可調整大小，包含即時 loss 圖表
 - **多語言支援** — 英文與繁體中文，使用響應式 `rem` 字型大小
 - **自動儲存** — 所有分頁自動存入 `localStorage`；支援匯入/匯出 graph JSON 檔案
-- **自訂節點** — 放入 Python 檔案，熱重載，即時出現在 UI
 - **深色主題** — 完整的深色 UI，類別以顏色區分
 
 ## 快速開始
@@ -45,6 +50,16 @@ pnpm dev
 
 > **沒有 NVIDIA 顯卡？** 請參考 [SETUP_zh-TW.md](./SETUP_zh-TW.md) 查看 CPU、Apple Silicon (MPS) 與 AMD 的安裝方式。
 
+### CLI 執行
+
+無需啟動伺服器，直接從命令列執行 graph：
+
+```bash
+cd backend
+python run_graph.py ../examples/Usage_Example/CNN-MNIST/TrainCNN-MNIST/graph.json
+python run_graph.py ../examples/Model_Architecture/ResNet-SkipConnection-CNN/graph.json --validate-only
+```
+
 ## 架構
 
 ```
@@ -57,82 +72,33 @@ backend/    Python 3.10+ · FastAPI · PyTorch
 | **後端權威** | `GET /api/nodes` 回傳所有節點定義。後端新增節點後 UI 自動出現。 |
 | **單一 BaseNode 元件** | 一個 React 元件渲染所有節點類型，由後端定義參數化。 |
 | **WebSocket 執行** | `ws://host/ws/execution` 串流每個節點的狀態。REST 處理圖表 CRUD。 |
-| **拓撲排序執行** | 使用 Kahn 演算法進行 DAG 排序 + 循環偵測。 |
+| **拓撲排序執行** | 使用 Kahn 演算法進行 DAG 排序 + 循環偵測。支援獨立節點的平行執行。 |
 
 ## 內建節點
 
-| 類別 | 節點 |
+| 類別 | 節點 | 數量 |
+|------|------|------|
+| **CNN** | Conv2d、Conv1d、ConvTranspose2d、MaxPool2d、AvgPool2d、AdaptiveAvgPool2d、BatchNorm2d、Dropout、Activation | 9 |
+| **RNN** | LSTM、GRU | 2 |
+| **Transformer** | MultiHeadAttention、TransformerEncoder、TransformerDecoder | 3 |
+| **RL** | DQN、PPO、EnvWrapper | 3 |
+| **資料** | Dataset、DataLoader、Transform、HuggingFaceDataset、KaggleDataset | 5 |
+| **資料流** | Map、Reduce、Switch | 3 |
+| **訓練** | Optimizer、Loss、TrainingLoop、LRScheduler、SequentialModel | 5 |
+| **IO** | ImageReader、ImageWriter、ImageBatchReader、FileReader、CheckpointSaver、CheckpointLoader、ModelLoader、ModelSaver、Inference | 9 |
+| **控制** | Start | 1 |
+| **工具** | Print、Reshape、Concat、Flatten、Linear、Visualize、Embedding | 7 |
+| **正規化** | BatchNorm1d、LayerNorm、GroupNorm、InstanceNorm2d | 4 |
+| **張量運算** | Add、MatMul、Mean、Multiply、Permute、Softmax、Split、Squeeze、Stack、TensorCreate、Unsqueeze | 11 |
+
+## 範例
+
+預建的範例工作流程位於 `examples/`：
+
+| 類別 | 範例 |
 |------|------|
-| **CNN** | Conv2d、MaxPool2d、BatchNorm2d、Dropout、Activation |
-| **RNN** | LSTM、GRU |
-| **Transformer** | MultiHeadAttention、TransformerEncoder、TransformerDecoder |
-| **RL** | DQN、PPO、EnvWrapper |
-| **資料** | Dataset、DataLoader、Transform |
-| **訓練** | Optimizer、Loss、TrainingLoop |
-| **IO** | ImageReader、ImageWriter、ImageBatchReader、FileReader、ModelSaver、ModelLoader、CheckpointSaver、CheckpointLoader、Inference |
-| **控制** | If、ForLoop、Compare |
-| **工具** | Print、Reshape、Concat、Flatten、Linear、SequentialModel、Visualize |
-
-## 預設模組
-
-開箱即用的模型模板：
-
-- **Simple CNN Classifier** — Conv2d → ReLU → MaxPool → Flatten → Linear
-- **LSTM Sequence** — LSTM 接激活層
-- **Training Pipeline** — 完整的 Dataset → DataLoader → Optimizer → Loss → TrainingLoop
-
-透過工具列的 **匯出子圖** 按鈕，可以將目前的畫布匯出為可重用的預設模組。
-
-## 使用已訓練的模型進行推論
-
-訓練完成後，可以將模型權重儲存下來，之後載入並用 **Inference** 節點進行推論。
-
-### 儲存模型權重
-
-訓練完成後，將 **TrainingLoop** 的 `model` 輸出連接到 **ModelSaver** 節點：
-
-```
-SequentialModel → Optimizer → TrainingLoop → ModelSaver
-                                   ↑
-                              DataLoader
-                              Loss
-```
-
-ModelSaver 會將權重存為 `.pt` 檔案，預設位置為 `backend/app/data/models/`。
-
-### 上傳已訓練的模型權重
-
-如果你有在外部訓練好的 `.pt` / `.pth` 權重檔，將檔案放入：
-
-```
-backend/app/data/models/
-```
-
-然後在 **ModelLoader** 節點的 `path` 參數填入檔名即可（例如 `my_weights.pt`）。
-
-> 也可以填入絕對路徑，指向系統上任意位置的權重檔。
-
-### 推論流程
-
-使用 **Inference** 節點對新資料進行預測：
-
-**方式一：state_dict 模式**（推薦 — 需要同樣的模型架構）
-
-```
-SequentialModel ──→ ModelLoader ──→ Inference ──→ output（預測結果）
-                        ↑               ↑
-                   my_weights.pt    輸入資料（Tensor）
-```
-
-**方式二：full_model 模式**（不需要 SequentialModel 節點）
-
-```
-ModelLoader（load_mode=full_model）──→ Inference ──→ output（預測結果）
-                  ↑                        ↑
-             my_model.pt              輸入資料（Tensor）
-```
-
-Inference 節點會自動將模型設為 `eval()` 模式並在 `torch.no_grad()` 下執行前向傳播。
+| **模型架構** | ResNet、ConvNeXt、EfficientNet、UNet、ViT、SwinTransformer、BERT、GPT、LLaMA、DiT、LSTM TimeSeries、BiGRU SpeechRecognition、Seq2Seq Attention、DQN Atari、PPO Robotics |
+| **使用範例** | CNN-MNIST 訓練、CNN-MNIST 推論 |
 
 ## 自訂節點
 
@@ -158,7 +124,7 @@ class MyNode(BaseNode):
         return {"output": inputs["input"]}
 ```
 
-透過 `POST /api/nodes/reload` 或工具列的 **重新載入節點** 按鈕進行熱重載。
+透過 `POST /api/nodes/reload` 或工具列的 **重新載入節點** 按鈕進行熱重載。也可以使用 **自訂節點管理器** GUI 上傳、啟用/停用和刪除自訂節點。
 
 ## 快捷鍵
 
@@ -166,8 +132,41 @@ class MyNode(BaseNode):
 |------|------|
 | 刪除節點 | `Delete` |
 | 多選 | `Shift` + 點擊 |
+| 快速新增節點 | 雙擊畫布 |
 | 重新命名節點 | 右鍵 → 重新命名 |
 | 複製節點 | 右鍵 → 複製 |
+| 復原 | `Ctrl/Cmd` + `Z` |
+| 重做 | `Ctrl/Cmd` + `Shift` + `Z` / `Ctrl/Cmd` + `Y` |
+| 複製節點 | `Ctrl/Cmd` + `C` |
+| 貼上節點 | `Ctrl/Cmd` + `V` |
+| 自動排版 | `Shift` + `L` |
+| 顯示快捷鍵 | `?` |
+
+## API 端點
+
+| 端點 | 方法 | 說明 |
+|------|------|------|
+| `/api/nodes` | GET | 列出所有節點定義 |
+| `/api/nodes/{node_name}` | GET | 取得單一節點定義 |
+| `/api/nodes/reload` | POST | 熱重載所有節點 |
+| `/api/presets` | GET | 列出預設模組定義 |
+| `/api/presets/{name}` | GET | 取得單一預設模組定義 |
+| `/api/presets/create` | POST | 從選取的節點建立新預設模組 |
+| `/api/graph/validate` | POST | 驗證圖形 |
+| `/api/graph/save` | POST | 儲存圖形 |
+| `/api/graph/load/{name}` | GET | 載入已儲存的圖形 |
+| `/api/graph/list` | GET | 列出已儲存的圖形 |
+| `/api/graph/export` | POST | 匯出圖形為 Python 腳本 |
+| `/api/examples/list` | GET | 列出範例圖形 |
+| `/api/examples/load` | GET | 載入範例圖形 |
+| `/api/custom-nodes` | GET | 列出自訂節點 |
+| `/api/custom-nodes/upload` | POST | 上傳自訂節點 |
+| `/api/custom-nodes/toggle` | POST | 啟用/停用自訂節點 |
+| `/api/custom-nodes/{filename}` | DELETE | 刪除自訂節點 |
+| `/api/models` | GET | 列出已上傳的模型檔案 |
+| `/api/models/upload` | POST | 上傳模型權重檔 |
+| `/api/models/{filename}` | DELETE | 刪除模型檔案 |
+| `/ws/execution` | WebSocket | 即時圖形執行 |
 
 ## 測試
 

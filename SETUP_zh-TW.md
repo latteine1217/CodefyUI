@@ -167,7 +167,7 @@ pnpm dev
    ```bash
    curl http://127.0.0.1:8000/api/health
    ```
-   應回傳 `{"status":"ok","nodes_loaded":60,"presets_loaded":3}`。
+   應回傳 `{"status":"ok","nodes_loaded":62,"presets_loaded":3}`。
 
 2. 驗證裝置偵測：
    ```bash

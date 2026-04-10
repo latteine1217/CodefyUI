@@ -167,7 +167,7 @@ Open [http://localhost:5173](http://localhost:5173).
    ```bash
    curl http://127.0.0.1:8000/api/health
    ```
-   Should return `{"status":"ok","nodes_loaded":60,"presets_loaded":3}`.
+   Should return `{"status":"ok","nodes_loaded":62,"presets_loaded":3}`.
 
 2. Verify device detection:
    ```bash

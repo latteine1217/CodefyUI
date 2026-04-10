@@ -9,7 +9,7 @@ A visual, node-based deep learning pipeline builder. Design CNN, RNN, Transforme
 ## Features
 
 - **Visual Graph Editor** — Drag-and-drop nodes, connect ports with type-safe edges, real-time validation
-- **59 Built-in Nodes** across 11 categories (CNN, RNN, Transformer, RL, Data, Training, IO, Control, Utility, Normalization, Tensor Operations)
+- **62 Built-in Nodes** across 12 categories (CNN, RNN, Transformer, RL, Data, Data Flow, Training, IO, Control, Utility, Normalization, Tensor Operations)
 - **Preset System** — Pre-built model templates for quick start; export your own subgraphs as reusable presets
 - **Multi-Tab Workspace** — Multiple independent canvases, each with its own execution context
 - **WebSocket Execution** — Real-time per-node progress, Print node output displayed in the Execution Log panel
@@ -82,11 +82,12 @@ backend/    Python 3.10+ · FastAPI · PyTorch
 | **RNN** | LSTM, GRU | 2 |
 | **Transformer** | MultiHeadAttention, TransformerEncoder, TransformerDecoder | 3 |
 | **RL** | DQN, PPO, EnvWrapper | 3 |
-| **Data** | Dataset, DataLoader, Transform | 3 |
-| **Training** | Optimizer, Loss, TrainingLoop, LRScheduler | 4 |
+| **Data** | Dataset, DataLoader, Transform, HuggingFaceDataset, KaggleDataset | 5 |
+| **Data Flow** | Map, Reduce, Switch | 3 |
+| **Training** | Optimizer, Loss, TrainingLoop, LRScheduler, SequentialModel | 5 |
 | **IO** | ImageReader, ImageWriter, ImageBatchReader, FileReader, CheckpointSaver, CheckpointLoader, ModelLoader, ModelSaver, Inference | 9 |
-| **Control** | If, ForLoop, Compare | 3 |
-| **Utility** | Print, Reshape, Concat, Flatten, Linear, SequentialModel, Visualize, Embedding | 8 |
+| **Control** | Start | 1 |
+| **Utility** | Print, Reshape, Concat, Flatten, Linear, Visualize, Embedding | 7 |
 | **Normalization** | BatchNorm1d, LayerNorm, GroupNorm, InstanceNorm2d | 4 |
 | **Tensor Operations** | Add, MatMul, Mean, Multiply, Permute, Softmax, Split, Squeeze, Stack, TensorCreate, Unsqueeze | 11 |
 
@@ -96,7 +97,7 @@ Pre-built example workflows organized in `examples/`:
 
 | Category | Examples |
 |----------|----------|
-| **Model Architecture** | ResNet, ConvNeXt, EfficientNet, ViT, SwinTransformer, BERT, GPT, LLaMA, DiT, LSTM TimeSeries, BiGRU SpeechRecognition, Seq2Seq Attention, DQN Atari, PPO Robotics |
+| **Model Architecture** | ResNet, ConvNeXt, EfficientNet, UNet, ViT, SwinTransformer, BERT, GPT, LLaMA, DiT, LSTM TimeSeries, BiGRU SpeechRecognition, Seq2Seq Attention, DQN Atari, PPO Robotics |
 | **Usage Example** | CNN-MNIST Training, CNN-MNIST Inference |
 
 ## Custom Nodes
@@ -134,20 +135,30 @@ Hot-reload via `POST /api/nodes/reload` or the **Reload Nodes** button in the to
 | Quick add node | Double-click canvas |
 | Rename node | Right-click → Rename |
 | Duplicate node | Right-click → Duplicate |
+| Undo | `Ctrl/Cmd` + `Z` |
+| Redo | `Ctrl/Cmd` + `Shift` + `Z` / `Ctrl/Cmd` + `Y` |
+| Copy nodes | `Ctrl/Cmd` + `C` |
+| Paste nodes | `Ctrl/Cmd` + `V` |
+| Auto Layout | `Shift` + `L` |
+| Show shortcuts | `?` |
 
 ## API Endpoints
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
 | `/api/nodes` | GET | List all node definitions |
+| `/api/nodes/{node_name}` | GET | Get a single node definition |
 | `/api/nodes/reload` | POST | Hot-reload all nodes |
 | `/api/presets` | GET | List preset definitions |
+| `/api/presets/{name}` | GET | Get a single preset definition |
 | `/api/presets/create` | POST | Create a new preset from selected nodes |
 | `/api/graph/validate` | POST | Validate a graph |
 | `/api/graph/save` | POST | Save a graph |
 | `/api/graph/load/{name}` | GET | Load a saved graph |
 | `/api/graph/list` | GET | List saved graphs |
 | `/api/graph/export` | POST | Export graph as Python script |
+| `/api/examples/list` | GET | List example graphs |
+| `/api/examples/load` | GET | Load an example graph |
 | `/api/custom-nodes` | GET | List custom nodes |
 | `/api/custom-nodes/upload` | POST | Upload a custom node |
 | `/api/custom-nodes/toggle` | POST | Enable/disable a custom node |
