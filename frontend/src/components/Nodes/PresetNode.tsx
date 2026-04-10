@@ -1,18 +1,26 @@
 import { memo } from 'react';
-import { Handle, Position } from '@xyflow/react';
+import { Handle, Position, useReactFlow } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { NodeData } from '../../types';
 import { getPortColor } from '../../utils';
 import { useTabStore } from '../../store/tabStore';
+import { useUIStore } from '../../store/uiStore';
 import { useI18n } from '../../i18n';
 import { STATUS_COLORS } from '../../styles/theme';
 import styles from './PresetNode.module.css';
+import baseStyles from './BaseNode.module.css';
 
 function PresetNode({ id, data, selected }: NodeProps<NodeData>) {
   const openPresetModal = useTabStore((s) => s.openPresetModal);
+  const draggingSourceType = useUIStore((s) => s.draggingSourceType);
+  const { getEdges } = useReactFlow();
   const def = data.definition;
   const preset = data.presetDefinition;
   const { t } = useI18n();
+  const isDraggingTrigger = draggingSourceType === 'TRIGGER';
+  const isTriggerTarget = getEdges().some(
+    (e) => e.target === id && ((e.data as { type?: string } | undefined)?.type === 'trigger'),
+  );
 
   const statusBorderColor =
     data.executionStatus === 'running'
@@ -40,7 +48,7 @@ function PresetNode({ id, data, selected }: NodeProps<NodeData>) {
   return (
     <div
       onClick={handleClick}
-      className={styles.node}
+      className={`${styles.node}${isTriggerTarget ? ` ${baseStyles.entryPoint}` : ''}${isDraggingTrigger ? ` ${baseStyles.triggerDropTarget}` : ''}`}
       style={{
         border: `2px solid ${borderColor}`,
         boxShadow: selected
@@ -48,6 +56,14 @@ function PresetNode({ id, data, selected }: NodeProps<NodeData>) {
           : '0 4px 12px rgba(0,0,0,0.4)',
       }}
     >
+      {/* Trigger target handle — hidden until user drags from Start */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="__trigger"
+        className={`${baseStyles.triggerHandle}${isDraggingTrigger ? ` ${baseStyles.triggerHandleActive}` : ''}`}
+      />
+
       {/* Header with gold gradient */}
       <div className={styles.header}>
         <span className={styles.headerLabel}>{data.label}</span>

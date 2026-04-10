@@ -3,20 +3,17 @@ import { Handle, Position, useReactFlow } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { NodeData } from '../../types';
 import { getPortColor, isValidConnection } from '../../utils';
-import { useTabStore } from '../../store/tabStore';
 import { useUIStore } from '../../store/uiStore';
+import { useTabStore } from '../../store/tabStore';
 import { useI18n } from '../../i18n';
 import { CATEGORY_COLORS, STATUS_COLORS } from '../../styles/theme';
-import { ContextMenu, type ContextMenuItem } from '../shared/ContextMenu';
 import styles from './BaseNode.module.css';
 
 function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
   const openSubgraphModal = useTabStore((s) => s.openSubgraphModal);
-  const toggleEntryPoint = useTabStore((s) => s.toggleEntryPoint);
   const tooltipsEnabled = useUIStore((s) => s.tooltipsEnabled);
   const draggingSourceType = useUIStore((s) => s.draggingSourceType);
   const [hovered, setHovered] = useState(false);
-  const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
   const { getEdges } = useReactFlow();
   const def = data.definition;
   const category = def?.category ?? 'Utility';
@@ -24,32 +21,18 @@ function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
   const { t, tn } = useI18n();
 
   const isSequentialModel = data.type === 'SequentialModel';
+  const isDraggingTrigger = draggingSourceType === 'TRIGGER';
+
+  // Detect if this node is a trigger target (connected from a Start node)
+  const isTriggerTarget = getEdges().some(
+    (e) => e.target === id && ((e.data as { type?: string } | undefined)?.type === 'trigger'),
+  );
 
   const handleClick = (e: React.MouseEvent) => {
     if (e.detail === 2 && isSequentialModel) {
       openSubgraphModal(id);
     }
   };
-
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    // Only show the menu when this node is a DATA root (no incoming
-    // data edges). Trigger edges don't count.
-    const edges = getEdges();
-    const hasDataIncoming = edges.some(
-      (edge) => edge.target === id && ((edge.data as { type?: string } | undefined)?.type ?? 'data') === 'data',
-    );
-    if (hasDataIncoming) return;
-    setMenuPos({ x: e.clientX, y: e.clientY });
-  };
-
-  const menuItems: ContextMenuItem[] = [
-    {
-      id: 'toggle',
-      label: data.isEntryPoint ? 'Remove Entry Point' : 'Set as Entry Point',
-    },
-  ];
 
   // Dynamic border: selected > execution status > default
   const statusBorderColor =
@@ -74,10 +57,9 @@ function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
   return (
     <div
       onClick={handleClick}
-      onContextMenu={handleContextMenu}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className={`${styles.node} ${data.isEntryPoint ? styles.entryPoint : ''}`}
+      className={`${styles.node}${isTriggerTarget ? ` ${styles.entryPoint}` : ''}${isDraggingTrigger ? ` ${styles.triggerDropTarget}` : ''}`}
       style={{
         '--border-color': borderColor,
         boxShadow: selected
@@ -86,6 +68,14 @@ function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
         cursor: isSequentialModel ? 'pointer' : undefined,
       } as React.CSSProperties}
     >
+      {/* Trigger target handle — hidden until user drags from Start */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="__trigger"
+        className={`${styles.triggerHandle}${isDraggingTrigger ? ` ${styles.triggerHandleActive}` : ''}`}
+      />
+
       {/* Tooltip */}
       {tooltipsEnabled && hovered && description && (
         <div className={styles.tooltip}>
@@ -122,9 +112,11 @@ function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
               id={input.name}
               className={`${styles.portHandle} ${styles.portHandleInput}${
                 draggingSourceType
-                  ? isValidConnection(draggingSourceType, input.data_type)
-                    ? ` ${styles.portCompatible}`
-                    : ` ${styles.portIncompatible}`
+                  ? isDraggingTrigger
+                    ? ` ${styles.portIncompatible}`
+                    : isValidConnection(draggingSourceType, input.data_type)
+                      ? ` ${styles.portCompatible}`
+                      : ` ${styles.portIncompatible}`
                   : ''
               }`}
               style={{ background: getPortColor(input.data_type) }}
@@ -259,18 +251,6 @@ function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
           <span className={styles.statusCachedDot} />
           {t('node.cached')}
         </div>
-      )}
-
-      {menuPos && (
-        <ContextMenu
-          x={menuPos.x}
-          y={menuPos.y}
-          items={menuItems}
-          onSelect={(itemId) => {
-            if (itemId === 'toggle') toggleEntryPoint(id);
-          }}
-          onClose={() => setMenuPos(null)}
-        />
       )}
     </div>
   );

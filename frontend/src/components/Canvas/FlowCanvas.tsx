@@ -129,7 +129,12 @@ export function FlowCanvas() {
               e.source === connection.source &&
               e.target === connection.target &&
               e.sourceHandle === connection.sourceHandle
-                ? { ...e, type: 'triggerEdge', data: { ...(e.data ?? {}), type: 'trigger' } }
+                ? {
+                    ...e,
+                    type: 'triggerEdge',
+                    targetHandle: '__trigger',
+                    data: { ...(e.data ?? {}), type: 'trigger' },
+                  }
                 : e,
             ),
           );
@@ -178,6 +183,10 @@ export function FlowCanvas() {
       if (!source || !target) return false;
       if (source === target) return false;
 
+      // Trigger connections (from Start node) are control-flow markers,
+      // not data — they connect only to the __trigger handle on target nodes.
+      if (sourceHandle === 'trigger') return targetHandle === '__trigger';
+
       if (sourceHandle && targetHandle) {
         const { tabs, activeTabId } = useTabStore.getState();
         const tab = tabs.find((t) => t.id === activeTabId)!;
@@ -221,6 +230,49 @@ export function FlowCanvas() {
 
   const onConnectEnd = useCallback(() => {
     useUIStore.getState().setDraggingSourceType(null);
+  }, []);
+
+  // Track which edge is being reconnected so we can delete it if dropped on empty space
+  const reconnectingEdgeRef = useRef<string | null>(null);
+
+  const onReconnectStart = useCallback((_: any, edge: Edge) => {
+    reconnectingEdgeRef.current = edge.id;
+  }, []);
+
+  const onReconnect = useCallback((oldEdge: Edge, newConnection: Connection) => {
+    reconnectingEdgeRef.current = null;
+    // Replace old edge with new connection
+    const { setEdges } = useTabStore.getState();
+    const tab = useTabStore.getState().tabs.find(
+      (t) => t.id === useTabStore.getState().activeTabId,
+    );
+    if (!tab) return;
+    useTabStore.getState().pushUndoSnapshot();
+    setEdges(
+      tab.edges
+        .filter((e) => e.id !== oldEdge.id)
+        .concat({
+          ...oldEdge,
+          source: newConnection.source,
+          target: newConnection.target,
+          sourceHandle: newConnection.sourceHandle ?? undefined,
+          targetHandle: newConnection.targetHandle ?? undefined,
+        }),
+    );
+  }, []);
+
+  const onReconnectEnd = useCallback((_: any, edge: Edge) => {
+    // If the reconnect was not completed (dropped on empty space), delete the edge
+    if (reconnectingEdgeRef.current === edge.id) {
+      reconnectingEdgeRef.current = null;
+      const { setEdges } = useTabStore.getState();
+      const tab = useTabStore.getState().tabs.find(
+        (t) => t.id === useTabStore.getState().activeTabId,
+      );
+      if (!tab) return;
+      useTabStore.getState().pushUndoSnapshot();
+      setEdges(tab.edges.filter((e) => e.id !== edge.id));
+    }
   }, []);
 
   const handleNodeClick = useCallback(
@@ -330,6 +382,9 @@ export function FlowCanvas() {
         onConnect={handleConnect}
         onConnectStart={onConnectStart}
         onConnectEnd={onConnectEnd}
+        onReconnectStart={onReconnectStart}
+        onReconnect={onReconnect}
+        onReconnectEnd={onReconnectEnd}
         isValidConnection={handleIsValidConnection}
         connectionLineComponent={CustomConnectionLine}
         onNodeClick={handleNodeClick}
