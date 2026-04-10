@@ -44,6 +44,17 @@ export function QuickNodeSearch({ screenPos, flowPos, onClose }: QuickNodeSearch
       }
     }
 
+    // Boost: Start node ranks first when query is empty or matches "start"
+    if (!q || 'start'.includes(q)) {
+      items.sort((a, b) => {
+        const aIsStart = a.kind === 'node' && a.def.node_name === 'Start';
+        const bIsStart = b.kind === 'node' && b.def.node_name === 'Start';
+        if (aIsStart && !bIsStart) return -1;
+        if (!aIsStart && bIsStart) return 1;
+        return 0;
+      });
+    }
+
     return items.slice(0, 20);
   })();
 
