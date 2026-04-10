@@ -271,18 +271,8 @@ class SequentialModelNode(BaseNode):
         import torch.nn as nn
 
         layers_str = params.get("layers", "[]")
-        spec = json.loads(layers_str)
+        layer_defs = json.loads(layers_str)
 
-        # v2 DAG spec — dispatch to GraphModelModule builder
-        if isinstance(spec, dict) and spec.get("version") == 2:
-            from .graph_model import build_graph_model
-            model = build_graph_model(spec)
-            total = sum(p.numel() for p in model.parameters())
-            logger.info("Built GraphModelModule with %s parameters", f"{total:,}")
-            return {"model": model}
-
-        # v1 flat-array spec (legacy)
-        layer_defs = spec
         modules = [_build_layer(cfg) for cfg in layer_defs]
         model = nn.Sequential(*modules)
 
