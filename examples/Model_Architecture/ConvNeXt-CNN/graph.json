@@ -14,7 +14,8 @@
           "name": "CIFAR10",
           "split": "train",
           "data_dir": "./data"
-        }
+        },
+        "isEntryPoint": true
       }
     },
     {
@@ -61,7 +62,8 @@
           "kernel_size": 4,
           "stride": 4,
           "padding": 0
-        }
+        },
+        "isEntryPoint": true
       }
     },
     {
@@ -357,7 +359,8 @@
       "data": {
         "params": {
           "type": "CrossEntropyLoss"
-        }
+        },
+        "isEntryPoint": true
       }
     },
     {
@@ -399,7 +402,8 @@
       "data": {
         "params": {
           "layers": "[{\"type\": \"Conv2d\", \"in_channels\": 3, \"out_channels\": 96, \"kernel_size\": 4, \"stride\": 4}, {\"type\": \"BatchNorm2d\", \"num_features\": 96}, {\"type\": \"Conv2d\", \"in_channels\": 96, \"out_channels\": 96, \"kernel_size\": 7, \"stride\": 1, \"padding\": 3}, {\"type\": \"BatchNorm2d\", \"num_features\": 96}, {\"type\": \"Conv2d\", \"in_channels\": 96, \"out_channels\": 384, \"kernel_size\": 1}, {\"type\": \"GELU\"}, {\"type\": \"Conv2d\", \"in_channels\": 384, \"out_channels\": 96, \"kernel_size\": 1}, {\"type\": \"Conv2d\", \"in_channels\": 96, \"out_channels\": 192, \"kernel_size\": 2, \"stride\": 2}, {\"type\": \"Conv2d\", \"in_channels\": 192, \"out_channels\": 384, \"kernel_size\": 2, \"stride\": 2}, {\"type\": \"AdaptiveAvgPool2d\", \"output_size\": 1}, {\"type\": \"Flatten\"}, {\"type\": \"Dropout\", \"p\": 0.2}, {\"type\": \"Linear\", \"in_features\": 384, \"out_features\": 10}]"
-        }
+        },
+        "isEntryPoint": true
       }
     },
     {

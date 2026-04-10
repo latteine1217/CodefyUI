@@ -12,7 +12,8 @@
       "data": {
         "params": {
           "env_name": "Humanoid-v4"
-        }
+        },
+        "isEntryPoint": true
       }
     },
     {
@@ -150,7 +151,8 @@
       "data": {
         "params": {
           "layers": "[{\"type\": \"Linear\", \"in_features\": 376, \"out_features\": 256}, {\"type\": \"ReLU\"}, {\"type\": \"Linear\", \"in_features\": 256, \"out_features\": 256}, {\"type\": \"ReLU\"}, {\"type\": \"Linear\", \"in_features\": 256, \"out_features\": 17}]"
-        }
+        },
+        "isEntryPoint": true
       }
     }
   ],

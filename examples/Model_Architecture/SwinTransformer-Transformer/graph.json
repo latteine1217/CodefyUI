@@ -14,7 +14,8 @@
           "name": "CIFAR10",
           "split": "train",
           "data_dir": "./data"
-        }
+        },
+        "isEntryPoint": true
       }
     },
     {
@@ -61,7 +62,8 @@
           "kernel_size": 4,
           "stride": 4,
           "padding": 0
-        }
+        },
+        "isEntryPoint": true
       }
     },
     {
@@ -293,7 +295,8 @@
       "data": {
         "params": {
           "type": "CrossEntropyLoss"
-        }
+        },
+        "isEntryPoint": true
       }
     },
     {
@@ -349,7 +352,8 @@
       "data": {
         "params": {
           "layers": "[{\"type\": \"Conv2d\", \"in_channels\": 3, \"out_channels\": 96, \"kernel_size\": 4, \"stride\": 4}, {\"type\": \"Reshape\", \"shape\": \"3136,96\"}, {\"type\": \"TransformerEncoder\", \"d_model\": 96, \"nhead\": 3, \"num_layers\": 2, \"dim_feedforward\": 384}, {\"type\": \"SelectIndex\", \"dim\": 1, \"index\": 0}, {\"type\": \"Linear\", \"in_features\": 96, \"out_features\": 192}, {\"type\": \"Dropout\", \"p\": 0.1}, {\"type\": \"Linear\", \"in_features\": 192, \"out_features\": 10}]"
-        }
+        },
+        "isEntryPoint": true
       }
     },
     {

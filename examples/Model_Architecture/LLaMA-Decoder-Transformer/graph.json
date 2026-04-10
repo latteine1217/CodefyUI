@@ -14,7 +14,8 @@
           "name": "MNIST",
           "split": "train",
           "data_dir": "./data"
-        }
+        },
+        "isEntryPoint": true
       }
     },
     {
@@ -57,7 +58,8 @@
       "data": {
         "params": {
           "shape": "-1,2048,4096"
-        }
+        },
+        "isEntryPoint": true
       }
     },
     {
@@ -166,7 +168,8 @@
       "data": {
         "params": {
           "type": "CrossEntropyLoss"
-        }
+        },
+        "isEntryPoint": true
       }
     },
     {
@@ -222,7 +225,8 @@
       "data": {
         "params": {
           "layers": "[{\"type\": \"Linear\", \"in_features\": 784, \"out_features\": 768}, {\"type\": \"Reshape\", \"shape\": \"128,6\"}, {\"type\": \"MultiHeadAttention\", \"embed_dim\": 6, \"num_heads\": 2}, {\"type\": \"TransformerDecoder\", \"d_model\": 6, \"nhead\": 2, \"num_layers\": 6, \"dim_feedforward\": 24}, {\"type\": \"Flatten\"}, {\"type\": \"Dropout\", \"p\": 0.0}, {\"type\": \"Linear\", \"in_features\": 768, \"out_features\": 32000}]"
-        }
+        },
+        "isEntryPoint": true
       }
     },
     {
