@@ -9,6 +9,8 @@ import { resolveSerializedNodes, resolveSerializedEdges } from '../../utils';
 import { SURFACE, TEXT, BRAND, STATUS_COLORS } from '../../styles/theme';
 import { CustomNodeManager } from '../CustomNodeManager/CustomNodeManager';
 import { useToastStore } from '../../store/toastStore';
+import type { LayoutMode } from '../../utils/autoLayout';
+import type { TranslationKey } from '../../i18n';
 import styles from './Toolbar.module.css';
 
 /* ── Shared dropdown menu component ─────────────────────────────── */
@@ -240,8 +242,26 @@ export function Toolbar() {
 
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [layoutMenuOpen, setLayoutMenuOpen] = useState(false);
   const [customNodeManagerOpen, setCustomNodeManagerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const lastLayoutMode = useUIStore((s) => s.lastLayoutMode);
+  const setLastLayoutMode = useUIStore((s) => s.setLastLayoutMode);
+  const applyLayout = useTabStore((s) => s.applyLayout);
+  const selectedCount = useTabStore((s) => {
+    const tab = s.tabs.find((tt) => tt.id === s.activeTabId);
+    return tab?.nodes.filter((n) => n.selected).length ?? 0;
+  });
+
+  const runLayout = useCallback(
+    (mode: LayoutMode) => {
+      setLastLayoutMode(mode);
+      applyLayout(mode);
+      setLayoutMenuOpen(false);
+    },
+    [applyLayout, setLastLayoutMode],
+  );
 
   const isRunning = status === 'running';
 
@@ -528,6 +548,48 @@ export function Toolbar() {
           <span className={styles.statusLabel} style={{ color: statusTextColor }}>
             {t(statusKey)}
           </span>
+        </div>
+
+        {/* Auto Layout split button (Task 20 will add i18n keys) */}
+        <div className={styles.splitButton} style={{ position: 'relative' }}>
+          <button
+            className={styles.splitButtonMain}
+            onClick={() => runLayout(lastLayoutMode)}
+            title={t('toolbar.autoLayout' as TranslationKey)}
+          >
+            {t('toolbar.autoLayout' as TranslationKey)}
+          </button>
+          <button
+            className={styles.splitButtonCaret}
+            onClick={() => setLayoutMenuOpen((v) => !v)}
+            aria-label="Layout mode"
+          >
+            ▾
+          </button>
+          {layoutMenuOpen && (
+            <div className={styles.layoutDropdown}>
+              <div
+                className={`${styles.layoutDropdownItem} ${lastLayoutMode === 'experiments' ? styles.layoutDropdownItemActive : ''}`}
+                onClick={() => runLayout('experiments')}
+              >
+                {t('toolbar.autoLayout.experiments' as TranslationKey)}
+              </div>
+              <div
+                className={`${styles.layoutDropdownItem} ${lastLayoutMode === 'all' ? styles.layoutDropdownItemActive : ''}`}
+                onClick={() => runLayout('all')}
+              >
+                {t('toolbar.autoLayout.all' as TranslationKey)}
+              </div>
+              <div
+                className={`${styles.layoutDropdownItem} ${selectedCount === 0 ? styles.layoutDropdownItemDisabled : ''} ${lastLayoutMode === 'selected' ? styles.layoutDropdownItemActive : ''}`}
+                onClick={() => {
+                  if (selectedCount > 0) runLayout('selected');
+                }}
+              >
+                {t('toolbar.autoLayout.selected' as TranslationKey, { count: selectedCount })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Language selector */}
