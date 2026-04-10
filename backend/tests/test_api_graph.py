@@ -53,7 +53,7 @@ async def test_save_and_load_roundtrip(test_client, sample_graph, tmp_path, monk
     assert resp.status_code == 200
     loaded = resp.json()
     assert loaded["name"] == "test-graph"
-    assert len(loaded["nodes"]) == 2
+    assert len(loaded["nodes"]) == 3  # Start + _TestSource + Print
 
     # List
     resp = await test_client.get("/api/graph/list")

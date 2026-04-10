@@ -8,6 +8,14 @@ from app.core.execution_context import CancellationError, ExecutionContext
 from app.core.graph_engine import execute_graph
 
 
+def _start_node(nid="start"):
+    return {"id": nid, "type": "Start", "data": {"params": {}}}
+
+
+def _trigger(eid, src, tgt):
+    return {"id": eid, "source": src, "target": tgt, "sourceHandle": "trigger", "type": "trigger"}
+
+
 def test_execution_context_cancel():
     ctx = ExecutionContext()
     assert not ctx.cancelled
@@ -22,9 +30,10 @@ async def test_cancel_before_execution():
     ctx.cancel()
 
     nodes = [
-        {"id": "1", "type": "_TestSource", "data": {"params": {}, "isEntryPoint": True}},
+        _start_node(),
+        {"id": "1", "type": "_TestSource", "data": {"params": {}}},
     ]
-    edges = []
+    edges = [_trigger("et", "start", "1")]
 
     with pytest.raises(CancellationError):
         await execute_graph(nodes, edges, context=ctx)
@@ -43,10 +52,14 @@ async def test_cancel_during_execution():
                 ctx.cancel()
 
     nodes = [
-        {"id": "1", "type": "_TestSource", "data": {"params": {}, "isEntryPoint": True}},
+        _start_node(),
+        {"id": "1", "type": "_TestSource", "data": {"params": {}}},
         {"id": "2", "type": "Print", "data": {"params": {}}},
     ]
-    edges = [{"source": "1", "target": "2", "sourceHandle": "value", "targetHandle": "value"}]
+    edges = [
+        _trigger("et", "start", "1"),
+        {"source": "1", "target": "2", "sourceHandle": "value", "targetHandle": "value"},
+    ]
 
     with pytest.raises(CancellationError):
         await execute_graph(nodes, edges, on_progress=on_progress, context=ctx)

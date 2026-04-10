@@ -9,6 +9,14 @@ from app.core.node_base import BaseNode, DataType, PortDefinition
 from app.core.node_registry import registry
 
 
+def _start_node(nid="start"):
+    return {"id": nid, "type": "Start", "data": {"params": {}}}
+
+
+def _trigger(eid, src, tgt):
+    return {"id": eid, "source": src, "target": tgt, "sourceHandle": "trigger", "type": "trigger"}
+
+
 def test_topological_levels_diamond():
     """Diamond graph: A -> B, A -> C, B -> D, C -> D produces 3 levels."""
     nodes = [{"id": "a"}, {"id": "b"}, {"id": "c"}, {"id": "d"}]
@@ -57,12 +65,14 @@ async def test_parallel_execution_diamond():
     registry._nodes["_TestSlow"] = SlowNode
     try:
         nodes = [
-            {"id": "a", "type": "_TestSlow", "data": {"params": {"id": "a"}, "isEntryPoint": True}},
+            _start_node(),
+            {"id": "a", "type": "_TestSlow", "data": {"params": {"id": "a"}}},
             {"id": "b", "type": "_TestSlow", "data": {"params": {"id": "b"}}},
             {"id": "c", "type": "_TestSlow", "data": {"params": {"id": "c"}}},
             {"id": "d", "type": "_TestSlow", "data": {"params": {"id": "d"}}},
         ]
         edges = [
+            _trigger("et", "start", "a"),
             {"source": "a", "target": "b", "sourceHandle": "output", "targetHandle": "input"},
             {"source": "a", "target": "c", "sourceHandle": "output", "targetHandle": "input"},
             {"source": "b", "target": "d", "sourceHandle": "output", "targetHandle": "input"},

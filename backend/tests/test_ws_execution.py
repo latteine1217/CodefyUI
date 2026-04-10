@@ -18,14 +18,16 @@ async def test_ws_connect_and_execute():
         base_url="http://test",
     ) as client:
         async with aconnect_ws("/ws/execution", client) as ws:
-            # Send execute with two Print nodes
+            # Send execute with Start -> _TestSource -> Print
             await ws.send_text(json.dumps({
                 "action": "execute",
                 "nodes": [
-                    {"id": "1", "type": "_TestSource", "data": {"params": {}, "isEntryPoint": True}},
+                    {"id": "start", "type": "Start", "data": {"params": {}}},
+                    {"id": "1", "type": "_TestSource", "data": {"params": {}}},
                     {"id": "2", "type": "Print", "data": {"params": {"label": "b"}}},
                 ],
                 "edges": [
+                    {"id": "et", "source": "start", "target": "1", "sourceHandle": "trigger", "type": "trigger"},
                     {"source": "1", "target": "2", "sourceHandle": "value", "targetHandle": "value"},
                 ],
             }))

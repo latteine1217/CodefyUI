@@ -31,14 +31,26 @@ def _register_failing_node():
     registry._nodes.pop("_TestFailing", None)
 
 
+def _start_node(nid="start"):
+    return {"id": nid, "type": "Start", "data": {"params": {}}}
+
+
+def _trigger(eid, src, tgt):
+    return {"id": eid, "source": src, "target": tgt, "sourceHandle": "trigger", "type": "trigger"}
+
+
 @pytest.mark.asyncio
 async def test_fail_fast_raises():
     """Default fail_fast mode should raise on first error."""
     nodes = [
-        {"id": "1", "type": "_TestFailing", "data": {"params": {}, "isEntryPoint": True}},
+        _start_node(),
+        {"id": "1", "type": "_TestFailing", "data": {"params": {}}},
         {"id": "2", "type": "Print", "data": {"params": {}}},
     ]
-    edges = [{"source": "1", "target": "2", "sourceHandle": "output", "targetHandle": "value"}]
+    edges = [
+        _trigger("et", "start", "1"),
+        {"source": "1", "target": "2", "sourceHandle": "output", "targetHandle": "value"},
+    ]
 
     with pytest.raises(RuntimeError, match="intentional failure"):
         await execute_graph(nodes, edges, error_mode="fail_fast")
@@ -53,10 +65,14 @@ async def test_continue_mode_skips_downstream():
         statuses[node_id] = status
 
     nodes = [
-        {"id": "1", "type": "_TestFailing", "data": {"params": {}, "isEntryPoint": True}},
+        _start_node(),
+        {"id": "1", "type": "_TestFailing", "data": {"params": {}}},
         {"id": "2", "type": "Print", "data": {"params": {}}},
     ]
-    edges = [{"source": "1", "target": "2", "sourceHandle": "output", "targetHandle": "value"}]
+    edges = [
+        _trigger("et", "start", "1"),
+        {"source": "1", "target": "2", "sourceHandle": "output", "targetHandle": "value"},
+    ]
 
     results = await execute_graph(nodes, edges, on_progress=on_progress, error_mode="continue")
 
@@ -93,8 +109,9 @@ async def test_retry_mode():
 
     registry._nodes["_TestRetry"] = RetryNode
     try:
-        nodes = [{"id": "1", "type": "_TestRetry", "data": {"params": {}, "isEntryPoint": True}}]
-        results = await execute_graph(nodes, [], error_mode="retry", max_retries=3)
+        nodes = [_start_node(), {"id": "1", "type": "_TestRetry", "data": {"params": {}}}]
+        edges = [_trigger("et", "start", "1")]
+        results = await execute_graph(nodes, edges, error_mode="retry", max_retries=3)
         assert results["1"]["out"] == "ok"
         assert call_count == 3
     finally:

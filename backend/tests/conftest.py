@@ -51,13 +51,15 @@ async def test_client():
 
 @pytest.fixture
 def sample_graph():
-    """A minimal valid graph: _TestSource (no required inputs, no torch) -> Print."""
+    """A minimal valid graph: Start -> _TestSource -> Print."""
     return {
         "nodes": [
-            {"id": "1", "type": "_TestSource", "position": {"x": 0, "y": 0}, "data": {"params": {}, "isEntryPoint": True}},
+            {"id": "start", "type": "Start", "position": {"x": -150, "y": 0}, "data": {"params": {}}},
+            {"id": "1", "type": "_TestSource", "position": {"x": 0, "y": 0}, "data": {"params": {}}},
             {"id": "2", "type": "Print", "position": {"x": 200, "y": 0}, "data": {"params": {"label": "second"}}},
         ],
         "edges": [
+            {"id": "et", "source": "start", "target": "1", "sourceHandle": "trigger", "type": "trigger"},
             {"id": "e1", "source": "1", "target": "2", "sourceHandle": "value", "targetHandle": "value"},
         ],
         "name": "test-graph",

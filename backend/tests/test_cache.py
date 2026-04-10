@@ -33,6 +33,14 @@ def _register_cache_test_node():
     registry._nodes.pop("_CacheTest", None)
 
 
+def _start_node(nid="start"):
+    return {"id": nid, "type": "Start", "data": {"params": {}}}
+
+
+def _trigger(eid, src, tgt):
+    return {"id": eid, "source": src, "target": tgt, "sourceHandle": "trigger", "type": "trigger"}
+
+
 def test_cache_compute_key_deterministic():
     k1 = ExecutionCache.compute_key("Conv2d", {"in_channels": 3}, ["abc"])
     k2 = ExecutionCache.compute_key("Conv2d", {"in_channels": 3}, ["abc"])
@@ -80,11 +88,11 @@ async def test_cache_hit_skips_execution():
 
     async def count_runs(node_id, status, data):
         nonlocal run_count
-        if status == "completed":
+        if status == "completed" and node_id != "start":
             run_count += 1
 
-    nodes = [{"id": "1", "type": "_CacheTest", "data": {"params": {"val": "test"}, "isEntryPoint": True}}]
-    edges = []
+    nodes = [_start_node(), {"id": "1", "type": "_CacheTest", "data": {"params": {"val": "test"}}}]
+    edges = [_trigger("et", "start", "1")]
 
     await execute_graph(nodes, edges, on_progress=count_runs, cache=cache)
     assert run_count == 1
@@ -94,7 +102,7 @@ async def test_cache_hit_skips_execution():
 
     async def count_cached(node_id, status, data):
         nonlocal cached_count
-        if status == "cached":
+        if status == "cached" and node_id != "start":
             cached_count += 1
 
     await execute_graph(nodes, edges, on_progress=count_cached, cache=cache)
@@ -106,16 +114,17 @@ async def test_cache_invalidation_on_param_change():
     """Changing params should cause a cache miss."""
     cache = ExecutionCache()
 
-    nodes_v1 = [{"id": "1", "type": "_CacheTest", "data": {"params": {"val": "v1"}, "isEntryPoint": True}}]
-    nodes_v2 = [{"id": "1", "type": "_CacheTest", "data": {"params": {"val": "v2"}, "isEntryPoint": True}}]
+    nodes_v1 = [_start_node(), {"id": "1", "type": "_CacheTest", "data": {"params": {"val": "v1"}}}]
+    nodes_v2 = [_start_node(), {"id": "1", "type": "_CacheTest", "data": {"params": {"val": "v2"}}}]
+    edges = [_trigger("et", "start", "1")]
 
-    await execute_graph(nodes_v1, [], cache=cache)
+    await execute_graph(nodes_v1, edges, cache=cache)
 
     statuses = {}
 
     async def track(node_id, status, data):
         statuses[node_id] = status
 
-    await execute_graph(nodes_v2, [], on_progress=track, cache=cache)
+    await execute_graph(nodes_v2, edges, on_progress=track, cache=cache)
     # Should NOT be cached since param changed
     assert statuses.get("1") == "completed"

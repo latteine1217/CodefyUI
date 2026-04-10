@@ -47,13 +47,23 @@ def test_cycle_detection():
         topological_sort(nodes, edges)
 
 
+def _start_node(nid="start"):
+    return {"id": nid, "type": "Start", "data": {"params": {}}}
+
+
+def _trigger(eid, src, tgt):
+    return {"id": eid, "source": src, "target": tgt, "sourceHandle": "trigger", "type": "trigger"}
+
+
 def test_validate_graph_valid():
     """_TestSource has no required inputs, Print's required input is satisfied by the edge."""
     nodes = [
-        {"id": "1", "type": "_TestSource", "data": {"params": {}, "isEntryPoint": True}},
+        _start_node(),
+        {"id": "1", "type": "_TestSource", "data": {"params": {}}},
         {"id": "2", "type": "Print", "data": {"params": {}}},
     ]
     edges = [
+        _trigger("et", "start", "1"),
         {"source": "1", "target": "2", "sourceHandle": "value", "targetHandle": "value"},
     ]
     errors = validate_graph(nodes, edges)
@@ -61,13 +71,13 @@ def test_validate_graph_valid():
 
 
 def test_validate_graph_unknown_node():
-    nodes = [{"id": "1", "type": "NonExistentNode", "data": {"isEntryPoint": True}}]
-    edges = []
+    nodes = [
+        _start_node(),
+        {"id": "1", "type": "NonExistentNode", "data": {}},
+    ]
+    edges = [_trigger("et", "start", "1")]
     errors = validate_graph(nodes, edges)
-    assert len(errors) == 1
-    assert "Unknown node type" in errors[0]
-    assert "NonExistentNode" in errors[0]
-    assert "node 1" in errors[0]
+    assert any("Unknown node type" in e and "NonExistentNode" in e and "node 1" in e for e in errors)
 
 
 def test_validate_graph_type_mismatch():
@@ -87,10 +97,12 @@ def test_validate_graph_type_mismatch():
 async def test_execute_print_nodes():
     """Use _TestSource (registered in conftest, no torch) to feed Print."""
     nodes = [
-        {"id": "1", "type": "_TestSource", "data": {"params": {}, "isEntryPoint": True}},
+        _start_node(),
+        {"id": "1", "type": "_TestSource", "data": {"params": {}}},
         {"id": "2", "type": "Print", "data": {"params": {"label": "second"}}},
     ]
     edges = [
+        _trigger("et", "start", "1"),
         {"source": "1", "target": "2", "sourceHandle": "value", "targetHandle": "value"},
     ]
     results = await execute_graph(nodes, edges)
@@ -185,49 +197,43 @@ def test_validate_graph_required_input_satisfied_by_edge():
 from app.core.graph_engine import find_entry_points, reachable_from_entry_points
 
 
-def test_find_entry_points_explicit_marker():
+def test_find_entry_points_only_trigger_targets():
+    """Only nodes with incoming trigger edges are entry points."""
     nodes = [
-        {"id": "a", "data": {"isEntryPoint": True}},
-        {"id": "b", "data": {"isEntryPoint": False}},
-        {"id": "c", "data": {"isEntryPoint": False}},
+        _start_node(),
+        {"id": "ds", "type": "Dataset", "data": {}},
+        {"id": "other", "type": "Dataset", "data": {}},
     ]
-    edges = []
-    assert find_entry_points(nodes, edges) == ["a"]
+    edges = [_trigger("e1", "start", "ds")]
+    result = find_entry_points(nodes, edges)
+    assert "ds" in result
+    assert "start" not in result  # Start itself is NOT an entry point
+    assert "other" not in result
 
 
 def test_find_entry_points_via_trigger_edge():
     nodes = [
-        {"id": "start", "type": "Start", "data": {"isEntryPoint": False}},
-        {"id": "ds", "type": "Dataset", "data": {"isEntryPoint": False}},
+        _start_node(),
+        {"id": "ds", "type": "Dataset", "data": {}},
     ]
-    edges = [
-        {"id": "e1", "source": "start", "target": "ds", "type": "trigger"},
-    ]
-    # The DOWNSTREAM node (ds) is the entry point because it has an
-    # incoming trigger edge.
-    assert "ds" in find_entry_points(nodes, edges)
-    # Start node itself is also an entry (it has isEntryPoint by virtue
-    # of being a Start? — no: Start nodes are entry points because they're
-    # always treated as such; we'll handle that via data.isEntryPoint=True
-    # being set when the StartNode is instantiated on the canvas, OR by
-    # treating Start type as implicit entry. We'll go with implicit-by-type
-    # below.)
-    assert "start" in find_entry_points(nodes, edges)
+    edges = [_trigger("e1", "start", "ds")]
+    result = find_entry_points(nodes, edges)
+    assert result == ["ds"]
+    assert "start" not in result
 
 
-def test_find_entry_points_combined():
+def test_find_entry_points_multiple_targets():
     nodes = [
-        {"id": "a", "type": "Dataset", "data": {"isEntryPoint": True}},
-        {"id": "start", "type": "Start", "data": {"isEntryPoint": False}},
-        {"id": "b", "type": "Dataset", "data": {"isEntryPoint": False}},
-        {"id": "c", "type": "Conv", "data": {"isEntryPoint": False}},
+        _start_node(),
+        {"id": "a", "type": "Dataset", "data": {}},
+        {"id": "b", "type": "Dataset", "data": {}},
     ]
     edges = [
-        {"id": "e1", "source": "start", "target": "b", "type": "trigger"},
-        {"id": "e2", "source": "a", "target": "c", "type": "data"},
+        _trigger("e1", "start", "a"),
+        _trigger("e2", "start", "b"),
     ]
     result = set(find_entry_points(nodes, edges))
-    assert result == {"a", "b", "start"}
+    assert result == {"a", "b"}
 
 
 def test_find_entry_points_none():
@@ -243,20 +249,8 @@ def test_reachable_traverses_data_edges_only():
         {"id": "e2", "source": "ds", "target": "dl", "type": "data"},
         {"id": "e3", "source": "dl", "target": "model", "type": "data"},
     ]
-    # Starting from `ds` (data root that received a trigger), BFS through
-    # data edges should reach ds, dl, model — but NOT start (it's upstream
-    # via a trigger edge, which is not traversed).
     reachable = reachable_from_entry_points(["ds"], edges)
     assert reachable == {"ds", "dl", "model"}
-
-
-def test_reachable_includes_start_when_explicitly_in_seed():
-    nodes = [{"id": n} for n in ["start", "ds"]]
-    edges = [{"id": "e1", "source": "start", "target": "ds", "type": "trigger"}]
-    # If we seed BFS with start AND ds, both are in the result; trigger
-    # edges are still not traversed, but the seeds themselves are included.
-    reachable = reachable_from_entry_points(["start", "ds"], edges)
-    assert reachable == {"start", "ds"}
 
 
 def test_reachable_handles_disconnected_components():
@@ -269,11 +263,7 @@ def test_reachable_handles_disconnected_components():
 
 
 def _make_node(nid, ntype="Dataset", is_entry=False):
-    return {
-        "id": nid,
-        "type": ntype,
-        "data": {"params": {}, "isEntryPoint": is_entry},
-    }
+    return {"id": nid, "type": ntype, "data": {"params": {}}}
 
 
 def _make_edge(eid, src, tgt, etype="data"):
@@ -294,48 +284,41 @@ def test_validate_rejects_no_entry_points():
     assert any("entry point" in err.lower() for err in errors)
 
 
-def test_validate_accepts_single_entry_point():
-    nodes = [_make_node("a", is_entry=True), _make_node("b")]
-    edges = [_make_edge("e1", "a", "b")]
+def test_validate_accepts_start_with_trigger():
+    nodes = [_start_node(), _make_node("a"), _make_node("b")]
+    edges = [
+        _trigger("et", "start", "a"),
+        _make_edge("e1", "a", "b"),
+    ]
     errors = validate_graph(nodes, edges)
-    # Should pass entry-point check (other validation may still complain
-    # about node type registration; we only care entry-point rule passes)
     assert not any("entry point" in err.lower() for err in errors)
 
 
-def test_validate_rejects_entry_with_incoming_data_edge():
-    """A node marked data.isEntryPoint=True must not have incoming data edges."""
-    nodes = [_make_node("a"), _make_node("b", is_entry=True)]
-    edges = [_make_edge("e1", "a", "b", etype="data")]
-    errors = validate_graph(nodes, edges)
-    assert any("data-root" in err.lower() or "incoming" in err.lower() for err in errors)
-
-
-def test_validate_rejects_trigger_target_with_incoming_data_edge():
-    """A node that is an entry via incoming trigger ALSO must be a data-root."""
+def test_validate_allows_trigger_to_any_node():
+    """Start trigger can connect to any node — it's a control-flow marker, not data."""
     nodes = [
-        _make_node("start", ntype="Start"),
-        _make_node("upstream"),
-        _make_node("target"),
+        _start_node(),
+        {"id": "conv", "type": "Conv2d", "data": {"params": {}}},
     ]
-    edges = [
-        _make_edge("e1", "start", "target", etype="trigger"),
-        _make_edge("e2", "upstream", "target", etype="data"),
-    ]
+    edges = [_trigger("et", "start", "conv")]
     errors = validate_graph(nodes, edges)
-    assert any("data-root" in err.lower() or "incoming" in err.lower() for err in errors)
+    # Conv2d will have a "missing required input" error (its tensor input),
+    # but NOT a "trigger cannot connect" error.
+    assert not any("trigger" in err.lower() for err in errors)
 
 
 def test_validate_allows_cycle_in_draft_component():
     """A cycle inside a non-entry-pointed (draft) component should NOT
     fail validation, because the draft is skipped at execution."""
     nodes = [
-        _make_node("ep", is_entry=True),
+        _start_node(),
+        _make_node("ep"),
         _make_node("a"),
         _make_node("b"),
         _make_node("c"),
     ]
     edges = [
+        _trigger("et", "start", "ep"),
         # Cycle in the draft component a->b->c->a
         _make_edge("e1", "a", "b"),
         _make_edge("e2", "b", "c"),
@@ -346,32 +329,30 @@ def test_validate_allows_cycle_in_draft_component():
 
 
 def test_validate_rejects_cycle_in_entry_pointed_component():
-    """A cycle in an entry-pointed component fails (current behaviour)."""
+    """A cycle in an entry-pointed component fails."""
     nodes = [
-        _make_node("ep", is_entry=True),
+        _start_node(),
         _make_node("a"),
         _make_node("b"),
     ]
     edges = [
-        _make_edge("e1", "ep", "a"),
-        _make_edge("e2", "a", "b"),
-        _make_edge("e3", "b", "ep"),  # cycle back
+        _trigger("et", "start", "a"),
+        _make_edge("e1", "a", "b"),
+        _make_edge("e2", "b", "a"),
     ]
     errors = validate_graph(nodes, edges)
-    # Note: this will also fail rule "entry must be data-root" because ep
-    # has an incoming edge from b. So we accept either error here.
-    assert any(("cycle" in err.lower()) or ("data-root" in err.lower()) for err in errors)
+    assert any("cycle" in err.lower() for err in errors)
 
 
 def test_topological_levels_excludes_trigger_from_in_degree():
     """A Dataset receiving a trigger from a Start should still be at level 0."""
     nodes = [
-        {"id": "start", "type": "Start", "data": {"params": {}, "isEntryPoint": False}},
-        {"id": "ds", "type": "Dataset", "data": {"params": {}, "isEntryPoint": False}},
-        {"id": "dl", "type": "DataLoader", "data": {"params": {}, "isEntryPoint": False}},
+        {"id": "start", "type": "Start", "data": {"params": {}}},
+        {"id": "ds", "type": "Dataset", "data": {"params": {}}},
+        {"id": "dl", "type": "DataLoader", "data": {"params": {}}},
     ]
     edges = [
-        {"id": "e1", "source": "start", "target": "ds", "sourceHandle": "trigger", "targetHandle": "trigger", "type": "trigger"},
+        {"id": "e1", "source": "start", "target": "ds", "sourceHandle": "trigger", "type": "trigger"},
         {"id": "e2", "source": "ds", "target": "dl", "sourceHandle": "dataset", "targetHandle": "dataset", "type": "data"},
     ]
     levels = topological_levels(nodes, edges)
@@ -384,14 +365,13 @@ def test_topological_levels_excludes_trigger_from_in_degree():
 
 @pytest.mark.asyncio
 async def test_execute_graph_skips_draft_components():
-    """Draft components (no entry point) should be skipped silently."""
-    # We need real registered nodes for execute_graph to actually run.
-    # _TestSource is registered in conftest.py and takes no inputs.
+    """Draft components (no Start trigger) should be skipped silently."""
     nodes = [
-        {"id": "live", "type": "_TestSource", "data": {"params": {"val": 42}, "isEntryPoint": True}},
-        {"id": "draft", "type": "_TestSource", "data": {"params": {"val": 99}, "isEntryPoint": False}},
+        _start_node(),
+        {"id": "live", "type": "_TestSource", "data": {"params": {"val": 42}}},
+        {"id": "draft", "type": "_TestSource", "data": {"params": {"val": 99}}},
     ]
-    edges = []
+    edges = [_trigger("et", "start", "live")]
     results = await execute_graph(nodes, edges)
     assert "live" in results
     assert "draft" not in results

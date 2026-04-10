@@ -174,6 +174,10 @@ def validate_graph(nodes: list[dict], edges: list[dict]) -> list[str]:
     # --- Edge-level validation ---
 
     for edge in edges:
+        # Trigger edges are control-flow markers, not data connections.
+        if edge.get("type", "data") == "trigger":
+            continue
+
         src = node_map.get(edge["source"])
         tgt = node_map.get(edge["target"])
         if not src or not tgt:
@@ -212,25 +216,13 @@ def validate_graph(nodes: list[dict], edges: list[dict]) -> list[str]:
     entry_ids = find_entry_points(nodes, edges)
     if not entry_ids:
         errors.append(
-            "Graph has no entry points. Mark a root node as an entry "
-            "point or add a Start node."
+            "Graph has no entry points. Add a Start node and connect "
+            "it to the node you want to start execution from."
         )
         # Still run remaining checks so user sees all problems at once
         executable_node_ids = {n["id"] for n in nodes}
     else:
         executable_node_ids = reachable_from_entry_points(entry_ids, edges)
-
-    # NEW: Entry-point nodes must have no incoming DATA edges
-    for entry_id in entry_ids:
-        incoming_data = [
-            e for e in edges
-            if e["target"] == entry_id and e.get("type", "data") == "data"
-        ]
-        if incoming_data:
-            errors.append(
-                f"Node '{entry_id}' is an entry point but has incoming "
-                f"data edges. Entry points must be data-roots."
-            )
 
     # MODIFIED: Run cycle detection on the EXECUTABLE subgraph only.
     # Drafts (nodes outside executable_node_ids) are skipped.
@@ -277,27 +269,19 @@ def find_entry_points(
 ) -> list[str]:
     """Return ids of nodes that are entry points.
 
-    A node is an entry point if any of:
-      1. Its `data.isEntryPoint` field is True.
-      2. It is of type "Start" (Start nodes are always entry points).
-      3. It has at least one incoming edge of type "trigger".
+    A node is an entry point if it has at least one incoming trigger edge
+    (i.e. it is connected from a Start node). Start nodes themselves are
+    NOT entry points — they are markers that designate entry points via
+    their trigger edges.
 
     The order of returned ids matches the order in `nodes` for determinism.
     """
-    entry_ids: list[str] = []
     nodes_with_trigger_in: set[str] = {
         e["target"]
         for e in edges
         if e.get("type", "data") == "trigger"
     }
-    for node in nodes:
-        nid = node["id"]
-        is_marker = bool(node.get("data", {}).get("isEntryPoint", False))
-        is_start_type = node.get("type") == "Start"
-        has_trigger_in = nid in nodes_with_trigger_in
-        if is_marker or is_start_type or has_trigger_in:
-            entry_ids.append(nid)
-    return entry_ids
+    return [n["id"] for n in nodes if n["id"] in nodes_with_trigger_in]
 
 
 def reachable_from_entry_points(
@@ -439,6 +423,12 @@ async def execute_graph(
         raise GraphValidationError("Graph has no entry points")
 
     executable_ids = reachable_from_entry_points(entry_ids, expanded_edges)
+
+    # Include Start nodes whose trigger targets are executable, so that
+    # trigger edges are preserved for validate_graph's entry-point detection.
+    for e in expanded_edges:
+        if e.get("type", "data") == "trigger" and e["target"] in executable_ids:
+            executable_ids.add(e["source"])
 
     # If any internal node of a preset is reachable, include ALL sibling
     # nodes from that preset.  A preset is a logical unit — its internal
