@@ -3,6 +3,17 @@
   "description": "Bidirectional GRU for Speech Recognition — Processes audio mel-spectrogram features in both forward and backward directions. BiGRU is widely used as the acoustic model backbone in modern ASR (Automatic Speech Recognition) systems like DeepSpeech and Conformer. Captures temporal context from both past and future frames.",
   "nodes": [
     {
+      "id": "start-1",
+      "type": "Start",
+      "position": {
+        "x": -150,
+        "y": 50
+      },
+      "data": {
+        "params": {}
+      }
+    },
+    {
       "id": "dataset-1",
       "type": "Dataset",
       "position": {
@@ -14,8 +25,7 @@
           "name": "MNIST",
           "split": "train",
           "data_dir": "./data"
-        },
-        "isEntryPoint": true
+        }
       }
     },
     {
@@ -58,8 +68,7 @@
       "data": {
         "params": {
           "shape": "-1,100,80"
-        },
-        "isEntryPoint": true
+        }
       }
     },
     {
@@ -185,8 +194,7 @@
       "data": {
         "params": {
           "type": "CrossEntropyLoss"
-        },
-        "isEntryPoint": true
+        }
       }
     },
     {
@@ -228,8 +236,7 @@
       "data": {
         "params": {
           "layers": "{\"version\":2,\"nodes\":[{\"id\":\"in\",\"type\":\"Input\",\"ports\":[{\"id\":\"p_x\",\"name\":\"x\"}]},{\"id\":\"n0\",\"type\":\"GRU\",\"params\":{\"input_size\":80,\"hidden_size\":256,\"num_layers\":3,\"batch_first\":true,\"bidirectional\":true}},{\"id\":\"n1\",\"type\":\"Dropout\",\"params\":{\"p\":0.3}},{\"id\":\"n2\",\"type\":\"GRU\",\"params\":{\"input_size\":512,\"hidden_size\":256,\"num_layers\":2,\"batch_first\":true,\"bidirectional\":true}},{\"id\":\"n3\",\"type\":\"SelectIndex\",\"params\":{\"dim\":1,\"index\":-1}},{\"id\":\"n4\",\"type\":\"Dropout\",\"params\":{\"p\":0.2}},{\"id\":\"n5\",\"type\":\"Linear\",\"params\":{\"in_features\":512,\"out_features\":29}},{\"id\":\"out\",\"type\":\"Output\",\"ports\":[{\"id\":\"p_y\",\"name\":\"y\"}]}],\"edges\":[{\"id\":\"e0\",\"source\":\"in\",\"sourceHandle\":\"p_x\",\"target\":\"n0\"},{\"id\":\"e1\",\"source\":\"n0\",\"target\":\"n1\"},{\"id\":\"e2\",\"source\":\"n1\",\"target\":\"n2\"},{\"id\":\"e3\",\"source\":\"n2\",\"target\":\"n3\"},{\"id\":\"e4\",\"source\":\"n3\",\"target\":\"n4\"},{\"id\":\"e5\",\"source\":\"n4\",\"target\":\"n5\"},{\"id\":\"e6\",\"source\":\"n5\",\"target\":\"out\",\"targetHandle\":\"p_y\"}]}"
-        },
-        "isEntryPoint": true
+        }
       }
     },
     {
@@ -366,6 +373,34 @@
       "target": "visualize-loss",
       "sourceHandle": "metrics",
       "targetHandle": "data"
+    },
+    {
+      "id": "e-trigger-1",
+      "source": "start-1",
+      "target": "dataset-1",
+      "sourceHandle": "trigger",
+      "type": "trigger"
+    },
+    {
+      "id": "e-trigger-2",
+      "source": "start-1",
+      "target": "reshape-mel",
+      "sourceHandle": "trigger",
+      "type": "trigger"
+    },
+    {
+      "id": "e-trigger-3",
+      "source": "start-1",
+      "target": "loss-1",
+      "sourceHandle": "trigger",
+      "type": "trigger"
+    },
+    {
+      "id": "e-trigger-4",
+      "source": "start-1",
+      "target": "seq-model",
+      "sourceHandle": "trigger",
+      "type": "trigger"
     }
   ]
 }

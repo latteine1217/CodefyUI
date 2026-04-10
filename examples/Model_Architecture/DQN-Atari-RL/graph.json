@@ -3,6 +3,17 @@
   "description": "Deep Q-Network with CNN backbone for Atari game playing — The landmark DeepMind architecture (2015) that demonstrated superhuman performance on Atari games. Uses CNN layers to extract visual features from game frames, fed into a DQN for action-value estimation. Features experience replay and target network for stable training.",
   "nodes": [
     {
+      "id": "start-1",
+      "type": "Start",
+      "position": {
+        "x": -150,
+        "y": 50
+      },
+      "data": {
+        "params": {}
+      }
+    },
+    {
       "id": "env-1",
       "type": "EnvWrapper",
       "position": {
@@ -12,8 +23,7 @@
       "data": {
         "params": {
           "env_name": "ALE/Breakout-v5"
-        },
-        "isEntryPoint": true
+        }
       }
     },
     {
@@ -213,8 +223,7 @@
       "data": {
         "params": {
           "layers": "{\"version\":2,\"nodes\":[{\"id\":\"in\",\"type\":\"Input\",\"ports\":[{\"id\":\"p_x\",\"name\":\"x\"}]},{\"id\":\"n0\",\"type\":\"Conv2d\",\"params\":{\"in_channels\":4,\"out_channels\":32,\"kernel_size\":8,\"stride\":4}},{\"id\":\"n1\",\"type\":\"ReLU\"},{\"id\":\"n2\",\"type\":\"Conv2d\",\"params\":{\"in_channels\":32,\"out_channels\":64,\"kernel_size\":4,\"stride\":2}},{\"id\":\"n3\",\"type\":\"ReLU\"},{\"id\":\"n4\",\"type\":\"Conv2d\",\"params\":{\"in_channels\":64,\"out_channels\":64,\"kernel_size\":3,\"stride\":1}},{\"id\":\"n5\",\"type\":\"ReLU\"},{\"id\":\"n6\",\"type\":\"Flatten\"},{\"id\":\"n7\",\"type\":\"Linear\",\"params\":{\"in_features\":3136,\"out_features\":512}},{\"id\":\"n8\",\"type\":\"ReLU\"},{\"id\":\"n9\",\"type\":\"Linear\",\"params\":{\"in_features\":512,\"out_features\":4}},{\"id\":\"out\",\"type\":\"Output\",\"ports\":[{\"id\":\"p_y\",\"name\":\"y\"}]}],\"edges\":[{\"id\":\"e0\",\"source\":\"in\",\"sourceHandle\":\"p_x\",\"target\":\"n0\"},{\"id\":\"e1\",\"source\":\"n0\",\"target\":\"n1\"},{\"id\":\"e2\",\"source\":\"n1\",\"target\":\"n2\"},{\"id\":\"e3\",\"source\":\"n2\",\"target\":\"n3\"},{\"id\":\"e4\",\"source\":\"n3\",\"target\":\"n4\"},{\"id\":\"e5\",\"source\":\"n4\",\"target\":\"n5\"},{\"id\":\"e6\",\"source\":\"n5\",\"target\":\"n6\"},{\"id\":\"e7\",\"source\":\"n6\",\"target\":\"n7\"},{\"id\":\"e8\",\"source\":\"n7\",\"target\":\"n8\"},{\"id\":\"e9\",\"source\":\"n8\",\"target\":\"n9\"},{\"id\":\"e10\",\"source\":\"n9\",\"target\":\"out\",\"targetHandle\":\"p_y\"}]}"
-        },
-        "isEntryPoint": true
+        }
       }
     }
   ],
@@ -316,6 +325,20 @@
       "target": "visualize-q",
       "sourceHandle": "action",
       "targetHandle": "data"
+    },
+    {
+      "id": "e-trigger-1",
+      "source": "start-1",
+      "target": "env-1",
+      "sourceHandle": "trigger",
+      "type": "trigger"
+    },
+    {
+      "id": "e-trigger-2",
+      "source": "start-1",
+      "target": "seq-model",
+      "sourceHandle": "trigger",
+      "type": "trigger"
     }
   ]
 }

@@ -3,6 +3,17 @@
   "description": "GPT-style Decoder-Only Transformer — The architecture behind ChatGPT, Claude, LLaMA, and all modern LLMs. Uses causal (masked) self-attention so each token can only attend to previous tokens, enabling autoregressive text generation. This example shows a 12-layer, 12-head configuration similar to GPT-2 Small (117M params).",
   "nodes": [
     {
+      "id": "start-1",
+      "type": "Start",
+      "position": {
+        "x": -150,
+        "y": 50
+      },
+      "data": {
+        "params": {}
+      }
+    },
+    {
       "id": "dataset-1",
       "type": "Dataset",
       "position": {
@@ -14,8 +25,7 @@
           "name": "MNIST",
           "split": "train",
           "data_dir": "./data"
-        },
-        "isEntryPoint": true
+        }
       }
     },
     {
@@ -58,8 +68,7 @@
       "data": {
         "params": {
           "shape": "-1,128,768"
-        },
-        "isEntryPoint": true
+        }
       }
     },
     {
@@ -140,8 +149,7 @@
       "data": {
         "params": {
           "type": "CrossEntropyLoss"
-        },
-        "isEntryPoint": true
+        }
       }
     },
     {
@@ -197,8 +205,7 @@
       "data": {
         "params": {
           "layers": "{\"version\":2,\"nodes\":[{\"id\":\"in\",\"type\":\"Input\",\"ports\":[{\"id\":\"p_x\",\"name\":\"x\"}]},{\"id\":\"n0\",\"type\":\"Linear\",\"params\":{\"in_features\":784,\"out_features\":768}},{\"id\":\"n1\",\"type\":\"Reshape\",\"params\":{\"shape\":\"128,6\"}},{\"id\":\"n2\",\"type\":\"TransformerDecoder\",\"params\":{\"d_model\":6,\"nhead\":2,\"num_layers\":12,\"dim_feedforward\":24}},{\"id\":\"n3\",\"type\":\"Flatten\",\"params\":{}},{\"id\":\"n4\",\"type\":\"Dropout\",\"params\":{\"p\":0.1}},{\"id\":\"n5\",\"type\":\"Linear\",\"params\":{\"in_features\":768,\"out_features\":50257}},{\"id\":\"out\",\"type\":\"Output\",\"ports\":[{\"id\":\"p_y\",\"name\":\"y\"}]}],\"edges\":[{\"id\":\"e0\",\"source\":\"in\",\"sourceHandle\":\"p_x\",\"target\":\"n0\"},{\"id\":\"e1\",\"source\":\"n0\",\"target\":\"n1\"},{\"id\":\"e2\",\"source\":\"n1\",\"target\":\"n2\"},{\"id\":\"e3\",\"source\":\"n2\",\"target\":\"n3\"},{\"id\":\"e4\",\"source\":\"n3\",\"target\":\"n4\"},{\"id\":\"e5\",\"source\":\"n4\",\"target\":\"n5\"},{\"id\":\"e6\",\"source\":\"n5\",\"target\":\"out\",\"targetHandle\":\"p_y\"}]}"
-        },
-        "isEntryPoint": true
+        }
       }
     },
     {
@@ -321,6 +328,34 @@
       "target": "visualize-attn",
       "sourceHandle": "metrics",
       "targetHandle": "data"
+    },
+    {
+      "id": "e-trigger-1",
+      "source": "start-1",
+      "target": "dataset-1",
+      "sourceHandle": "trigger",
+      "type": "trigger"
+    },
+    {
+      "id": "e-trigger-2",
+      "source": "start-1",
+      "target": "reshape-tokens",
+      "sourceHandle": "trigger",
+      "type": "trigger"
+    },
+    {
+      "id": "e-trigger-3",
+      "source": "start-1",
+      "target": "loss-1",
+      "sourceHandle": "trigger",
+      "type": "trigger"
+    },
+    {
+      "id": "e-trigger-4",
+      "source": "start-1",
+      "target": "seq-model",
+      "sourceHandle": "trigger",
+      "type": "trigger"
     }
   ]
 }

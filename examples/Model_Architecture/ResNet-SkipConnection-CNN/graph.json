@@ -3,6 +3,17 @@
   "description": "ResNet (Residual Network) — Still the backbone of most production CV systems. Demonstrates residual/skip connections using Concat nodes to merge the shortcut path with the main path, enabling training of very deep networks by solving the vanishing gradient problem.",
   "nodes": [
     {
+      "id": "start-1",
+      "type": "Start",
+      "position": {
+        "x": -150,
+        "y": 50
+      },
+      "data": {
+        "params": {}
+      }
+    },
+    {
       "id": "dataset-1",
       "type": "Dataset",
       "position": {
@@ -14,8 +25,7 @@
           "name": "CIFAR10",
           "split": "train",
           "data_dir": "./data"
-        },
-        "isEntryPoint": true
+        }
       }
     },
     {
@@ -62,8 +72,7 @@
           "kernel_size": 3,
           "stride": 1,
           "padding": 1
-        },
-        "isEntryPoint": true
+        }
       }
     },
     {
@@ -340,8 +349,7 @@
       "data": {
         "params": {
           "type": "CrossEntropyLoss"
-        },
-        "isEntryPoint": true
+        }
       }
     },
     {
@@ -383,8 +391,7 @@
       "data": {
         "params": {
           "layers": "{\"version\": 2, \"nodes\": [{\"id\": \"in\", \"type\": \"Input\", \"ports\": [{\"id\": \"p_x\", \"name\": \"x\"}]}, {\"id\": \"stem_conv\", \"type\": \"Conv2d\", \"params\": {\"in_channels\": 3, \"out_channels\": 64, \"kernel_size\": 7, \"stride\": 2, \"padding\": 3}}, {\"id\": \"stem_bn\", \"type\": \"BatchNorm2d\", \"params\": {\"num_features\": 64}}, {\"id\": \"stem_relu\", \"type\": \"ReLU\"}, {\"id\": \"stem_pool\", \"type\": \"MaxPool2d\", \"params\": {\"kernel_size\": 3, \"stride\": 2}}, {\"id\": \"b1_c1\", \"type\": \"Conv2d\", \"params\": {\"in_channels\": 64, \"out_channels\": 64, \"kernel_size\": 3, \"padding\": 1}}, {\"id\": \"b1_bn1\", \"type\": \"BatchNorm2d\", \"params\": {\"num_features\": 64}}, {\"id\": \"b1_r1\", \"type\": \"ReLU\"}, {\"id\": \"b1_c2\", \"type\": \"Conv2d\", \"params\": {\"in_channels\": 64, \"out_channels\": 64, \"kernel_size\": 3, \"padding\": 1}}, {\"id\": \"b1_bn2\", \"type\": \"BatchNorm2d\", \"params\": {\"num_features\": 64}}, {\"id\": \"b1_add\", \"type\": \"Add\"}, {\"id\": \"b1_r2\", \"type\": \"ReLU\"}, {\"id\": \"b2_c1\", \"type\": \"Conv2d\", \"params\": {\"in_channels\": 64, \"out_channels\": 64, \"kernel_size\": 3, \"padding\": 1}}, {\"id\": \"b2_bn1\", \"type\": \"BatchNorm2d\", \"params\": {\"num_features\": 64}}, {\"id\": \"b2_r1\", \"type\": \"ReLU\"}, {\"id\": \"b2_c2\", \"type\": \"Conv2d\", \"params\": {\"in_channels\": 64, \"out_channels\": 64, \"kernel_size\": 3, \"padding\": 1}}, {\"id\": \"b2_bn2\", \"type\": \"BatchNorm2d\", \"params\": {\"num_features\": 64}}, {\"id\": \"b2_add\", \"type\": \"Add\"}, {\"id\": \"b2_r2\", \"type\": \"ReLU\"}, {\"id\": \"head_pool\", \"type\": \"AdaptiveAvgPool2d\", \"params\": {\"output_size\": 1}}, {\"id\": \"head_flat\", \"type\": \"Flatten\"}, {\"id\": \"head_fc\", \"type\": \"Linear\", \"params\": {\"in_features\": 64, \"out_features\": 1000}}, {\"id\": \"out\", \"type\": \"Output\", \"ports\": [{\"id\": \"p_y\", \"name\": \"y\"}]}], \"edges\": [{\"id\": \"e1\", \"source\": \"in\", \"sourceHandle\": \"p_x\", \"target\": \"stem_conv\"}, {\"id\": \"e2\", \"source\": \"stem_conv\", \"target\": \"stem_bn\"}, {\"id\": \"e3\", \"source\": \"stem_bn\", \"target\": \"stem_relu\"}, {\"id\": \"e4\", \"source\": \"stem_relu\", \"target\": \"stem_pool\"}, {\"id\": \"e5\", \"source\": \"stem_pool\", \"target\": \"b1_c1\"}, {\"id\": \"e6\", \"source\": \"b1_c1\", \"target\": \"b1_bn1\"}, {\"id\": \"e7\", \"source\": \"b1_bn1\", \"target\": \"b1_r1\"}, {\"id\": \"e8\", \"source\": \"b1_r1\", \"target\": \"b1_c2\"}, {\"id\": \"e9\", \"source\": \"b1_c2\", \"target\": \"b1_bn2\"}, {\"id\": \"e10\", \"source\": \"b1_bn2\", \"target\": \"b1_add\"}, {\"id\": \"e11\", \"source\": \"stem_pool\", \"target\": \"b1_add\"}, {\"id\": \"e12\", \"source\": \"b1_add\", \"target\": \"b1_r2\"}, {\"id\": \"e13\", \"source\": \"b1_r2\", \"target\": \"b2_c1\"}, {\"id\": \"e14\", \"source\": \"b2_c1\", \"target\": \"b2_bn1\"}, {\"id\": \"e15\", \"source\": \"b2_bn1\", \"target\": \"b2_r1\"}, {\"id\": \"e16\", \"source\": \"b2_r1\", \"target\": \"b2_c2\"}, {\"id\": \"e17\", \"source\": \"b2_c2\", \"target\": \"b2_bn2\"}, {\"id\": \"e18\", \"source\": \"b2_bn2\", \"target\": \"b2_add\"}, {\"id\": \"e19\", \"source\": \"b1_r2\", \"target\": \"b2_add\"}, {\"id\": \"e20\", \"source\": \"b2_add\", \"target\": \"b2_r2\"}, {\"id\": \"e21\", \"source\": \"b2_r2\", \"target\": \"head_pool\"}, {\"id\": \"e22\", \"source\": \"head_pool\", \"target\": \"head_flat\"}, {\"id\": \"e23\", \"source\": \"head_flat\", \"target\": \"head_fc\"}, {\"id\": \"e24\", \"source\": \"head_fc\", \"target\": \"out\", \"targetHandle\": \"p_y\"}]}"
-        },
-        "isEntryPoint": true
+        }
       }
     },
     {
@@ -605,6 +612,34 @@
       "target": "visualize-1",
       "sourceHandle": "losses",
       "targetHandle": "data"
+    },
+    {
+      "id": "e-trigger-1",
+      "source": "start-1",
+      "target": "dataset-1",
+      "sourceHandle": "trigger",
+      "type": "trigger"
+    },
+    {
+      "id": "e-trigger-2",
+      "source": "start-1",
+      "target": "stem-conv",
+      "sourceHandle": "trigger",
+      "type": "trigger"
+    },
+    {
+      "id": "e-trigger-3",
+      "source": "start-1",
+      "target": "loss-1",
+      "sourceHandle": "trigger",
+      "type": "trigger"
+    },
+    {
+      "id": "e-trigger-4",
+      "source": "start-1",
+      "target": "seq-model",
+      "sourceHandle": "trigger",
+      "type": "trigger"
     }
   ]
 }

@@ -3,6 +3,17 @@
   "description": "LSTM for Time Series Forecasting — The go-to RNN architecture for temporal prediction tasks like stock prices, weather forecasting, energy demand, and IoT sensor data. Uses a stacked 3-layer LSTM with MSE loss for regression-based forecasting. Widely deployed in finance and industrial applications.",
   "nodes": [
     {
+      "id": "start-1",
+      "type": "Start",
+      "position": {
+        "x": -150,
+        "y": 50
+      },
+      "data": {
+        "params": {}
+      }
+    },
+    {
       "id": "dataset-1",
       "type": "Dataset",
       "position": {
@@ -14,8 +25,7 @@
           "name": "MNIST",
           "split": "train",
           "data_dir": "./data"
-        },
-        "isEntryPoint": true
+        }
       }
     },
     {
@@ -58,8 +68,7 @@
       "data": {
         "params": {
           "shape": "-1,96,1"
-        },
-        "isEntryPoint": true
+        }
       }
     },
     {
@@ -141,8 +150,7 @@
       "data": {
         "params": {
           "type": "MSELoss"
-        },
-        "isEntryPoint": true
+        }
       }
     },
     {
@@ -198,8 +206,7 @@
       "data": {
         "params": {
           "layers": "{\"version\":2,\"nodes\":[{\"id\":\"in\",\"type\":\"Input\",\"ports\":[{\"id\":\"p_x\",\"name\":\"x\"}]},{\"id\":\"n0\",\"type\":\"LSTM\",\"params\":{\"input_size\":1,\"hidden_size\":128,\"num_layers\":3,\"batch_first\":true,\"bidirectional\":false}},{\"id\":\"n1\",\"type\":\"SelectIndex\",\"params\":{\"dim\":1,\"index\":-1}},{\"id\":\"n2\",\"type\":\"Dropout\",\"params\":{\"p\":0.2}},{\"id\":\"n3\",\"type\":\"Linear\",\"params\":{\"in_features\":128,\"out_features\":24}},{\"id\":\"out\",\"type\":\"Output\",\"ports\":[{\"id\":\"p_y\",\"name\":\"y\"}]}],\"edges\":[{\"id\":\"e0\",\"source\":\"in\",\"sourceHandle\":\"p_x\",\"target\":\"n0\"},{\"id\":\"e1\",\"source\":\"n0\",\"target\":\"n1\"},{\"id\":\"e2\",\"source\":\"n1\",\"target\":\"n2\"},{\"id\":\"e3\",\"source\":\"n2\",\"target\":\"n3\"},{\"id\":\"e4\",\"source\":\"n3\",\"target\":\"out\",\"targetHandle\":\"p_y\"}]}"
-        },
-        "isEntryPoint": true
+        }
       }
     },
     {
@@ -315,6 +322,34 @@
       "target": "visualize-pred",
       "sourceHandle": "metrics",
       "targetHandle": "data"
+    },
+    {
+      "id": "e-trigger-1",
+      "source": "start-1",
+      "target": "dataset-1",
+      "sourceHandle": "trigger",
+      "type": "trigger"
+    },
+    {
+      "id": "e-trigger-2",
+      "source": "start-1",
+      "target": "reshape-seq",
+      "sourceHandle": "trigger",
+      "type": "trigger"
+    },
+    {
+      "id": "e-trigger-3",
+      "source": "start-1",
+      "target": "loss-1",
+      "sourceHandle": "trigger",
+      "type": "trigger"
+    },
+    {
+      "id": "e-trigger-4",
+      "source": "start-1",
+      "target": "seq-model",
+      "sourceHandle": "trigger",
+      "type": "trigger"
     }
   ]
 }

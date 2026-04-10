@@ -3,6 +3,17 @@
   "description": "LLaMA (Meta, 2023–2025) — The open-source foundation model architecture adopted by LLaMA 3, Mistral, Qwen, and Yi. Key innovations over GPT: RMSNorm (pre-norm), RoPE positional encoding, SwiGLU activation, and Grouped-Query Attention (GQA). This example shows a LLaMA-7B-scale config (32 layers, 4096 dim, 32 heads).",
   "nodes": [
     {
+      "id": "start-1",
+      "type": "Start",
+      "position": {
+        "x": -150,
+        "y": 50
+      },
+      "data": {
+        "params": {}
+      }
+    },
+    {
       "id": "dataset-1",
       "type": "Dataset",
       "position": {
@@ -14,8 +25,7 @@
           "name": "MNIST",
           "split": "train",
           "data_dir": "./data"
-        },
-        "isEntryPoint": true
+        }
       }
     },
     {
@@ -58,8 +68,7 @@
       "data": {
         "params": {
           "shape": "-1,2048,4096"
-        },
-        "isEntryPoint": true
+        }
       }
     },
     {
@@ -168,8 +177,7 @@
       "data": {
         "params": {
           "type": "CrossEntropyLoss"
-        },
-        "isEntryPoint": true
+        }
       }
     },
     {
@@ -225,8 +233,7 @@
       "data": {
         "params": {
           "layers": "{\"version\": 2, \"nodes\": [{\"id\": \"in\", \"type\": \"Input\", \"ports\": [{\"id\": \"p_x\", \"name\": \"x\"}]}, {\"id\": \"n0\", \"type\": \"Linear\", \"params\": {\"in_features\": 784, \"out_features\": 768}}, {\"id\": \"n1\", \"type\": \"Reshape\", \"params\": {\"shape\": \"128,6\"}}, {\"id\": \"n2\", \"type\": \"MultiHeadAttention\", \"params\": {\"embed_dim\": 6, \"num_heads\": 2}}, {\"id\": \"n3\", \"type\": \"TransformerDecoder\", \"params\": {\"d_model\": 6, \"nhead\": 2, \"num_layers\": 6, \"dim_feedforward\": 24}}, {\"id\": \"n4\", \"type\": \"Flatten\", \"params\": {}}, {\"id\": \"n5\", \"type\": \"Dropout\", \"params\": {\"p\": 0.0}}, {\"id\": \"n6\", \"type\": \"Linear\", \"params\": {\"in_features\": 768, \"out_features\": 32000}}, {\"id\": \"out\", \"type\": \"Output\", \"ports\": [{\"id\": \"p_y\", \"name\": \"y\"}]}], \"edges\": [{\"id\": \"e0\", \"source\": \"in\", \"sourceHandle\": \"p_x\", \"target\": \"n0\"}, {\"id\": \"e1\", \"source\": \"n0\", \"target\": \"n1\"}, {\"id\": \"e2\", \"source\": \"n1\", \"target\": \"n2\"}, {\"id\": \"e3\", \"source\": \"n2\", \"target\": \"n3\"}, {\"id\": \"e4\", \"source\": \"n3\", \"target\": \"n4\"}, {\"id\": \"e5\", \"source\": \"n4\", \"target\": \"n5\"}, {\"id\": \"e6\", \"source\": \"n5\", \"target\": \"n6\"}, {\"id\": \"e7\", \"source\": \"n6\", \"target\": \"out\", \"targetHandle\": \"p_y\"}]}"
-        },
-        "isEntryPoint": true
+        }
       }
     },
     {
@@ -384,6 +391,34 @@
       "target": "visualize-perplexity",
       "sourceHandle": "val_losses",
       "targetHandle": "data"
+    },
+    {
+      "id": "e-trigger-1",
+      "source": "start-1",
+      "target": "dataset-1",
+      "sourceHandle": "trigger",
+      "type": "trigger"
+    },
+    {
+      "id": "e-trigger-2",
+      "source": "start-1",
+      "target": "reshape-tokens",
+      "sourceHandle": "trigger",
+      "type": "trigger"
+    },
+    {
+      "id": "e-trigger-3",
+      "source": "start-1",
+      "target": "loss-1",
+      "sourceHandle": "trigger",
+      "type": "trigger"
+    },
+    {
+      "id": "e-trigger-4",
+      "source": "start-1",
+      "target": "seq-model",
+      "sourceHandle": "trigger",
+      "type": "trigger"
     }
   ]
 }
