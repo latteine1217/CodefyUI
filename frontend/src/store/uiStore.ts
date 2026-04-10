@@ -15,8 +15,6 @@ interface UIState {
   toggleBeginnerMode: () => void;
   lastLayoutMode: 'experiments' | 'all' | 'selected';
   setLastLayoutMode: (mode: 'experiments' | 'all' | 'selected') => void;
-  migrationModalOpen: boolean;
-  setMigrationModalOpen: (open: boolean) => void;
 }
 
 const TOOLTIPS_KEY = 'codefyui-tooltips';
@@ -63,6 +61,4 @@ export const useUIStore = create<UIState>((set) => ({
     localStorage.setItem(LAYOUT_MODE_KEY, mode);
     set({ lastLayoutMode: mode });
   },
-  migrationModalOpen: false,
-  setMigrationModalOpen: (open: boolean) => set({ migrationModalOpen: open }),
 }));
