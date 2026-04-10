@@ -15,7 +15,6 @@ def test_execution_context_cancel():
     assert ctx.cancelled
 
 
-@pytest.mark.xfail(reason="Updated in Task 6")
 @pytest.mark.asyncio
 async def test_cancel_before_execution():
     """Cancelling context before execution raises CancellationError."""
@@ -23,7 +22,7 @@ async def test_cancel_before_execution():
     ctx.cancel()
 
     nodes = [
-        {"id": "1", "type": "_TestSource", "data": {"params": {}}},
+        {"id": "1", "type": "_TestSource", "isEntryPoint": True, "data": {"params": {}}},
     ]
     edges = []
 
@@ -31,7 +30,6 @@ async def test_cancel_before_execution():
         await execute_graph(nodes, edges, context=ctx)
 
 
-@pytest.mark.xfail(reason="Updated in Task 6")
 @pytest.mark.asyncio
 async def test_cancel_during_execution():
     """Cancelling mid-execution stops before later nodes run."""
@@ -45,7 +43,7 @@ async def test_cancel_during_execution():
                 ctx.cancel()
 
     nodes = [
-        {"id": "1", "type": "_TestSource", "data": {"params": {}}},
+        {"id": "1", "type": "_TestSource", "isEntryPoint": True, "data": {"params": {}}},
         {"id": "2", "type": "Print", "data": {"params": {}}},
     ]
     edges = [{"source": "1", "target": "2", "sourceHandle": "value", "targetHandle": "value"}]

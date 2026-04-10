@@ -7,6 +7,7 @@ import pytest
 from app.core.graph_engine import (
     GraphValidationError,
     execute_graph,
+    topological_levels,
     topological_sort,
     validate_graph,
 )
@@ -46,11 +47,10 @@ def test_cycle_detection():
         topological_sort(nodes, edges)
 
 
-@pytest.mark.xfail(reason="Updated in Task 6")
 def test_validate_graph_valid():
     """_TestSource has no required inputs, Print's required input is satisfied by the edge."""
     nodes = [
-        {"id": "1", "type": "_TestSource", "data": {"params": {}}},
+        {"id": "1", "type": "_TestSource", "isEntryPoint": True, "data": {"params": {}}},
         {"id": "2", "type": "Print", "data": {"params": {}}},
     ]
     edges = [
@@ -60,9 +60,8 @@ def test_validate_graph_valid():
     assert errors == [], f"Unexpected errors: {errors}"
 
 
-@pytest.mark.xfail(reason="Updated in Task 6")
 def test_validate_graph_unknown_node():
-    nodes = [{"id": "1", "type": "NonExistentNode"}]
+    nodes = [{"id": "1", "type": "NonExistentNode", "isEntryPoint": True}]
     edges = []
     errors = validate_graph(nodes, edges)
     assert len(errors) == 1
@@ -84,12 +83,11 @@ def test_validate_graph_type_mismatch():
     assert "mismatch" in errors[0].lower() or "Type" in errors[0]
 
 
-@pytest.mark.xfail(reason="Updated in Task 6")
 @pytest.mark.asyncio
 async def test_execute_print_nodes():
     """Use _TestSource (registered in conftest, no torch) to feed Print."""
     nodes = [
-        {"id": "1", "type": "_TestSource", "data": {"params": {}}},
+        {"id": "1", "type": "_TestSource", "isEntryPoint": True, "data": {"params": {}}},
         {"id": "2", "type": "Print", "data": {"params": {"label": "second"}}},
     ]
     edges = [
@@ -363,3 +361,37 @@ def test_validate_rejects_cycle_in_entry_pointed_component():
     # Note: this will also fail rule "entry must be data-root" because ep
     # has an incoming edge from b. So we accept either error here.
     assert any(("cycle" in err.lower()) or ("data-root" in err.lower()) for err in errors)
+
+
+def test_topological_levels_excludes_trigger_from_in_degree():
+    """A Dataset receiving a trigger from a Start should still be at level 0."""
+    nodes = [
+        {"id": "start", "type": "Start", "isEntryPoint": False, "data": {"params": {}}},
+        {"id": "ds", "type": "Dataset", "isEntryPoint": False, "data": {"params": {}}},
+        {"id": "dl", "type": "DataLoader", "isEntryPoint": False, "data": {"params": {}}},
+    ]
+    edges = [
+        {"id": "e1", "source": "start", "target": "ds", "sourceHandle": "trigger", "targetHandle": "trigger", "type": "trigger"},
+        {"id": "e2", "source": "ds", "target": "dl", "sourceHandle": "dataset", "targetHandle": "dataset", "type": "data"},
+    ]
+    levels = topological_levels(nodes, edges)
+    # Both start and ds should be in level 0 (start has no inputs, ds's
+    # only incoming edge is a trigger which is excluded).
+    assert "start" in levels[0]
+    assert "ds" in levels[0]
+    assert "dl" in levels[1]
+
+
+@pytest.mark.asyncio
+async def test_execute_graph_skips_draft_components():
+    """Draft components (no entry point) should be skipped silently."""
+    # We need real registered nodes for execute_graph to actually run.
+    # _TestSource is registered in conftest.py and takes no inputs.
+    nodes = [
+        {"id": "live", "type": "_TestSource", "isEntryPoint": True, "data": {"params": {"val": 42}}},
+        {"id": "draft", "type": "_TestSource", "isEntryPoint": False, "data": {"params": {"val": 99}}},
+    ]
+    edges = []
+    results = await execute_graph(nodes, edges)
+    assert "live" in results
+    assert "draft" not in results

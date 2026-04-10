@@ -33,7 +33,6 @@ def test_topological_levels_independent():
     assert set(levels[0]) == {"a", "b", "c"}
 
 
-@pytest.mark.xfail(reason="Updated in Task 6")
 @pytest.mark.asyncio
 async def test_parallel_execution_diamond():
     """B and C should run concurrently in a diamond graph."""
@@ -58,7 +57,7 @@ async def test_parallel_execution_diamond():
     registry._nodes["_TestSlow"] = SlowNode
     try:
         nodes = [
-            {"id": "a", "type": "_TestSlow", "data": {"params": {"id": "a"}}},
+            {"id": "a", "type": "_TestSlow", "isEntryPoint": True, "data": {"params": {"id": "a"}}},
             {"id": "b", "type": "_TestSlow", "data": {"params": {"id": "b"}}},
             {"id": "c", "type": "_TestSlow", "data": {"params": {"id": "c"}}},
             {"id": "d", "type": "_TestSlow", "data": {"params": {"id": "d"}}},

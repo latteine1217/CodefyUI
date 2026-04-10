@@ -72,7 +72,6 @@ def test_cache_lru_access_refreshes():
     assert cache.get("b") is None
 
 
-@pytest.mark.xfail(reason="Updated in Task 6")
 @pytest.mark.asyncio
 async def test_cache_hit_skips_execution():
     """Second run with same params should hit cache."""
@@ -84,7 +83,7 @@ async def test_cache_hit_skips_execution():
         if status == "completed":
             run_count += 1
 
-    nodes = [{"id": "1", "type": "_CacheTest", "data": {"params": {"val": "test"}}}]
+    nodes = [{"id": "1", "type": "_CacheTest", "isEntryPoint": True, "data": {"params": {"val": "test"}}}]
     edges = []
 
     await execute_graph(nodes, edges, on_progress=count_runs, cache=cache)
@@ -102,14 +101,13 @@ async def test_cache_hit_skips_execution():
     assert cached_count == 1
 
 
-@pytest.mark.xfail(reason="Updated in Task 6")
 @pytest.mark.asyncio
 async def test_cache_invalidation_on_param_change():
     """Changing params should cause a cache miss."""
     cache = ExecutionCache()
 
-    nodes_v1 = [{"id": "1", "type": "_CacheTest", "data": {"params": {"val": "v1"}}}]
-    nodes_v2 = [{"id": "1", "type": "_CacheTest", "data": {"params": {"val": "v2"}}}]
+    nodes_v1 = [{"id": "1", "type": "_CacheTest", "isEntryPoint": True, "data": {"params": {"val": "v1"}}}]
+    nodes_v2 = [{"id": "1", "type": "_CacheTest", "isEntryPoint": True, "data": {"params": {"val": "v2"}}}]
 
     await execute_graph(nodes_v1, [], cache=cache)
 

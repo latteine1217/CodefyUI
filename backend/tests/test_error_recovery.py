@@ -31,12 +31,11 @@ def _register_failing_node():
     registry._nodes.pop("_TestFailing", None)
 
 
-@pytest.mark.xfail(reason="Updated in Task 6")
 @pytest.mark.asyncio
 async def test_fail_fast_raises():
     """Default fail_fast mode should raise on first error."""
     nodes = [
-        {"id": "1", "type": "_TestFailing", "data": {"params": {}}},
+        {"id": "1", "type": "_TestFailing", "isEntryPoint": True, "data": {"params": {}}},
         {"id": "2", "type": "Print", "data": {"params": {}}},
     ]
     edges = [{"source": "1", "target": "2", "sourceHandle": "output", "targetHandle": "value"}]
@@ -45,7 +44,6 @@ async def test_fail_fast_raises():
         await execute_graph(nodes, edges, error_mode="fail_fast")
 
 
-@pytest.mark.xfail(reason="Updated in Task 6")
 @pytest.mark.asyncio
 async def test_continue_mode_skips_downstream():
     """Continue mode: failing node is recorded, downstream is skipped."""
@@ -55,7 +53,7 @@ async def test_continue_mode_skips_downstream():
         statuses[node_id] = status
 
     nodes = [
-        {"id": "1", "type": "_TestFailing", "data": {"params": {}}},
+        {"id": "1", "type": "_TestFailing", "isEntryPoint": True, "data": {"params": {}}},
         {"id": "2", "type": "Print", "data": {"params": {}}},
     ]
     edges = [{"source": "1", "target": "2", "sourceHandle": "output", "targetHandle": "value"}]
@@ -68,7 +66,6 @@ async def test_continue_mode_skips_downstream():
     assert "2" not in results
 
 
-@pytest.mark.xfail(reason="Updated in Task 6")
 @pytest.mark.asyncio
 async def test_retry_mode():
     """Retry mode retries up to max_retries times before continuing."""
@@ -96,7 +93,7 @@ async def test_retry_mode():
 
     registry._nodes["_TestRetry"] = RetryNode
     try:
-        nodes = [{"id": "1", "type": "_TestRetry", "data": {"params": {}}}]
+        nodes = [{"id": "1", "type": "_TestRetry", "isEntryPoint": True, "data": {"params": {}}}]
         results = await execute_graph(nodes, [], error_mode="retry", max_retries=3)
         assert results["1"]["out"] == "ok"
         assert call_count == 3

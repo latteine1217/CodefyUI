@@ -252,6 +252,8 @@ def _has_cycle(nodes: list[dict], edges: list[dict]) -> bool:
     adj: dict[str, list[str]] = defaultdict(list)
 
     for edge in edges:
+        if edge.get("type", "data") == "trigger":
+            continue  # markers, not dependencies
         adj[edge["source"]].append(edge["target"])
         if edge["target"] in in_degree:
             in_degree[edge["target"]] += 1
@@ -325,11 +327,17 @@ def reachable_from_entry_points(
 
 
 def topological_sort(nodes: list[dict], edges: list[dict]) -> list[str]:
-    """Kahn's algorithm. Returns ordered node IDs."""
+    """Kahn's algorithm. Returns ordered node IDs.
+
+    Trigger edges (type="trigger") are excluded from in-degree calculation
+    because they are execution markers, not data dependencies.
+    """
     in_degree: dict[str, int] = {n["id"]: 0 for n in nodes}
     adj: dict[str, list[str]] = defaultdict(list)
 
     for edge in edges:
+        if edge.get("type", "data") == "trigger":
+            continue  # markers, not dependencies
         adj[edge["source"]].append(edge["target"])
         if edge["target"] in in_degree:
             in_degree[edge["target"]] += 1
@@ -351,11 +359,18 @@ def topological_sort(nodes: list[dict], edges: list[dict]) -> list[str]:
 
 
 def topological_levels(nodes: list[dict], edges: list[dict]) -> list[list[str]]:
-    """Kahn's algorithm returning nodes grouped by DAG level for parallel execution."""
+    """Kahn's algorithm returning nodes grouped by DAG level for parallel execution.
+
+    Trigger edges (type="trigger") are excluded from in-degree calculation
+    because they are execution markers, not data dependencies. A node that
+    only receives a trigger edge is still considered a root (level 0).
+    """
     in_degree: dict[str, int] = {n["id"]: 0 for n in nodes}
     adj: dict[str, list[str]] = defaultdict(list)
 
     for edge in edges:
+        if edge.get("type", "data") == "trigger":
+            continue  # markers, not dependencies
         adj[edge["source"]].append(edge["target"])
         if edge["target"] in in_degree:
             in_degree[edge["target"]] += 1
@@ -414,6 +429,22 @@ async def execute_graph(
             break
         expanded_nodes, expanded_edges, mapping = expand_presets(expanded_nodes, expanded_edges)
         internal_to_preset.update(mapping)
+
+    # Filter to the executable subgraph: the nodes reachable from any entry
+    # point via data edges (plus the entry points themselves). Draft
+    # components (graph fragments with no entry point) are silently skipped.
+    entry_ids = find_entry_points(expanded_nodes, expanded_edges)
+    if not entry_ids:
+        # validate_graph would catch this, but defend in depth.
+        raise GraphValidationError("Graph has no entry points")
+
+    executable_ids = reachable_from_entry_points(entry_ids, expanded_edges)
+    expanded_nodes = [n for n in expanded_nodes if n["id"] in executable_ids]
+    expanded_edges = [
+        e
+        for e in expanded_edges
+        if e["source"] in executable_ids and e["target"] in executable_ids
+    ]
 
     errors = validate_graph(expanded_nodes, expanded_edges)
     if errors:
