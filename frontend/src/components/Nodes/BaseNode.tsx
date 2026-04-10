@@ -52,7 +52,7 @@ function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
       onClick={handleClick}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className={styles.node}
+      className={`${styles.node} ${data.isEntryPoint ? styles.entryPoint : ''}`}
       style={{
         '--border-color': borderColor,
         boxShadow: selected
