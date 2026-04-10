@@ -1,4 +1,5 @@
 // frontend/src/components/SubgraphEditor/graphSerialization.ts
+import dagre from '@dagrejs/dagre';
 import type { Node, Edge } from '@xyflow/react';
 import { generateId } from '../../utils';
 
@@ -62,6 +63,10 @@ export function flowToGraphJson(nodes: Node<LayerNodeData>[], edges: Edge[]): st
   return JSON.stringify(spec);
 }
 
+const SUBGRAPH_NODE_W = 160;
+const SUBGRAPH_NODE_H = 40;
+const SUBGRAPH_NODESEP = 40;
+const SUBGRAPH_RANKSEP = 60;
 const LAYOUT_Y_STEP = 100;
 
 /**
@@ -102,37 +107,89 @@ function topoSort(
 }
 
 /**
- * Topological-sort nodes in a GraphSpec and assign vertical positions.
+ * Use dagre to assign positions when loading a graph without saved positions.
+ * Uses default dimensions since nodes haven't been rendered yet.
  */
 function assignPositionsFromTopology(spec: GraphSpec): void {
-  const sorted = topoSort(
-    spec.nodes.map((n) => n.id),
-    spec.edges,
-  );
-  sorted.forEach((id, i) => {
-    const node = spec.nodes.find((n) => n.id === id);
-    if (node) node.position = { x: 50, y: 50 + i * LAYOUT_Y_STEP };
+  if (spec.nodes.length === 0) return;
+
+  const g = new dagre.graphlib.Graph();
+  g.setGraph({
+    rankdir: 'TB',
+    nodesep: SUBGRAPH_NODESEP,
+    ranksep: SUBGRAPH_RANKSEP,
   });
+  g.setDefaultEdgeLabel(() => ({}));
+
+  for (const n of spec.nodes) {
+    g.setNode(n.id, { width: SUBGRAPH_NODE_W, height: SUBGRAPH_NODE_H });
+  }
+  const nodeIds = new Set(spec.nodes.map((n) => n.id));
+  for (const e of spec.edges) {
+    if (nodeIds.has(e.source) && nodeIds.has(e.target)) {
+      g.setEdge(e.source, e.target);
+    }
+  }
+
+  dagre.layout(g);
+
+  for (const n of spec.nodes) {
+    const pos = g.node(n.id);
+    if (pos) {
+      n.position = {
+        x: pos.x - SUBGRAPH_NODE_W / 2,
+        y: pos.y - SUBGRAPH_NODE_H / 2,
+      };
+    }
+  }
 }
 
 /**
- * Auto-layout React Flow nodes top-to-bottom by topological order.
+ * Auto-layout React Flow nodes top-to-bottom using dagre for proper
+ * branching support and measured-dimension-aware spacing.
  */
 export function autoLayoutSubgraph(
   nodes: Node<LayerNodeData>[],
   edges: Edge[],
 ): Node<LayerNodeData>[] {
-  const sorted = topoSort(
-    nodes.map((n) => n.id),
-    edges,
-  );
-  const posMap = new Map<string, { x: number; y: number }>();
-  sorted.forEach((id, i) => {
-    posMap.set(id, { x: 50, y: 50 + i * LAYOUT_Y_STEP });
+  if (nodes.length === 0) return nodes;
+
+  const g = new dagre.graphlib.Graph();
+  g.setGraph({
+    rankdir: 'TB',
+    nodesep: SUBGRAPH_NODESEP,
+    ranksep: SUBGRAPH_RANKSEP,
   });
+  g.setDefaultEdgeLabel(() => ({}));
+
+  for (const node of nodes) {
+    const w = node.measured?.width ?? node.width ?? SUBGRAPH_NODE_W;
+    const h = node.measured?.height ?? node.height ?? SUBGRAPH_NODE_H;
+    g.setNode(node.id, { width: w, height: h });
+  }
+
+  const nodeIds = new Set(nodes.map((n) => n.id));
+  for (const edge of edges) {
+    if (nodeIds.has(edge.source) && nodeIds.has(edge.target)) {
+      g.setEdge(edge.source, edge.target);
+    }
+  }
+
+  dagre.layout(g);
+
   return nodes.map((n) => {
-    const pos = posMap.get(n.id);
-    return pos ? { ...n, position: pos } : n;
+    const pos = g.node(n.id);
+    if (!pos) return n;
+    // dagre returns center coordinates; convert to top-left for React Flow
+    const w = n.measured?.width ?? n.width ?? SUBGRAPH_NODE_W;
+    const h = n.measured?.height ?? n.height ?? SUBGRAPH_NODE_H;
+    return {
+      ...n,
+      position: {
+        x: pos.x - w / 2,
+        y: pos.y - h / 2,
+      },
+    };
   });
 }
 
