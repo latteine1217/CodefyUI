@@ -439,6 +439,19 @@ async def execute_graph(
         raise GraphValidationError("Graph has no entry points")
 
     executable_ids = reachable_from_entry_points(entry_ids, expanded_edges)
+
+    # If any internal node of a preset is reachable, include ALL sibling
+    # nodes from that preset.  A preset is a logical unit — its internal
+    # root nodes (e.g. Dataset, Loss) have no incoming external edges and
+    # would otherwise be pruned, breaking the internal wiring.
+    presets_to_include: set[str] = set()
+    for internal_id, preset_id in internal_to_preset.items():
+        if internal_id in executable_ids:
+            presets_to_include.add(preset_id)
+    for internal_id, preset_id in internal_to_preset.items():
+        if preset_id in presets_to_include:
+            executable_ids.add(internal_id)
+
     expanded_nodes = [n for n in expanded_nodes if n["id"] in executable_ids]
     expanded_edges = [
         e
