@@ -53,6 +53,14 @@ export function useKeyboardShortcuts() {
         useUIStore.getState().toggleShortcutsModal();
         return;
       }
+
+      // Shift+L — Auto Layout (last-used mode)
+      if (!mod && e.shiftKey && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        const mode = useUIStore.getState().lastLayoutMode;
+        useTabStore.getState().applyLayout(mode);
+        return;
+      }
     };
 
     document.addEventListener('keydown', handler);
