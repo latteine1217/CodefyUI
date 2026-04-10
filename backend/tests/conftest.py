@@ -54,7 +54,7 @@ def sample_graph():
     """A minimal valid graph: _TestSource (no required inputs, no torch) -> Print."""
     return {
         "nodes": [
-            {"id": "1", "type": "_TestSource", "position": {"x": 0, "y": 0}, "data": {"params": {}}},
+            {"id": "1", "type": "_TestSource", "position": {"x": 0, "y": 0}, "data": {"params": {}, "isEntryPoint": True}},
             {"id": "2", "type": "Print", "position": {"x": 200, "y": 0}, "data": {"params": {"label": "second"}}},
         ],
         "edges": [

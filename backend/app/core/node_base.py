@@ -18,6 +18,7 @@ class DataType(str, Enum):
     IMAGE = "IMAGE"
     LIST = "LIST"
     ANY = "ANY"
+    TRIGGER = "TRIGGER"
 
 
 class ParamType(str, Enum):

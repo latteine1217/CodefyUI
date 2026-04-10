@@ -6,9 +6,11 @@ import { useUIStore } from '../../store/uiStore';
 import { saveGraph, loadGraph, listGraphs, createPreset, exportGraph } from '../../api/rest';
 import { useI18n, SUPPORTED_LOCALES } from '../../i18n';
 import { resolveSerializedNodes, resolveSerializedEdges } from '../../utils';
+import { findEntryPoints } from '../../utils/findEntryPoints';
 import { SURFACE, TEXT, BRAND, STATUS_COLORS } from '../../styles/theme';
 import { CustomNodeManager } from '../CustomNodeManager/CustomNodeManager';
 import { useToastStore } from '../../store/toastStore';
+import type { LayoutMode } from '../../utils/autoLayout';
 import styles from './Toolbar.module.css';
 
 /* ── Shared dropdown menu component ─────────────────────────────── */
@@ -240,8 +242,26 @@ export function Toolbar() {
 
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   const [langMenuOpen, setLangMenuOpen] = useState(false);
+  const [layoutMenuOpen, setLayoutMenuOpen] = useState(false);
   const [customNodeManagerOpen, setCustomNodeManagerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const lastLayoutMode = useUIStore((s) => s.lastLayoutMode);
+  const setLastLayoutMode = useUIStore((s) => s.setLastLayoutMode);
+  const applyLayout = useTabStore((s) => s.applyLayout);
+  const selectedCount = useTabStore((s) => {
+    const tab = s.tabs.find((tt) => tt.id === s.activeTabId);
+    return tab?.nodes.filter((n) => n.selected).length ?? 0;
+  });
+
+  const runLayout = useCallback(
+    (mode: LayoutMode) => {
+      setLastLayoutMode(mode);
+      applyLayout(mode);
+      setLayoutMenuOpen(false);
+    },
+    [applyLayout, setLastLayoutMode],
+  );
 
   const isRunning = status === 'running';
 
@@ -285,10 +305,17 @@ export function Toolbar() {
             mergedPresets.push(p);
           }
         }
-        setNodes(resolveSerializedNodes(rawNodes, store.definitions, mergedPresets));
-        setEdges(resolveSerializedEdges(rawEdges));
+        const resolvedNodes = resolveSerializedNodes(rawNodes, store.definitions, mergedPresets);
+        const resolvedEdges = resolveSerializedEdges(rawEdges);
+        setNodes(resolvedNodes);
+        setEdges(resolvedEdges);
         if (savedPresets.length > 0) {
           useNodeDefStore.setState({ presets: mergedPresets });
+        }
+        // Migration: if loaded graph has no entry points, prompt the user
+        const entries = findEntryPoints(resolvedNodes, resolvedEdges);
+        if (entries.length === 0 && resolvedNodes.length > 0) {
+          useUIStore.getState().setMigrationModalOpen(true);
         }
       } catch (e) {
         addToast(t('toolbar.load.fail', { error: (e as Error).message }), 'error');
@@ -318,10 +345,17 @@ export function Toolbar() {
               mergedPresets.push(p);
             }
           }
-          setNodes(resolveSerializedNodes(rawNodes, store.definitions, mergedPresets));
-          setEdges(resolveSerializedEdges(edges));
+          const resolvedNodes = resolveSerializedNodes(rawNodes, store.definitions, mergedPresets);
+          const resolvedEdges = resolveSerializedEdges(edges);
+          setNodes(resolvedNodes);
+          setEdges(resolvedEdges);
           if (importedPresets.length > 0) {
             useNodeDefStore.setState({ presets: mergedPresets });
+          }
+          // Migration: if imported graph has no entry points, prompt the user
+          const entries = findEntryPoints(resolvedNodes, resolvedEdges);
+          if (entries.length === 0 && resolvedNodes.length > 0) {
+            useUIStore.getState().setMigrationModalOpen(true);
           }
         } catch (err) {
           addToast(t('toolbar.import.fail', { error: (err as Error).message }), 'error');
@@ -528,6 +562,48 @@ export function Toolbar() {
           <span className={styles.statusLabel} style={{ color: statusTextColor }}>
             {t(statusKey)}
           </span>
+        </div>
+
+        {/* Auto Layout split button */}
+        <div className={styles.splitButton} style={{ position: 'relative' }}>
+          <button
+            className={styles.splitButtonMain}
+            onClick={() => runLayout(lastLayoutMode)}
+            title={t('toolbar.autoLayout')}
+          >
+            {t('toolbar.autoLayout')}
+          </button>
+          <button
+            className={styles.splitButtonCaret}
+            onClick={() => setLayoutMenuOpen((v) => !v)}
+            aria-label="Layout mode"
+          >
+            ▾
+          </button>
+          {layoutMenuOpen && (
+            <div className={styles.layoutDropdown}>
+              <div
+                className={`${styles.layoutDropdownItem} ${lastLayoutMode === 'experiments' ? styles.layoutDropdownItemActive : ''}`}
+                onClick={() => runLayout('experiments')}
+              >
+                {t('toolbar.autoLayout.experiments')}
+              </div>
+              <div
+                className={`${styles.layoutDropdownItem} ${lastLayoutMode === 'all' ? styles.layoutDropdownItemActive : ''}`}
+                onClick={() => runLayout('all')}
+              >
+                {t('toolbar.autoLayout.all')}
+              </div>
+              <div
+                className={`${styles.layoutDropdownItem} ${selectedCount === 0 ? styles.layoutDropdownItemDisabled : ''} ${lastLayoutMode === 'selected' ? styles.layoutDropdownItemActive : ''}`}
+                onClick={() => {
+                  if (selectedCount > 0) runLayout('selected');
+                }}
+              >
+                {t('toolbar.autoLayout.selected', { count: selectedCount })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Language selector */}

@@ -5,17 +5,24 @@
     {
       "id": "model-builder",
       "type": "SequentialModel",
-      "position": { "x": 50, "y": 200 },
+      "position": {
+        "x": 50,
+        "y": 200
+      },
       "data": {
         "params": {
           "layers": "{\"version\":2,\"nodes\":[{\"id\":\"in\",\"type\":\"Input\",\"ports\":[{\"id\":\"p_x\",\"name\":\"x\"}]},{\"id\":\"c1\",\"type\":\"Conv2d\",\"params\":{\"in_channels\":1,\"out_channels\":32,\"kernel_size\":3,\"padding\":1}},{\"id\":\"r1\",\"type\":\"ReLU\"},{\"id\":\"p1\",\"type\":\"MaxPool2d\",\"params\":{\"kernel_size\":2,\"stride\":2}},{\"id\":\"c2\",\"type\":\"Conv2d\",\"params\":{\"in_channels\":32,\"out_channels\":64,\"kernel_size\":3,\"padding\":1}},{\"id\":\"r2\",\"type\":\"ReLU\"},{\"id\":\"p2\",\"type\":\"MaxPool2d\",\"params\":{\"kernel_size\":2,\"stride\":2}},{\"id\":\"f\",\"type\":\"Flatten\"},{\"id\":\"l1\",\"type\":\"Linear\",\"params\":{\"in_features\":3136,\"out_features\":128}},{\"id\":\"r3\",\"type\":\"ReLU\"},{\"id\":\"l2\",\"type\":\"Linear\",\"params\":{\"in_features\":128,\"out_features\":10}},{\"id\":\"out\",\"type\":\"Output\",\"ports\":[{\"id\":\"p_y\",\"name\":\"y\"}]}],\"edges\":[{\"id\":\"e1\",\"source\":\"in\",\"sourceHandle\":\"p_x\",\"target\":\"c1\"},{\"id\":\"e2\",\"source\":\"c1\",\"target\":\"r1\"},{\"id\":\"e3\",\"source\":\"r1\",\"target\":\"p1\"},{\"id\":\"e4\",\"source\":\"p1\",\"target\":\"c2\"},{\"id\":\"e5\",\"source\":\"c2\",\"target\":\"r2\"},{\"id\":\"e6\",\"source\":\"r2\",\"target\":\"p2\"},{\"id\":\"e7\",\"source\":\"p2\",\"target\":\"f\"},{\"id\":\"e8\",\"source\":\"f\",\"target\":\"l1\"},{\"id\":\"e9\",\"source\":\"l1\",\"target\":\"r3\"},{\"id\":\"e10\",\"source\":\"r3\",\"target\":\"l2\"},{\"id\":\"e11\",\"source\":\"l2\",\"target\":\"out\",\"targetHandle\":\"p_y\"}]}"
-        }
+        },
+        "isEntryPoint": true
       }
     },
     {
       "id": "weight-loader",
       "type": "ModelLoader",
-      "position": { "x": 450, "y": 200 },
+      "position": {
+        "x": 450,
+        "y": 200
+      },
       "data": {
         "params": {
           "path": "model_weights.pt",
@@ -28,25 +35,39 @@
     {
       "id": "test-image",
       "type": "ImageReader",
-      "position": { "x": 450, "y": 420 },
+      "position": {
+        "x": 450,
+        "y": 420
+      },
       "data": {
         "params": {
           "path": "test_digit.png",
           "mode": "grayscale",
           "resize": 28
-        }
+        },
+        "isEntryPoint": true
       }
     },
     {
       "id": "add-batch-dim",
       "type": "Unsqueeze",
-      "position": { "x": 650, "y": 420 },
-      "data": { "params": { "dim": 0 } }
+      "position": {
+        "x": 650,
+        "y": 420
+      },
+      "data": {
+        "params": {
+          "dim": 0
+        }
+      }
     },
     {
       "id": "inference",
       "type": "Inference",
-      "position": { "x": 850, "y": 280 },
+      "position": {
+        "x": 850,
+        "y": 280
+      },
       "data": {
         "params": {
           "device": "cpu"
@@ -56,29 +77,92 @@
     {
       "id": "print-output",
       "type": "Print",
-      "position": { "x": 1200, "y": 200 },
-      "data": { "params": { "label": "Raw logits (10 classes)" } }
+      "position": {
+        "x": 1200,
+        "y": 200
+      },
+      "data": {
+        "params": {
+          "label": "Raw logits (10 classes)"
+        }
+      }
     },
     {
       "id": "softmax",
       "type": "Softmax",
-      "position": { "x": 1200, "y": 380 },
-      "data": { "params": { "dim": -1 } }
+      "position": {
+        "x": 1200,
+        "y": 380
+      },
+      "data": {
+        "params": {
+          "dim": -1
+        }
+      }
     },
     {
       "id": "print-probs",
       "type": "Print",
-      "position": { "x": 1550, "y": 380 },
-      "data": { "params": { "label": "Prediction probabilities" } }
+      "position": {
+        "x": 1550,
+        "y": 380
+      },
+      "data": {
+        "params": {
+          "label": "Prediction probabilities"
+        }
+      }
     }
   ],
   "edges": [
-    { "id": "e-1", "source": "model-builder", "target": "weight-loader", "sourceHandle": "model", "targetHandle": "model" },
-    { "id": "e-2", "source": "weight-loader", "target": "inference", "sourceHandle": "model", "targetHandle": "model" },
-    { "id": "e-3", "source": "test-image", "target": "add-batch-dim", "sourceHandle": "tensor", "targetHandle": "tensor" },
-    { "id": "e-3b", "source": "add-batch-dim", "target": "inference", "sourceHandle": "tensor", "targetHandle": "input" },
-    { "id": "e-4", "source": "inference", "target": "print-output", "sourceHandle": "output", "targetHandle": "value" },
-    { "id": "e-5", "source": "inference", "target": "softmax", "sourceHandle": "output", "targetHandle": "tensor" },
-    { "id": "e-6", "source": "softmax", "target": "print-probs", "sourceHandle": "tensor", "targetHandle": "value" }
+    {
+      "id": "e-1",
+      "source": "model-builder",
+      "target": "weight-loader",
+      "sourceHandle": "model",
+      "targetHandle": "model"
+    },
+    {
+      "id": "e-2",
+      "source": "weight-loader",
+      "target": "inference",
+      "sourceHandle": "model",
+      "targetHandle": "model"
+    },
+    {
+      "id": "e-3",
+      "source": "test-image",
+      "target": "add-batch-dim",
+      "sourceHandle": "tensor",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-3b",
+      "source": "add-batch-dim",
+      "target": "inference",
+      "sourceHandle": "tensor",
+      "targetHandle": "input"
+    },
+    {
+      "id": "e-4",
+      "source": "inference",
+      "target": "print-output",
+      "sourceHandle": "output",
+      "targetHandle": "value"
+    },
+    {
+      "id": "e-5",
+      "source": "inference",
+      "target": "softmax",
+      "sourceHandle": "output",
+      "targetHandle": "tensor"
+    },
+    {
+      "id": "e-6",
+      "source": "softmax",
+      "target": "print-probs",
+      "sourceHandle": "tensor",
+      "targetHandle": "value"
+    }
   ]
 }

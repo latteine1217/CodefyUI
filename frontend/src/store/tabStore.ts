@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { applyNodeChanges, applyEdgeChanges } from '@xyflow/react';
 import type { Node, Edge, NodeChange, EdgeChange, Connection } from '@xyflow/react';
 import { generateId } from '../utils';
+import { autoLayout, type LayoutMode } from '../utils/autoLayout';
 import type { NodeData, NodeDefinition, PresetDefinition, ExecutionStatus, OutputSummary, NodeProgress } from '../types';
 import { ExecutionWebSocket } from '../api/ws';
 
@@ -97,6 +98,9 @@ interface TabStoreState {
   deleteNode: (nodeId: string) => void;
   duplicateNode: (nodeId: string) => void;
   renameNode: (nodeId: string, newLabel: string) => void;
+  toggleEntryPoint: (nodeId: string) => void;
+  markAllRootsAsEntryPoints: () => void;
+  applyLayout: (mode: LayoutMode) => void;
 
   // undo/redo
   pushUndoSnapshot: () => void;
@@ -478,6 +482,7 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
         data: {
           params: n.data.params,
           ...(n.data.isPreset ? { internalParams: n.data.internalParams } : {}),
+          ...(n.data.isEntryPoint ? { isEntryPoint: true } : {}),
         },
       };
     });
@@ -534,6 +539,70 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
         ),
       })),
     });
+  },
+
+  toggleEntryPoint: (nodeId) => {
+    const tabId = get().activeTabId;
+    if (!tabId) return;
+    get().pushUndoSnapshot();
+    set((state) => ({
+      tabs: state.tabs.map((tab) => {
+        if (tab.id !== tabId) return tab;
+        return {
+          ...tab,
+          nodes: tab.nodes.map((n) =>
+            n.id === nodeId
+              ? {
+                  ...n,
+                  data: { ...n.data, isEntryPoint: !n.data.isEntryPoint },
+                }
+              : n,
+          ),
+        };
+      }),
+    }));
+  },
+
+  markAllRootsAsEntryPoints: () => {
+    const tabId = get().activeTabId;
+    if (!tabId) return;
+    set((state) => ({
+      tabs: state.tabs.map((tab) => {
+        if (tab.id !== tabId) return tab;
+        // Find data-roots: nodes with no incoming data edge
+        const targetIds = new Set(
+          tab.edges
+            .filter((e) => ((e.data as any)?.type ?? 'data') === 'data')
+            .map((e) => e.target),
+        );
+        return {
+          ...tab,
+          nodes: tab.nodes.map((n) => {
+            if (targetIds.has(n.id)) return n;
+            return { ...n, data: { ...n.data, isEntryPoint: true } };
+          }),
+        };
+      }),
+    }));
+  },
+
+  applyLayout: (mode) => {
+    const tabId = get().activeTabId;
+    if (!tabId) return;
+    get().pushUndoSnapshot();
+    set((state) => ({
+      tabs: state.tabs.map((tab) => {
+        if (tab.id !== tabId) return tab;
+        const selectedIds = new Set(
+          tab.nodes.filter((n) => n.selected).map((n) => n.id),
+        );
+        const newNodes = autoLayout(tab.nodes, tab.edges, mode, selectedIds) as Node<NodeData>[];
+        return {
+          ...tab,
+          nodes: newNodes,
+        };
+      }),
+    }));
   },
 
   // ── Undo/Redo ──

@@ -22,7 +22,7 @@ async def test_cancel_before_execution():
     ctx.cancel()
 
     nodes = [
-        {"id": "1", "type": "_TestSource", "data": {"params": {}}},
+        {"id": "1", "type": "_TestSource", "data": {"params": {}, "isEntryPoint": True}},
     ]
     edges = []
 
@@ -43,7 +43,7 @@ async def test_cancel_during_execution():
                 ctx.cancel()
 
     nodes = [
-        {"id": "1", "type": "_TestSource", "data": {"params": {}}},
+        {"id": "1", "type": "_TestSource", "data": {"params": {}, "isEntryPoint": True}},
         {"id": "2", "type": "Print", "data": {"params": {}}},
     ]
     edges = [{"source": "1", "target": "2", "sourceHandle": "value", "targetHandle": "value"}]

@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import { Handle, Position } from '@xyflow/react';
+import { Handle, Position, useReactFlow } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { NodeData } from '../../types';
 import { getPortColor, isValidConnection } from '../../utils';
@@ -7,13 +7,17 @@ import { useTabStore } from '../../store/tabStore';
 import { useUIStore } from '../../store/uiStore';
 import { useI18n } from '../../i18n';
 import { CATEGORY_COLORS, STATUS_COLORS } from '../../styles/theme';
+import { ContextMenu, type ContextMenuItem } from '../shared/ContextMenu';
 import styles from './BaseNode.module.css';
 
 function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
   const openSubgraphModal = useTabStore((s) => s.openSubgraphModal);
+  const toggleEntryPoint = useTabStore((s) => s.toggleEntryPoint);
   const tooltipsEnabled = useUIStore((s) => s.tooltipsEnabled);
   const draggingSourceType = useUIStore((s) => s.draggingSourceType);
   const [hovered, setHovered] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ x: number; y: number } | null>(null);
+  const { getEdges } = useReactFlow();
   const def = data.definition;
   const category = def?.category ?? 'Utility';
   const headerColor = CATEGORY_COLORS[category] ?? '#607D8B';
@@ -26,6 +30,26 @@ function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
       openSubgraphModal(id);
     }
   };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only show the menu when this node is a DATA root (no incoming
+    // data edges). Trigger edges don't count.
+    const edges = getEdges();
+    const hasDataIncoming = edges.some(
+      (edge) => edge.target === id && ((edge.data as { type?: string } | undefined)?.type ?? 'data') === 'data',
+    );
+    if (hasDataIncoming) return;
+    setMenuPos({ x: e.clientX, y: e.clientY });
+  };
+
+  const menuItems: ContextMenuItem[] = [
+    {
+      id: 'toggle',
+      label: data.isEntryPoint ? 'Remove Entry Point' : 'Set as Entry Point',
+    },
+  ];
 
   // Dynamic border: selected > execution status > default
   const statusBorderColor =
@@ -50,9 +74,10 @@ function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
   return (
     <div
       onClick={handleClick}
+      onContextMenu={handleContextMenu}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className={styles.node}
+      className={`${styles.node} ${data.isEntryPoint ? styles.entryPoint : ''}`}
       style={{
         '--border-color': borderColor,
         boxShadow: selected
@@ -234,6 +259,18 @@ function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
           <span className={styles.statusCachedDot} />
           {t('node.cached')}
         </div>
+      )}
+
+      {menuPos && (
+        <ContextMenu
+          x={menuPos.x}
+          y={menuPos.y}
+          items={menuItems}
+          onSelect={(itemId) => {
+            if (itemId === 'toggle') toggleEntryPoint(id);
+          }}
+          onClose={() => setMenuPos(null)}
+        />
       )}
     </div>
   );

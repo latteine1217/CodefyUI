@@ -14,7 +14,8 @@
           "name": "MNIST",
           "split": "train",
           "data_dir": "./data"
-        }
+        },
+        "isEntryPoint": true
       }
     },
     {
@@ -57,7 +58,8 @@
       "data": {
         "params": {
           "shape": "-1,512,768"
-        }
+        },
+        "isEntryPoint": true
       }
     },
     {
@@ -138,7 +140,8 @@
       "data": {
         "params": {
           "type": "CrossEntropyLoss"
-        }
+        },
+        "isEntryPoint": true
       }
     },
     {
@@ -194,7 +197,8 @@
       "data": {
         "params": {
           "layers": "{\"version\":2,\"nodes\":[{\"id\":\"in\",\"type\":\"Input\",\"ports\":[{\"id\":\"p_x\",\"name\":\"x\"}]},{\"id\":\"n0\",\"type\":\"Linear\",\"params\":{\"in_features\":784,\"out_features\":768}},{\"id\":\"n1\",\"type\":\"Reshape\",\"params\":{\"shape\":\"128,6\"}},{\"id\":\"n2\",\"type\":\"TransformerEncoder\",\"params\":{\"d_model\":6,\"nhead\":2,\"num_layers\":12,\"dim_feedforward\":24}},{\"id\":\"n3\",\"type\":\"SelectIndex\",\"params\":{\"dim\":1,\"index\":0}},{\"id\":\"n4\",\"type\":\"Dropout\",\"params\":{\"p\":0.1}},{\"id\":\"n5\",\"type\":\"Linear\",\"params\":{\"in_features\":6,\"out_features\":2}},{\"id\":\"out\",\"type\":\"Output\",\"ports\":[{\"id\":\"p_y\",\"name\":\"y\"}]}],\"edges\":[{\"id\":\"e0\",\"source\":\"in\",\"sourceHandle\":\"p_x\",\"target\":\"n0\"},{\"id\":\"e1\",\"source\":\"n0\",\"target\":\"n1\"},{\"id\":\"e2\",\"source\":\"n1\",\"target\":\"n2\"},{\"id\":\"e3\",\"source\":\"n2\",\"target\":\"n3\"},{\"id\":\"e4\",\"source\":\"n3\",\"target\":\"n4\"},{\"id\":\"e5\",\"source\":\"n4\",\"target\":\"n5\"},{\"id\":\"e6\",\"source\":\"n5\",\"target\":\"out\",\"targetHandle\":\"p_y\"}]}"
-        }
+        },
+        "isEntryPoint": true
       }
     },
     {

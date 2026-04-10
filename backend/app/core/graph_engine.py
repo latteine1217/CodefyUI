@@ -208,8 +208,40 @@ def validate_graph(nodes: list[dict], edges: list[dict]) -> list[str]:
                 f"-> {tgt['type']}.{tgt_port} ({tgt_inputs[tgt_port].data_type})"
             )
 
-    # Cycle detection via topological sort
-    if _has_cycle(nodes, edges):
+    # NEW: Entry-point rules
+    entry_ids = find_entry_points(nodes, edges)
+    if not entry_ids:
+        errors.append(
+            "Graph has no entry points. Mark a root node as an entry "
+            "point or add a Start node."
+        )
+        # Still run remaining checks so user sees all problems at once
+        executable_node_ids = {n["id"] for n in nodes}
+    else:
+        executable_node_ids = reachable_from_entry_points(entry_ids, edges)
+
+    # NEW: Entry-point nodes must have no incoming DATA edges
+    for entry_id in entry_ids:
+        incoming_data = [
+            e for e in edges
+            if e["target"] == entry_id and e.get("type", "data") == "data"
+        ]
+        if incoming_data:
+            errors.append(
+                f"Node '{entry_id}' is an entry point but has incoming "
+                f"data edges. Entry points must be data-roots."
+            )
+
+    # MODIFIED: Run cycle detection on the EXECUTABLE subgraph only.
+    # Drafts (nodes outside executable_node_ids) are skipped.
+    executable_nodes = [n for n in nodes if n["id"] in executable_node_ids]
+    executable_edges = [
+        e for e in edges
+        if e["source"] in executable_node_ids
+        and e["target"] in executable_node_ids
+        and e.get("type", "data") == "data"
+    ]
+    if _has_cycle(executable_nodes, executable_edges):
         errors.append("Graph contains a cycle")
 
     return errors
@@ -220,6 +252,8 @@ def _has_cycle(nodes: list[dict], edges: list[dict]) -> bool:
     adj: dict[str, list[str]] = defaultdict(list)
 
     for edge in edges:
+        if edge.get("type", "data") == "trigger":
+            continue  # markers, not dependencies
         adj[edge["source"]].append(edge["target"])
         if edge["target"] in in_degree:
             in_degree[edge["target"]] += 1
@@ -237,12 +271,73 @@ def _has_cycle(nodes: list[dict], edges: list[dict]) -> bool:
     return visited != len(nodes)
 
 
+def find_entry_points(
+    nodes: list[dict],
+    edges: list[dict],
+) -> list[str]:
+    """Return ids of nodes that are entry points.
+
+    A node is an entry point if any of:
+      1. Its `data.isEntryPoint` field is True.
+      2. It is of type "Start" (Start nodes are always entry points).
+      3. It has at least one incoming edge of type "trigger".
+
+    The order of returned ids matches the order in `nodes` for determinism.
+    """
+    entry_ids: list[str] = []
+    nodes_with_trigger_in: set[str] = {
+        e["target"]
+        for e in edges
+        if e.get("type", "data") == "trigger"
+    }
+    for node in nodes:
+        nid = node["id"]
+        is_marker = bool(node.get("data", {}).get("isEntryPoint", False))
+        is_start_type = node.get("type") == "Start"
+        has_trigger_in = nid in nodes_with_trigger_in
+        if is_marker or is_start_type or has_trigger_in:
+            entry_ids.append(nid)
+    return entry_ids
+
+
+def reachable_from_entry_points(
+    entry_ids: list[str],
+    edges: list[dict],
+) -> set[str]:
+    """BFS forward from entry_ids through DATA edges only.
+
+    Trigger edges are markers, not data dependencies, and are not
+    traversed. The seed entry_ids themselves are always included in the
+    result, regardless of edge types.
+    """
+    reachable: set[str] = set(entry_ids)
+    frontier: list[str] = list(entry_ids)
+    # Build adjacency list of data edges only.
+    adj: dict[str, list[str]] = {}
+    for e in edges:
+        if e.get("type", "data") == "data":
+            adj.setdefault(e["source"], []).append(e["target"])
+    while frontier:
+        node = frontier.pop()
+        for next_node in adj.get(node, []):
+            if next_node not in reachable:
+                reachable.add(next_node)
+                frontier.append(next_node)
+    return reachable
+
+
 def topological_sort(nodes: list[dict], edges: list[dict]) -> list[str]:
-    """Kahn's algorithm. Returns ordered node IDs."""
+    """Kahn's algorithm. Returns ordered node IDs.
+
+    Trigger edges (type="trigger") are excluded from in-degree calculation
+    because they are execution markers, not data dependencies.
+    """
     in_degree: dict[str, int] = {n["id"]: 0 for n in nodes}
     adj: dict[str, list[str]] = defaultdict(list)
 
     for edge in edges:
+        if edge.get("type", "data") == "trigger":
+            continue  # markers, not dependencies
         adj[edge["source"]].append(edge["target"])
         if edge["target"] in in_degree:
             in_degree[edge["target"]] += 1
@@ -264,11 +359,18 @@ def topological_sort(nodes: list[dict], edges: list[dict]) -> list[str]:
 
 
 def topological_levels(nodes: list[dict], edges: list[dict]) -> list[list[str]]:
-    """Kahn's algorithm returning nodes grouped by DAG level for parallel execution."""
+    """Kahn's algorithm returning nodes grouped by DAG level for parallel execution.
+
+    Trigger edges (type="trigger") are excluded from in-degree calculation
+    because they are execution markers, not data dependencies. A node that
+    only receives a trigger edge is still considered a root (level 0).
+    """
     in_degree: dict[str, int] = {n["id"]: 0 for n in nodes}
     adj: dict[str, list[str]] = defaultdict(list)
 
     for edge in edges:
+        if edge.get("type", "data") == "trigger":
+            continue  # markers, not dependencies
         adj[edge["source"]].append(edge["target"])
         if edge["target"] in in_degree:
             in_degree[edge["target"]] += 1
@@ -327,6 +429,22 @@ async def execute_graph(
             break
         expanded_nodes, expanded_edges, mapping = expand_presets(expanded_nodes, expanded_edges)
         internal_to_preset.update(mapping)
+
+    # Filter to the executable subgraph: the nodes reachable from any entry
+    # point via data edges (plus the entry points themselves). Draft
+    # components (graph fragments with no entry point) are silently skipped.
+    entry_ids = find_entry_points(expanded_nodes, expanded_edges)
+    if not entry_ids:
+        # validate_graph would catch this, but defend in depth.
+        raise GraphValidationError("Graph has no entry points")
+
+    executable_ids = reachable_from_entry_points(entry_ids, expanded_edges)
+    expanded_nodes = [n for n in expanded_nodes if n["id"] in executable_ids]
+    expanded_edges = [
+        e
+        for e in expanded_edges
+        if e["source"] in executable_ids and e["target"] in executable_ids
+    ]
 
     errors = validate_graph(expanded_nodes, expanded_edges)
     if errors:
