@@ -11,7 +11,6 @@ import { SURFACE, TEXT, BRAND, STATUS_COLORS } from '../../styles/theme';
 import { CustomNodeManager } from '../CustomNodeManager/CustomNodeManager';
 import { useToastStore } from '../../store/toastStore';
 import type { LayoutMode } from '../../utils/autoLayout';
-import type { TranslationKey } from '../../i18n';
 import styles from './Toolbar.module.css';
 
 /* ── Shared dropdown menu component ─────────────────────────────── */
@@ -565,14 +564,14 @@ export function Toolbar() {
           </span>
         </div>
 
-        {/* Auto Layout split button (Task 20 will add i18n keys) */}
+        {/* Auto Layout split button */}
         <div className={styles.splitButton} style={{ position: 'relative' }}>
           <button
             className={styles.splitButtonMain}
             onClick={() => runLayout(lastLayoutMode)}
-            title={t('toolbar.autoLayout' as TranslationKey)}
+            title={t('toolbar.autoLayout')}
           >
-            {t('toolbar.autoLayout' as TranslationKey)}
+            {t('toolbar.autoLayout')}
           </button>
           <button
             className={styles.splitButtonCaret}
@@ -587,13 +586,13 @@ export function Toolbar() {
                 className={`${styles.layoutDropdownItem} ${lastLayoutMode === 'experiments' ? styles.layoutDropdownItemActive : ''}`}
                 onClick={() => runLayout('experiments')}
               >
-                {t('toolbar.autoLayout.experiments' as TranslationKey)}
+                {t('toolbar.autoLayout.experiments')}
               </div>
               <div
                 className={`${styles.layoutDropdownItem} ${lastLayoutMode === 'all' ? styles.layoutDropdownItemActive : ''}`}
                 onClick={() => runLayout('all')}
               >
-                {t('toolbar.autoLayout.all' as TranslationKey)}
+                {t('toolbar.autoLayout.all')}
               </div>
               <div
                 className={`${styles.layoutDropdownItem} ${selectedCount === 0 ? styles.layoutDropdownItemDisabled : ''} ${lastLayoutMode === 'selected' ? styles.layoutDropdownItemActive : ''}`}
@@ -601,7 +600,7 @@ export function Toolbar() {
                   if (selectedCount > 0) runLayout('selected');
                 }}
               >
-                {t('toolbar.autoLayout.selected' as TranslationKey, { count: selectedCount })}
+                {t('toolbar.autoLayout.selected', { count: selectedCount })}
               </div>
             </div>
           )}

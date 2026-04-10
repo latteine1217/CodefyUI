@@ -161,6 +161,30 @@ const zhTW: Record<TranslationKey, string> = {
   'toolbar.gridSnap.off': '吸附 OFF',
   'toolbar.gridSnap.title': '切換節點網格吸附',
 
+  // Auto Layout
+  'toolbar.autoLayout': '自動排版',
+  'toolbar.autoLayout.experiments': '排版實驗',
+  'toolbar.autoLayout.all': '排版全部',
+  'toolbar.autoLayout.selected': '排版選取 ({count})',
+
+  // Node context menu — entry points
+  'node.contextMenu.setAsEntryPoint': '設為起始節點',
+  'node.contextMenu.removeEntryPoint': '取消起始節點',
+
+  // Migration modal — entry points
+  'migration.noEntryPoints.title': '尚未定義起始節點',
+  'migration.noEntryPoints.body': '此圖沒有定義任何起始節點。沒有起始節點就無法執行。請選擇處理方式：',
+  'migration.autoMark': '自動將所有根節點標記為起始節點',
+  'migration.openAsDraft': '當作草稿開啟（稍後再標記）',
+  'migration.cancel': '取消',
+
+  // Execution errors
+  'execution.error.noEntryPoints': '尚未定義起始節點。請在根節點上按右鍵選擇「設為起始節點」，或從面板拖曳一個 Start 節點。',
+
+  // Node palette — control category / start node
+  'palette.category.control': '控制',
+  'palette.start.description': '標記執行的起點。連接到你想執行的第一個節點。',
+
   // Keyboard Shortcuts
   'shortcuts.title': '鍵盤快捷鍵',
   'shortcuts.undo': '復原',

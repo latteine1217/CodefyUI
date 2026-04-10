@@ -159,6 +159,30 @@ const en = {
   'toolbar.gridSnap.off': 'Snap OFF',
   'toolbar.gridSnap.title': 'Toggle grid snapping for node alignment',
 
+  // Auto Layout
+  'toolbar.autoLayout': 'Auto Layout',
+  'toolbar.autoLayout.experiments': 'Layout Experiments',
+  'toolbar.autoLayout.all': 'Layout All',
+  'toolbar.autoLayout.selected': 'Layout Selected ({count})',
+
+  // Node context menu — entry points
+  'node.contextMenu.setAsEntryPoint': 'Set as Entry Point',
+  'node.contextMenu.removeEntryPoint': 'Remove Entry Point',
+
+  // Migration modal — entry points
+  'migration.noEntryPoints.title': 'No Entry Points Defined',
+  'migration.noEntryPoints.body': 'This graph has no entry points. Without entry points, the graph cannot be executed. Choose how to handle it:',
+  'migration.autoMark': 'Auto-mark all root nodes as entry points',
+  'migration.openAsDraft': 'Open as draft (I\'ll mark them later)',
+  'migration.cancel': 'Cancel',
+
+  // Execution errors
+  'execution.error.noEntryPoints': 'No entry points defined. Right-click a root node and select "Set as Entry Point", or drag a Start node from the palette.',
+
+  // Node palette — control category / start node
+  'palette.category.control': 'Control',
+  'palette.start.description': 'Marks an execution entry point. Connect to the first node of a script.',
+
   // Keyboard Shortcuts
   'shortcuts.title': 'Keyboard Shortcuts',
   'shortcuts.undo': 'Undo',
