@@ -138,6 +138,16 @@ const zhTW: Record<TranslationKey, string> = {
   'subgraph.snapOn': '吸附 ON',
   'subgraph.snapOff': '吸附 OFF',
   'subgraph.snapTitle': '切換網格吸附',
+  'subgraph.category.io': '輸入/輸出',
+  'subgraph.category.merge': '合併',
+  'subgraph.validation.cycle': '圖形包含循環',
+  'subgraph.validation.noInput': '圖形必須有一個 Input 節點',
+  'subgraph.validation.noOutput': '圖形必須有一個 Output 節點',
+  'subgraph.port.add': '+ 新增 port',
+  'subgraph.port.remove': '移除',
+  'subgraph.port.namePlaceholder': 'port 名稱',
+  'subgraph.port.duplicate': 'port 名稱重複',
+  'subgraph.port.list': 'Ports',
 
   // Tooltips
   'toolbar.tooltips.on': '提示 ON',

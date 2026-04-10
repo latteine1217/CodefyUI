@@ -13,6 +13,7 @@ import {
   type NodeChange,
   type EdgeChange,
   type NodeTypes,
+  type Connection,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -21,6 +22,18 @@ import { useToastStore } from '../../store/toastStore';
 import { useI18n } from '../../i18n';
 import { generateId } from '../../utils';
 import { LayerNode } from './LayerNode';
+import { InputNode } from './InputNode';
+import { OutputNode } from './OutputNode';
+import { PortListEditor } from './PortListEditor';
+import {
+  graphToFlow,
+  flowToGraphJson,
+  emptyGraph,
+  validateGraph,
+  isMergeType,
+  type LayerNodeData as GraphLayerNodeData,
+  type PortDef,
+} from './graphSerialization';
 import type { ParamDefinition } from '../../types';
 
 // ── Layer definitions (matches backend _build_layer) ──
@@ -121,107 +134,17 @@ const LAYER_DEFS: LayerDef[] = [
   { type: 'Softmax', category: 'Activation', color: '#F44336', params: [] },
 ];
 
-const LAYER_DEF_MAP = new Map(LAYER_DEFS.map((d) => [d.type, d]));
+const MERGE_LAYER_DEFS: LayerDef[] = [
+  { type: 'Add', category: 'Merge', color: '#FF9800', params: [] },
+  { type: 'Concat', category: 'Merge', color: '#FF9800', params: [p_int('dim', 1, 'Concatenation dim')] },
+  { type: 'Multiply', category: 'Merge', color: '#FF9800', params: [] },
+  { type: 'Subtract', category: 'Merge', color: '#FF9800', params: [] },
+  { type: 'Mean', category: 'Merge', color: '#FF9800', params: [] },
+  { type: 'Stack', category: 'Merge', color: '#FF9800', params: [p_int('dim', 1, 'Stack dim')] },
+];
 
-// ── Types ──
-
-interface LayerNodeData {
-  layerType: string;
-  params: Record<string, any>;
-  color: string;
-  [key: string]: unknown;
-}
-
-// ── Convert layers JSON to nodes/edges ──
-
-function layersToFlow(layersJson: string): { nodes: Node<LayerNodeData>[]; edges: Edge[] } {
-  let layers: Record<string, any>[];
-  try {
-    layers = JSON.parse(layersJson);
-  } catch {
-    layers = [];
-  }
-  if (!Array.isArray(layers)) layers = [];
-
-  const nodes: Node<LayerNodeData>[] = [];
-  const edges: Edge[] = [];
-
-  layers.forEach((layer, i) => {
-    const type = layer.type ?? 'Unknown';
-    const def = LAYER_DEF_MAP.get(type);
-    const params = { ...layer };
-    delete params.type;
-
-    const id = generateId();
-    nodes.push({
-      id,
-      type: 'layerNode',
-      position: { x: 200, y: i * 100 },
-      data: {
-        layerType: type,
-        params,
-        color: def?.color ?? '#607D8B',
-      },
-    });
-
-    if (i > 0) {
-      edges.push({
-        id: generateId(),
-        source: nodes[i - 1].id,
-        target: id,
-        style: { stroke: '#555', strokeWidth: 2 },
-      });
-    }
-  });
-
-  return { nodes, edges };
-}
-
-// ── Convert nodes/edges back to layers JSON ──
-
-function flowToLayersJson(nodes: Node<LayerNodeData>[], edges: Edge[]): string {
-  // Build adjacency to determine order
-  const outgoing = new Map<string, string>();
-  for (const e of edges) {
-    outgoing.set(e.source, e.target);
-  }
-
-  // Find the head node (not a target of any edge)
-  const targets = new Set(edges.map((e) => e.target));
-  const heads = nodes.filter((n) => !targets.has(n.id));
-
-  // Walk the chain from head
-  const ordered: Node<LayerNodeData>[] = [];
-  const visited = new Set<string>();
-
-  // If there are multiple disconnected chains or no edges, fall back to vertical position order
-  if (heads.length !== 1 || edges.length !== nodes.length - 1) {
-    // Sort by Y position
-    const sorted = [...nodes].sort((a, b) => a.position.y - b.position.y);
-    for (const n of sorted) {
-      ordered.push(n);
-    }
-  } else {
-    let current: string | undefined = heads[0].id;
-    while (current && !visited.has(current)) {
-      visited.add(current);
-      const node = nodes.find((n) => n.id === current);
-      if (node) ordered.push(node);
-      current = outgoing.get(current);
-    }
-    // Add any unvisited nodes (disconnected)
-    for (const n of nodes) {
-      if (!visited.has(n.id)) ordered.push(n);
-    }
-  }
-
-  const layers = ordered.map((n) => ({
-    type: n.data.layerType,
-    ...n.data.params,
-  }));
-
-  return JSON.stringify(layers);
-}
+const ALL_LAYER_DEFS: LayerDef[] = [...LAYER_DEFS, ...MERGE_LAYER_DEFS];
+const LAYER_DEF_MAP_FULL = new Map(ALL_LAYER_DEFS.map((d) => [d.type, d]));
 
 // ── Layer Palette Item ──
 
@@ -282,12 +205,12 @@ function ParamEditor({
   onParamChange,
   onDelete,
 }: {
-  node: Node<LayerNodeData>;
+  node: Node<GraphLayerNodeData>;
   onParamChange: (nodeId: string, paramName: string, value: any) => void;
   onDelete: (nodeId: string) => void;
 }) {
   const { t } = useI18n();
-  const def = LAYER_DEF_MAP.get(node.data.layerType);
+  const def = LAYER_DEF_MAP_FULL.get(node.data.layerType);
 
   return (
     <div style={{ padding: '12px 10px' }}>
@@ -377,6 +300,8 @@ function ParamEditor({
 
 const nodeTypes: NodeTypes = {
   layerNode: LayerNode,
+  inputNode: InputNode,
+  outputNode: OutputNode,
 };
 
 function SubgraphFlowInner({
@@ -392,8 +317,13 @@ function SubgraphFlowInner({
   const { screenToFlowPosition, fitView } = useReactFlow();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const initial = useMemo(() => layersToFlow(initialLayersJson), [initialLayersJson]);
-  const [nodes, setNodes] = useState<Node<LayerNodeData>[]>(initial.nodes);
+  const initial = useMemo(() => {
+    const parsed = graphToFlow(initialLayersJson);
+    if (parsed.nodes.length === 0) return emptyGraph();
+    return parsed;
+  }, [initialLayersJson]);
+
+  const [nodes, setNodes] = useState<Node<GraphLayerNodeData>[]>(initial.nodes);
   const [edges, setEdges] = useState<Edge[]>(initial.edges);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
@@ -405,9 +335,9 @@ function SubgraphFlowInner({
 
   const selectedNode = nodes.find((n) => n.id === selectedNodeId) ?? null;
 
-  const onNodesChange = useCallback(
+  const handleNodesChange = useCallback(
     (changes: NodeChange[]) => {
-      setNodes((nds) => applyNodeChanges(changes, nds) as Node<LayerNodeData>[]);
+      setNodes((prev) => applyNodeChanges(changes, prev) as Node<GraphLayerNodeData>[]);
     },
     []
   );
@@ -419,47 +349,51 @@ function SubgraphFlowInner({
     []
   );
 
-  // Auto-connect: rebuild chain by Y position after drag
-  const rebuildChain = useCallback((currentNodes: Node<LayerNodeData>[]) => {
-    const sorted = [...currentNodes].sort((a, b) => a.position.y - b.position.y);
-    const newEdges: Edge[] = [];
-    for (let i = 1; i < sorted.length; i++) {
-      newEdges.push({
-        id: `chain-${sorted[i - 1].id}-${sorted[i].id}`,
-        source: sorted[i - 1].id,
-        target: sorted[i].id,
-        style: { stroke: '#555', strokeWidth: 2 },
-      });
-    }
-    setEdges(newEdges);
-  }, []);
-
-  const handleNodesChange = useCallback(
-    (changes: NodeChange[]) => {
-      setNodes((prevNodes) => {
-        const updated = applyNodeChanges(changes, prevNodes) as Node<LayerNodeData>[];
-        // Rebuild chain if any node was dragged
-        const hasDrag = changes.some((c) => c.type === 'position' && 'dragging' in c && !c.dragging);
-        if (hasDrag) {
-          setTimeout(() => rebuildChain(updated), 0);
-        }
-        return updated;
-      });
+  const isValidConnection = useCallback(
+    (conn: Connection) => {
+      // Plain layer input handle: reject if already has incoming
+      const targetNode = nodes.find((n) => n.id === conn.target);
+      if (!targetNode) return false;
+      if (!targetNode.data.isMerge && !targetNode.data.isBoundary) {
+        const existing = edges.filter((e) => e.target === conn.target);
+        if (existing.length >= 1) return false;
+      }
+      // Output port: reject if already has incoming for that handle
+      if (targetNode.data.layerType === 'Output' && conn.targetHandle) {
+        const existing = edges.filter((e) => e.target === conn.target && e.targetHandle === conn.targetHandle);
+        if (existing.length >= 1) return false;
+      }
+      return true;
     },
-    [rebuildChain]
+    [nodes, edges]
+  );
+
+  const onConnect = useCallback(
+    (params: Connection) => {
+      setEdges((eds) => [
+        ...eds,
+        {
+          id: generateId(),
+          source: params.source,
+          sourceHandle: params.sourceHandle ?? undefined,
+          target: params.target,
+          targetHandle: params.targetHandle ?? undefined,
+          style: { stroke: '#555', strokeWidth: 2 },
+        },
+      ]);
+    },
+    []
   );
 
   const addLayer = useCallback(
     (layerType: string, position: { x: number; y: number }) => {
-      const def = LAYER_DEF_MAP.get(layerType);
+      const def = LAYER_DEF_MAP_FULL.get(layerType);
       if (!def) return;
 
       const defaultParams: Record<string, any> = {};
-      for (const p of def.params) {
-        defaultParams[p.name] = p.default;
-      }
+      for (const p of def.params) defaultParams[p.name] = p.default;
 
-      const newNode: Node<LayerNodeData> = {
+      const newNode: Node<GraphLayerNodeData> = {
         id: generateId(),
         type: 'layerNode',
         position,
@@ -467,16 +401,13 @@ function SubgraphFlowInner({
           layerType,
           params: defaultParams,
           color: def.color,
+          isMerge: isMergeType(layerType),
+          isBoundary: false,
         },
       };
-
-      setNodes((prev) => {
-        const updated = [...prev, newNode];
-        setTimeout(() => rebuildChain(updated), 0);
-        return updated;
-      });
+      setNodes((prev) => [...prev, newNode]);
     },
-    [rebuildChain]
+    []
   );
 
   const handleDragOver = useCallback((event: React.DragEvent) => {
@@ -510,20 +441,33 @@ function SubgraphFlowInner({
   }, []);
 
   const handleDeleteLayer = useCallback((nodeId: string) => {
-    setNodes((prev) => {
-      const updated = prev.filter((n) => n.id !== nodeId);
-      setTimeout(() => rebuildChain(updated), 0);
-      return updated;
-    });
+    setNodes((prev) => prev.filter((n) => n.id !== nodeId));
+    setEdges((prev) => prev.filter((e) => e.source !== nodeId && e.target !== nodeId));
     setSelectedNodeId((prev) => (prev === nodeId ? null : prev));
-  }, [rebuildChain]);
+  }, []);
+
+  const handleUpdatePorts = useCallback((nodeId: string, ports: PortDef[]) => {
+    setNodes((prev) =>
+      prev.map((n) => (n.id === nodeId ? { ...n, data: { ...n.data, ports } } : n))
+    );
+  }, []);
+
+  const handleRemoveEdges = useCallback((edgeIds: string[]) => {
+    const idSet = new Set(edgeIds);
+    setEdges((prev) => prev.filter((e) => !idSet.has(e.id)));
+  }, []);
 
   const handleApply = () => {
-    onApply(flowToLayersJson(nodes, edges));
+    const err = validateGraph(nodes, edges);
+    if (err) {
+      useToastStore.getState().addToast(err.message, 'error');
+      return;
+    }
+    onApply(flowToGraphJson(nodes, edges));
   };
 
   const handleExport = () => {
-    const json = flowToLayersJson(nodes, edges);
+    const json = flowToGraphJson(nodes, edges);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -544,9 +488,8 @@ function SubgraphFlowInner({
     reader.onload = (e) => {
       try {
         const text = e.target?.result as string;
-        const parsed = JSON.parse(text);
-        if (!Array.isArray(parsed)) throw new Error('Expected JSON array');
-        const { nodes: newNodes, edges: newEdges } = layersToFlow(text);
+        const { nodes: newNodes, edges: newEdges } = graphToFlow(text);
+        if (newNodes.length === 0) throw new Error('Empty or invalid v2 graph');
         setNodes(newNodes);
         setEdges(newEdges);
         setSelectedNodeId(null);
@@ -560,10 +503,10 @@ function SubgraphFlowInner({
     event.target.value = '';
   };
 
-  // Filter layer palette
+  // Filter layer palette (ALL_LAYER_DEFS so Merge shows up)
   const filteredDefs = search.trim()
-    ? LAYER_DEFS.filter((d) => d.type.toLowerCase().includes(search.toLowerCase()))
-    : LAYER_DEFS;
+    ? ALL_LAYER_DEFS.filter((d) => d.type.toLowerCase().includes(search.toLowerCase()))
+    : ALL_LAYER_DEFS;
 
   const groupedDefs = useMemo(() => {
     const groups: Record<string, LayerDef[]> = {};
@@ -573,6 +516,12 @@ function SubgraphFlowInner({
     }
     return groups;
   }, [filteredDefs]);
+
+  // i18n category labels
+  const getCategoryLabel = (category: string) => {
+    if (category === 'Merge') return t('subgraph.category.merge');
+    return category;
+  };
 
   return (
     <div
@@ -753,7 +702,7 @@ function SubgraphFlowInner({
                       padding: '4px 4px 2px',
                     }}
                   >
-                    {category}
+                    {getCategoryLabel(category)}
                   </div>
                   {defs.map((d) => (
                     <LayerPaletteItem key={d.type} def={d} />
@@ -798,6 +747,8 @@ function SubgraphFlowInner({
               onPaneClick={() => setSelectedNodeId(null)}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
+              onConnect={onConnect}
+              isValidConnection={isValidConnection}
               nodeTypes={nodeTypes}
               fitView
               snapToGrid={snapEnabled}
@@ -806,11 +757,8 @@ function SubgraphFlowInner({
               deleteKeyCode="Delete"
               onNodesDelete={(deleted) => {
                 const ids = new Set(deleted.map((n) => n.id));
-                setNodes((prev) => {
-                  const updated = prev.filter((n) => !ids.has(n.id));
-                  setTimeout(() => rebuildChain(updated), 0);
-                  return updated;
-                });
+                setNodes((prev) => prev.filter((n) => !ids.has(n.id)));
+                setEdges((prev) => prev.filter((e) => !ids.has(e.source) && !ids.has(e.target)));
                 setSelectedNodeId((prev) => (prev && ids.has(prev) ? null : prev));
               }}
               style={{ background: '#111' }}
@@ -855,11 +803,20 @@ function SubgraphFlowInner({
             </div>
             <div style={{ flex: 1, overflowY: 'auto' }}>
               {selectedNode ? (
-                <ParamEditor
-                  node={selectedNode}
-                  onParamChange={handleParamChange}
-                  onDelete={handleDeleteLayer}
-                />
+                selectedNode.data.isBoundary ? (
+                  <PortListEditor
+                    node={selectedNode}
+                    edges={edges}
+                    onUpdatePorts={handleUpdatePorts}
+                    onRemoveEdges={handleRemoveEdges}
+                  />
+                ) : (
+                  <ParamEditor
+                    node={selectedNode}
+                    onParamChange={handleParamChange}
+                    onDelete={handleDeleteLayer}
+                  />
+                )
               ) : (
                 <div
                   style={{
@@ -943,7 +900,7 @@ export function SubgraphEditorModal() {
 
   if (!nodeId || !node) return null;
 
-  const layersJson = (node.data.params?.layers as string) ?? '[]';
+  const layersJson = (node.data.params?.layers as string) ?? '{}';
 
   const handleApply = (newLayersJson: string) => {
     updateSubgraphLayers(nodeId, newLayersJson);
