@@ -38,8 +38,192 @@ export interface GraphSpec {
 
 const MERGE_TYPES = new Set(['Add', 'Concat', 'Multiply', 'Subtract', 'Mean', 'Stack']);
 
+/** All layer types that the SubgraphEditor can represent. */
+const KNOWN_LAYER_TYPES = new Set([
+  'Conv2d', 'Conv1d', 'ConvTranspose2d',
+  'BatchNorm2d', 'BatchNorm1d', 'LayerNorm', 'GroupNorm', 'InstanceNorm2d',
+  'MaxPool2d', 'AvgPool2d', 'AdaptiveAvgPool2d',
+  'Dropout',
+  'Linear', 'Embedding',
+  'Flatten',
+  'ReLU', 'LeakyReLU', 'GELU', 'SiLU', 'Mish', 'ELU', 'SELU', 'PReLU',
+  'Sigmoid', 'Tanh', 'Hardswish', 'Softmax',
+  'Add', 'Concat', 'Multiply', 'Subtract', 'Mean', 'Stack',
+]);
+
+/** Map main-editor Activation node's `function` param → SubgraphEditor layer type. */
+const ACTIVATION_MAP: Record<string, string> = {
+  relu: 'ReLU', leaky_relu: 'LeakyReLU', gelu: 'GELU', silu: 'SiLU',
+  mish: 'Mish', elu: 'ELU', selu: 'SELU', prelu: 'PReLU',
+  sigmoid: 'Sigmoid', tanh: 'Tanh', hardswish: 'Hardswish', softmax: 'Softmax',
+};
+
 export function isMergeType(t: string): boolean {
   return MERGE_TYPES.has(t);
+}
+
+// ── Main-editor workflow import types & functions ──
+
+export interface WorkflowData {
+  nodes: Array<{
+    id: string;
+    type: string;
+    position?: { x: number; y: number };
+    data?: { params?: Record<string, any> };
+  }>;
+  edges: Array<{
+    id: string;
+    source: string;
+    target: string;
+    sourceHandle?: string;
+    targetHandle?: string;
+  }>;
+}
+
+export interface SequentialModelEntry {
+  nodeId: string;
+  label: string;
+  layersJson: string;
+}
+
+export type ImportDetection =
+  | { kind: 'graphspec'; json: string }
+  | { kind: 'workflow-layers'; workflowData: WorkflowData }
+  | { kind: 'workflow-sequential'; models: SequentialModelEntry[] }
+  | { kind: 'unknown' };
+
+export function detectImportFormat(text: string): ImportDetection {
+  let data: any;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    return { kind: 'unknown' };
+  }
+
+  // GraphSpec v2
+  if (data.version === 2 && Array.isArray(data.nodes) && Array.isArray(data.edges)) {
+    return { kind: 'graphspec', json: text };
+  }
+
+  // Main-editor workflow
+  if (Array.isArray(data.nodes) && Array.isArray(data.edges)) {
+    const hasLayerNodes = data.nodes.some((n: any) => {
+      const t = n.type ?? '';
+      if (KNOWN_LAYER_TYPES.has(t)) return true;
+      if (t === 'Activation') return (n.data?.params?.function ?? '') in ACTIVATION_MAP;
+      return false;
+    });
+
+    if (hasLayerNodes) {
+      return { kind: 'workflow-layers', workflowData: { nodes: data.nodes, edges: data.edges } };
+    }
+
+    const models: SequentialModelEntry[] = data.nodes
+      .filter((n: any) => n.type === 'SequentialModel' && typeof n.data?.params?.layers === 'string')
+      .map((n: any) => ({
+        nodeId: n.id,
+        label: n.data?.label ?? n.id,
+        layersJson: n.data.params.layers,
+      }));
+
+    if (models.length > 0) {
+      return { kind: 'workflow-sequential', models };
+    }
+  }
+
+  return { kind: 'unknown' };
+}
+
+export function convertWorkflowToGraphSpec(workflow: WorkflowData): GraphSpec {
+  const layerNodeIds = new Set<string>();
+  const convertedNodes: GraphSpec['nodes'] = [];
+
+  for (const n of workflow.nodes) {
+    const rawType = n.type ?? '';
+    let layerType = rawType;
+    const params = { ...(n.data?.params ?? {}) };
+
+    if (rawType === 'Activation') {
+      const fn = params.function ?? 'relu';
+      const mapped = ACTIVATION_MAP[fn];
+      if (!mapped) continue;
+      layerType = mapped;
+      delete params.function;
+    } else if (!KNOWN_LAYER_TYPES.has(rawType)) {
+      continue;
+    }
+
+    layerNodeIds.add(n.id);
+    convertedNodes.push({
+      id: n.id,
+      type: layerType,
+      params: Object.keys(params).length > 0 ? params : undefined,
+      position: n.position,
+    });
+  }
+
+  // Keep only edges between converted layer nodes, strip handles
+  const convertedEdges: GraphSpec['edges'] = workflow.edges
+    .filter((e) => layerNodeIds.has(e.source) && layerNodeIds.has(e.target))
+    .map((e) => ({
+      id: e.id,
+      source: e.source,
+      sourceHandle: null,
+      target: e.target,
+      targetHandle: null,
+    }));
+
+  // Compute in-degree / out-degree
+  const inDeg = new Map<string, number>();
+  const outDeg = new Map<string, number>();
+  for (const id of layerNodeIds) { inDeg.set(id, 0); outDeg.set(id, 0); }
+  for (const e of convertedEdges) {
+    inDeg.set(e.target, (inDeg.get(e.target) ?? 0) + 1);
+    outDeg.set(e.source, (outDeg.get(e.source) ?? 0) + 1);
+  }
+
+  const roots = [...layerNodeIds].filter((id) => (inDeg.get(id) ?? 0) === 0);
+  const leaves = [...layerNodeIds].filter((id) => (outDeg.get(id) ?? 0) === 0);
+
+  // Create Input node with one port per root
+  const inputNodeId = generateId();
+  const inputPorts: PortDef[] = roots.map((_, i) => ({
+    id: generateId(),
+    name: i === 0 ? 'x' : `x${i + 1}`,
+  }));
+  convertedNodes.unshift({ id: inputNodeId, type: 'Input', ports: inputPorts });
+  for (let i = 0; i < roots.length; i++) {
+    convertedEdges.push({
+      id: generateId(),
+      source: inputNodeId,
+      sourceHandle: inputPorts[i].id,
+      target: roots[i],
+      targetHandle: null,
+    });
+  }
+
+  // Create Output node connected to the topologically-last leaf
+  const outputNodeId = generateId();
+  const outputPorts: PortDef[] = [{ id: generateId(), name: 'y' }];
+  convertedNodes.push({ id: outputNodeId, type: 'Output', ports: outputPorts });
+
+  const sorted = topoSort(
+    convertedNodes.map((n) => n.id),
+    convertedEdges,
+  );
+  let lastLeaf = leaves[0];
+  for (let i = sorted.length - 1; i >= 0; i--) {
+    if (leaves.includes(sorted[i])) { lastLeaf = sorted[i]; break; }
+  }
+  convertedEdges.push({
+    id: generateId(),
+    source: lastLeaf,
+    sourceHandle: null,
+    target: outputNodeId,
+    targetHandle: outputPorts[0].id,
+  });
+
+  return { version: 2, nodes: convertedNodes, edges: convertedEdges };
 }
 
 export function flowToGraphJson(nodes: Node<LayerNodeData>[], edges: Edge[]): string {

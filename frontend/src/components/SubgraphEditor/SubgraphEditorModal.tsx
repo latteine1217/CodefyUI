@@ -32,8 +32,11 @@ import {
   validateGraph,
   isMergeType,
   autoLayoutSubgraph,
+  detectImportFormat,
+  convertWorkflowToGraphSpec,
   type LayerNodeData as GraphLayerNodeData,
   type PortDef,
+  type SequentialModelEntry,
 } from './graphSerialization';
 import type { ParamDefinition } from '../../types';
 
@@ -297,6 +300,121 @@ function ParamEditor({
   );
 }
 
+// ── SequentialModel Selector (for multi-model workflow import) ──
+
+function SequentialModelSelector({
+  models,
+  onSelect,
+  onCancel,
+}: {
+  models: SequentialModelEntry[];
+  onSelect: (layersJson: string) => void;
+  onCancel: () => void;
+}) {
+  const { t } = useI18n();
+  const [selectedIdx, setSelectedIdx] = useState(0);
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 1100,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'rgba(0,0,0,0.5)',
+      }}
+      onClick={onCancel}
+    >
+      <div
+        style={{
+          background: '#1a1a1a',
+          border: '1px solid #333',
+          borderRadius: 10,
+          width: 400,
+          maxHeight: '60vh',
+          display: 'flex',
+          flexDirection: 'column',
+          boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
+        }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div style={{
+          padding: '12px 16px',
+          borderBottom: '1px solid #333',
+          fontWeight: 700,
+          fontSize: '0.9375rem',
+          color: '#eee',
+        }}>
+          {t('subgraph.import.selectModel')}
+        </div>
+        <div style={{ flex: 1, overflowY: 'auto', padding: '8px 12px' }}>
+          {models.map((m, i) => (
+            <div
+              key={m.nodeId}
+              onClick={() => setSelectedIdx(i)}
+              style={{
+                padding: '10px 12px',
+                margin: '4px 0',
+                borderRadius: 6,
+                cursor: 'pointer',
+                border: selectedIdx === i ? '1px solid #F44336' : '1px solid #333',
+                background: selectedIdx === i ? 'rgba(244,67,54,0.1)' : '#222',
+                transition: 'all 0.15s',
+              }}
+            >
+              <div style={{ fontWeight: 600, color: '#eee', fontSize: '0.8125rem' }}>
+                {m.label}
+              </div>
+              <div style={{ fontSize: '0.6875rem', color: '#666', marginTop: 2 }}>
+                ID: {m.nodeId}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{
+          padding: '10px 16px',
+          borderTop: '1px solid #333',
+          display: 'flex',
+          justifyContent: 'flex-end',
+          gap: 8,
+        }}>
+          <button
+            onClick={onCancel}
+            style={{
+              padding: '6px 14px',
+              background: '#2a2a2a',
+              border: '1px solid #444',
+              borderRadius: 5,
+              color: '#aaa',
+              fontSize: '0.8125rem',
+              cursor: 'pointer',
+            }}
+          >
+            {t('subgraph.cancel')}
+          </button>
+          <button
+            onClick={() => onSelect(models[selectedIdx].layersJson)}
+            style={{
+              padding: '6px 14px',
+              background: '#F44336',
+              border: 'none',
+              borderRadius: 5,
+              color: '#fff',
+              fontSize: '0.8125rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+          >
+            {t('subgraph.import')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Inner Flow (needs ReactFlowProvider wrapping) ──
 
 const nodeTypes: NodeTypes = {
@@ -329,6 +447,7 @@ function SubgraphFlowInner({
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [snapEnabled, setSnapEnabled] = useState(false);
+  const [selectorModels, setSelectorModels] = useState<SequentialModelEntry[] | null>(null);
 
   // Snap all existing nodes to grid when snap is enabled
   useEffect(() => {
@@ -508,6 +627,30 @@ function SubgraphFlowInner({
     fileInputRef.current?.click();
   };
 
+  const loadGraphSpecIntoEditor = useCallback(
+    (json: string) => {
+      const { nodes: newNodes, edges: newEdges } = graphToFlow(json);
+      if (newNodes.length === 0) throw new Error('Empty or invalid graph');
+      setNodes(newNodes);
+      setEdges(newEdges);
+      setSelectedNodeId(null);
+      setTimeout(() => fitView({ padding: 0.3 }), 50);
+    },
+    [fitView],
+  );
+
+  const handleSelectSequentialModel = useCallback(
+    (layersJson: string) => {
+      setSelectorModels(null);
+      try {
+        loadGraphSpecIntoEditor(layersJson);
+      } catch (err) {
+        useToastStore.getState().addToast(t('subgraph.import.fail', { error: String(err) }), 'error');
+      }
+    },
+    [loadGraphSpecIntoEditor, t],
+  );
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -515,18 +658,42 @@ function SubgraphFlowInner({
     reader.onload = (e) => {
       try {
         const text = e.target?.result as string;
-        const { nodes: newNodes, edges: newEdges } = graphToFlow(text);
-        if (newNodes.length === 0) throw new Error('Empty or invalid v2 graph');
-        setNodes(newNodes);
-        setEdges(newEdges);
-        setSelectedNodeId(null);
-        setTimeout(() => fitView({ padding: 0.3 }), 50);
+        const detection = detectImportFormat(text);
+
+        switch (detection.kind) {
+          case 'graphspec':
+            loadGraphSpecIntoEditor(detection.json);
+            break;
+
+          case 'workflow-layers': {
+            const spec = convertWorkflowToGraphSpec(detection.workflowData);
+            const json = JSON.stringify(spec);
+            const { nodes: newNodes, edges: newEdges } = graphToFlow(json);
+            if (newNodes.length === 0) throw new Error('No convertible layers found');
+            setNodes(autoLayoutSubgraph(newNodes, newEdges));
+            setEdges(newEdges);
+            setSelectedNodeId(null);
+            setTimeout(() => fitView({ padding: 0.3 }), 50);
+            break;
+          }
+
+          case 'workflow-sequential':
+            if (detection.models.length === 1) {
+              loadGraphSpecIntoEditor(detection.models[0].layersJson);
+            } else {
+              setSelectorModels(detection.models);
+            }
+            break;
+
+          case 'unknown':
+          default:
+            throw new Error(t('subgraph.import.noContent'));
+        }
       } catch (err) {
         useToastStore.getState().addToast(t('subgraph.import.fail', { error: String(err) }), 'error');
       }
     };
     reader.readAsText(file);
-    // Reset input so the same file can be re-selected
     event.target.value = '';
   };
 
@@ -916,6 +1083,15 @@ function SubgraphFlowInner({
             {t('subgraph.apply')}
           </button>
         </div>
+
+        {/* SequentialModel selector for multi-model workflow import */}
+        {selectorModels && (
+          <SequentialModelSelector
+            models={selectorModels}
+            onSelect={handleSelectSequentialModel}
+            onCancel={() => setSelectorModels(null)}
+          />
+        )}
 
         {/* Hidden file input for import */}
         <input
