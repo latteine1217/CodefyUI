@@ -40,6 +40,27 @@ export function resolveSerializedNodes(
     const position = raw.position ?? { x: 0, y: 0 };
     const params = raw.data?.params ?? {};
 
+    // Note node
+    if (nodeType === 'note') {
+      return {
+        id: raw.id,
+        type: 'noteNode' as const,
+        position,
+        data: {
+          label: 'Note',
+          type: 'note',
+          params: {},
+          noteKind: raw.data?.noteKind ?? 'text',
+          noteContent: raw.data?.noteContent ?? '',
+          noteColor: raw.data?.noteColor ?? '#3d3d1a',
+          boundToNodeId: raw.data?.boundToNodeId ?? null,
+          boundOffset: raw.data?.boundOffset ?? null,
+          noteWidth: raw.data?.noteWidth ?? 200,
+          noteHeight: raw.data?.noteHeight,
+        },
+      };
+    }
+
     // Preset node
     if (nodeType.startsWith('preset:')) {
       const presetName = nodeType.slice('preset:'.length);

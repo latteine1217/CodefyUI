@@ -5,6 +5,8 @@ import { generateId } from '../utils';
 import { autoLayout, type LayoutMode } from '../utils/autoLayout';
 import type { NodeData, NodeDefinition, PresetDefinition, ExecutionStatus, OutputSummary, NodeProgress } from '../types';
 import { ExecutionWebSocket } from '../api/ws';
+import { useToastStore } from './toastStore';
+import { useI18n } from '../i18n';
 
 // ── Per-tab state ──
 
@@ -99,6 +101,13 @@ interface TabStoreState {
   duplicateNode: (nodeId: string) => void;
   renameNode: (nodeId: string, newLabel: string) => void;
   applyLayout: (mode: LayoutMode) => void;
+
+  // note actions
+  addNote: (kind: 'text' | 'image', position: { x: number; y: number }) => void;
+  updateNoteData: (nodeId: string, updates: Partial<Pick<NodeData, 'noteContent' | 'noteColor' | 'boundToNodeId' | 'boundOffset' | 'noteWidth' | 'noteHeight'>>) => void;
+  bindNoteToNode: (noteId: string, targetNodeId: string) => void;
+  bindNoteToNearest: (noteId: string) => void;
+  unbindNote: (noteId: string) => void;
 
   // undo/redo
   pushUndoSnapshot: () => void;
@@ -256,9 +265,75 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
       get().pushUndoSnapshot();
     }
     set({
-      tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
-        nodes: applyNodeChanges(changes, tab.nodes) as Node<NodeData>[],
-      })),
+      tabs: updateTab(get().tabs, get().activeTabId, (tab) => {
+        let updatedNodes = applyNodeChanges(changes, tab.nodes) as Node<NodeData>[];
+
+        // Collect IDs of nodes that had position changes (not notes)
+        const posChanges = changes.filter(
+          (c) => c.type === 'position' && (c as any).position
+        );
+        if (posChanges.length > 0) {
+          const movedIds = new Set(posChanges.map((c) => c.id));
+
+          // 1) If a bound note was dragged, update its offset relative to parent
+          updatedNodes = updatedNodes.map((n) => {
+            if (n.type !== 'noteNode' || !n.data.boundToNodeId || !n.data.boundOffset) return n;
+            if (!movedIds.has(n.id)) return n;
+            // Note itself was moved — recalculate offset
+            const parent = updatedNodes.find((p) => p.id === n.data.boundToNodeId);
+            if (!parent) return n;
+            return {
+              ...n,
+              data: {
+                ...n.data,
+                boundOffset: {
+                  x: n.position.x - parent.position.x,
+                  y: n.position.y - parent.position.y,
+                },
+              },
+            };
+          });
+
+          // 2) If a computational node moved, reposition all its bound notes
+          const movedComputational = new Set(
+            [...movedIds].filter((id) => {
+              const node = updatedNodes.find((n) => n.id === id);
+              return node && node.type !== 'noteNode';
+            })
+          );
+          if (movedComputational.size > 0) {
+            updatedNodes = updatedNodes.map((n) => {
+              if (n.type !== 'noteNode' || !n.data.boundToNodeId || !n.data.boundOffset) return n;
+              if (!movedComputational.has(n.data.boundToNodeId)) return n;
+              // Skip if the note itself was also moved (user is dragging the note)
+              if (movedIds.has(n.id)) return n;
+              const parent = updatedNodes.find((p) => p.id === n.data.boundToNodeId);
+              if (!parent) return n;
+              return {
+                ...n,
+                position: {
+                  x: parent.position.x + n.data.boundOffset.x,
+                  y: parent.position.y + n.data.boundOffset.y,
+                },
+              };
+            });
+          }
+        }
+
+        // When a node is removed, unbind notes that were bound to it
+        if (hasRemove) {
+          const removedIds = new Set(
+            changes.filter((c) => c.type === 'remove').map((c) => c.id)
+          );
+          updatedNodes = updatedNodes.map((n) => {
+            if (n.type !== 'noteNode' || !n.data.boundToNodeId) return n;
+            if (!removedIds.has(n.data.boundToNodeId)) return n;
+            return { ...n, data: { ...n.data, boundToNodeId: null, boundOffset: null } };
+          });
+        }
+
+        return { nodes: updatedNodes };
+      }),
     });
   },
 
@@ -466,6 +541,24 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
     const seenPresets = new Set<string>();
 
     const nodes = tab.nodes.map((n) => {
+      // Note nodes: serialize with note-specific fields
+      if (n.type === 'noteNode') {
+        return {
+          id: n.id,
+          type: 'note',
+          position: n.position,
+          data: {
+            noteKind: n.data.noteKind,
+            noteContent: n.data.noteContent,
+            noteColor: n.data.noteColor,
+            boundToNodeId: n.data.boundToNodeId,
+            boundOffset: n.data.boundOffset,
+            noteWidth: n.data.noteWidth,
+            noteHeight: n.data.noteHeight,
+          },
+        };
+      }
+
       if (n.data.isPreset && n.data.presetDefinition) {
         const name = n.data.presetDefinition.preset_name;
         if (!seenPresets.has(name)) {
@@ -505,7 +598,14 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
     get().pushUndoSnapshot();
     set({
       tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
-        nodes: tab.nodes.filter((n) => n.id !== nodeId),
+        nodes: tab.nodes
+          .filter((n) => n.id !== nodeId)
+          // Unbind notes that were bound to the deleted node
+          .map((n) =>
+            n.type === 'noteNode' && n.data.boundToNodeId === nodeId
+              ? { ...n, data: { ...n.data, boundToNodeId: null, boundOffset: null } }
+              : n
+          ),
         edges: tab.edges.filter((e) => e.source !== nodeId && e.target !== nodeId),
         selectedNodeId: tab.selectedNodeId === nodeId ? null : tab.selectedNodeId,
       })),
@@ -542,6 +642,99 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
     });
   },
 
+  // ── Note actions ──
+
+  addNote: (kind, position) => {
+    get().pushUndoSnapshot();
+    const node: Node<NodeData> = {
+      id: generateId(),
+      type: 'noteNode',
+      position,
+      data: {
+        label: 'Note',
+        type: 'note',
+        params: {},
+        noteKind: kind,
+        noteContent: '',
+        noteColor: '#3d3d1a',
+        boundToNodeId: null,
+        boundOffset: null,
+        noteWidth: 200,
+        noteHeight: kind === 'image' ? 150 : undefined,
+      },
+    };
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
+        nodes: [...tab.nodes, node],
+      })),
+    });
+  },
+
+  updateNoteData: (nodeId, updates) => {
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
+        nodes: tab.nodes.map((n) =>
+          n.id === nodeId ? { ...n, data: { ...n.data, ...updates } } : n
+        ),
+      })),
+    });
+  },
+
+  bindNoteToNode: (noteId, targetNodeId) => {
+    get().pushUndoSnapshot();
+    const tab = get().getActiveTab();
+    const note = tab.nodes.find((n) => n.id === noteId);
+    const target = tab.nodes.find((n) => n.id === targetNodeId);
+    if (!note || !target) return;
+    const offset = {
+      x: note.position.x - target.position.x,
+      y: note.position.y - target.position.y,
+    };
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (t) => ({
+        nodes: t.nodes.map((n) =>
+          n.id === noteId
+            ? { ...n, data: { ...n.data, boundToNodeId: targetNodeId, boundOffset: offset } }
+            : n
+        ),
+      })),
+    });
+  },
+
+  bindNoteToNearest: (noteId) => {
+    const tab = get().getActiveTab();
+    const note = tab.nodes.find((n) => n.id === noteId);
+    if (!note) return;
+    const cx = note.position.x + (note.measured?.width ?? 200) / 2;
+    const cy = note.position.y + (note.measured?.height ?? 80) / 2;
+    let bestId: string | null = null;
+    let bestDist = Infinity;
+    for (const n of tab.nodes) {
+      if (n.type === 'noteNode') continue;
+      const nx = n.position.x + (n.measured?.width ?? 200) / 2;
+      const ny = n.position.y + (n.measured?.height ?? 80) / 2;
+      const d = (cx - nx) ** 2 + (cy - ny) ** 2;
+      if (d < bestDist) {
+        bestDist = d;
+        bestId = n.id;
+      }
+    }
+    if (bestId) get().bindNoteToNode(noteId, bestId);
+  },
+
+  unbindNote: (noteId) => {
+    get().pushUndoSnapshot();
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
+        nodes: tab.nodes.map((n) =>
+          n.id === noteId
+            ? { ...n, data: { ...n.data, boundToNodeId: null, boundOffset: null } }
+            : n
+        ),
+      })),
+    });
+  },
+
   applyLayout: (mode) => {
     const tabId = get().activeTabId;
     if (!tabId) return;
@@ -559,6 +752,17 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
         };
       }),
     }));
+    // Warn if there are unbound notes on the canvas
+    const tab = get().getActiveTab();
+    const hasUnboundNotes = tab.nodes.some(
+      (n) => n.type === 'noteNode' && !n.data.boundToNodeId
+    );
+    if (hasUnboundNotes) {
+      useToastStore.getState().addToast(
+        useI18n.getState().t('note.layoutWarning'),
+        'warning',
+      );
+    }
   },
 
   // ── Undo/Redo ──
@@ -641,13 +845,23 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
     const idMap = new Map<string, string>();
     clipboard.nodes.forEach((n) => idMap.set(n.id, generateId()));
 
-    const newNodes: Node<NodeData>[] = clipboard.nodes.map((n) => ({
-      ...JSON.parse(JSON.stringify(n)),
-      id: idMap.get(n.id)!,
-      position: { x: n.position.x + 50, y: n.position.y + 50 },
-      selected: true,
-      data: { ...JSON.parse(JSON.stringify(n.data)), executionStatus: 'idle' as const, error: undefined },
-    }));
+    const newNodes: Node<NodeData>[] = clipboard.nodes.map((n) => {
+      const cloned = JSON.parse(JSON.stringify(n));
+      const data = { ...cloned.data, executionStatus: 'idle' as const, error: undefined };
+      // Remap note binding: if bound parent was also copied, remap; otherwise clear
+      if (cloned.type === 'noteNode' && data.boundToNodeId) {
+        const remapped = idMap.get(data.boundToNodeId);
+        data.boundToNodeId = remapped ?? null;
+        if (!remapped) data.boundOffset = null;
+      }
+      return {
+        ...cloned,
+        id: idMap.get(n.id)!,
+        position: { x: n.position.x + 50, y: n.position.y + 50 },
+        selected: true,
+        data,
+      };
+    });
 
     const newEdges: Edge[] = clipboard.edges.map((e) => ({
       ...JSON.parse(JSON.stringify(e)),

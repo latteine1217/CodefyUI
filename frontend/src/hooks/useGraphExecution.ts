@@ -133,10 +133,12 @@ export function useGraphExecution() {
     }
 
     const graph = getSerializedGraph();
+    // Filter out note nodes — they are annotations, not computational
+    const execNodes = graph.nodes.filter((n: any) => n.type !== 'note');
 
     // Pre-execution validation
     try {
-      const validation = await validateGraph(graph.nodes, graph.edges);
+      const validation = await validateGraph(execNodes, graph.edges);
       if (!validation.valid) {
         const { addToast } = useToastStore.getState();
         validation.errors.forEach((err: string) => addToast(err, 'error'));
@@ -158,7 +160,9 @@ export function useGraphExecution() {
 
     ws.send({
       action: 'execute',
-      ...graph,
+      nodes: execNodes,
+      edges: graph.edges,
+      presets: graph.presets,
       ...(changedNodes.length > 0 ? { changed_nodes: changedNodes } : {}),
     });
   }, [getActiveTab, getSerializedGraph, clearLogs, clearExecutionStatus, clearOutputSummaries, setTabStatus, addTabLog]);

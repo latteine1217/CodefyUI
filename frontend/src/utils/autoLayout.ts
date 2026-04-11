@@ -115,22 +115,35 @@ function packIntoSwimLanes(
   return finalPositions;
 }
 
+function isNoteNode(node: Node): boolean {
+  return node.type === 'noteNode';
+}
+
 function pickTargetIds(
   nodes: Node[],
   edges: Edge[],
   mode: LayoutMode,
   selectedIds?: Set<string>,
 ): Set<string> {
+  // Exclude note nodes from layout computation
+  const computationalNodes = nodes.filter((n) => !isNoteNode(n));
+
   if (mode === 'all') {
-    return new Set(nodes.map((n) => n.id));
+    return new Set(computationalNodes.map((n) => n.id));
   }
   if (mode === 'selected') {
-    return new Set(selectedIds ?? []);
+    // For selected mode, also exclude notes
+    const filtered = new Set(selectedIds ?? []);
+    for (const id of filtered) {
+      const node = nodes.find((n) => n.id === id);
+      if (node && isNoteNode(node)) filtered.delete(id);
+    }
+    return filtered;
   }
   // mode === 'experiments': only nodes in connected components that contain
   // at least one entry point
   const allComponents = findConnectedComponents(
-    new Set(nodes.map((n) => n.id)),
+    new Set(computationalNodes.map((n) => n.id)),
     edges,
   );
   const targets = new Set<string>();
@@ -198,9 +211,25 @@ export function autoLayout(
   }
 
   // Build result: only target nodes get new positions; others unchanged
-  return nodes.map((n) => {
+  const result = nodes.map((n) => {
     const newPos = finalPositions.get(n.id);
     if (!newPos) return n;
     return { ...n, position: newPos };
+  });
+
+  // Reposition bound notes relative to their parent's new position
+  return result.map((n) => {
+    if (!isNoteNode(n)) return n;
+    const data = n.data as any;
+    if (!data.boundToNodeId || !data.boundOffset) return n;
+    const parent = result.find((p) => p.id === data.boundToNodeId);
+    if (!parent) return n;
+    return {
+      ...n,
+      position: {
+        x: parent.position.x + data.boundOffset.x,
+        y: parent.position.y + data.boundOffset.y,
+      },
+    };
   });
 }

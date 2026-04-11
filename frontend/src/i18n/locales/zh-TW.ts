@@ -113,6 +113,16 @@ const zhTW: Record<TranslationKey, string> = {
   'contextMenu.duplicate': '複製',
   'contextMenu.delete': '刪除',
   'contextMenu.rename.prompt': '請輸入節點的新名稱：',
+  'contextMenu.addTextNote': '新增文字註記',
+  'contextMenu.addImageNote': '新增圖片註記',
+
+  // Notes
+  'note.placeholder': '點擊以編輯...',
+  'note.imagePlaceholder': '點擊上傳圖片',
+  'note.bind': '綁定到最近的節點',
+  'note.unbind': '解除綁定',
+  'note.changeColor': '更改顏色',
+  'note.layoutWarning': '未綁定的註記不會被自動排版重新定位。',
 
   // Tabs
   'tabs.add': '新增分頁',
@@ -134,6 +144,8 @@ const zhTW: Record<TranslationKey, string> = {
   'subgraph.deleteLayer': '刪除',
   'subgraph.hint': '雙擊以編輯架構',
   'subgraph.import.fail': '匯入失敗：{error}',
+  'subgraph.import.selectModel': '選擇要匯入的 SequentialModel',
+  'subgraph.import.noContent': '此檔案中找不到可匯入的層級或 SequentialModel 節點。',
   'subgraph.searchLayers': '搜尋層級...',
   'subgraph.snapOn': '吸附 ON',
   'subgraph.snapOff': '吸附 OFF',

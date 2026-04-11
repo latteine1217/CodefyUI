@@ -19,6 +19,7 @@ import { CATEGORY_COLORS } from '../../styles/theme';
 import BaseNode from '../Nodes/BaseNode';
 import PresetNode from '../Nodes/PresetNode';
 import { StartNode } from '../Nodes/StartNode';
+import NoteNode from '../Nodes/NoteNode';
 import { CustomConnectionLine } from './CustomConnectionLine';
 import { TriggerEdge } from './TriggerEdge';
 import { EmptyCanvasOverlay } from './EmptyCanvasOverlay';
@@ -27,8 +28,11 @@ import { QuickNodeSearch } from './QuickNodeSearch';
 import {
   NodeContextMenu,
   useNodeContextMenuItems,
+  useNoteContextMenuItems,
   type ContextMenuPosition,
 } from '../ContextMenu/NodeContextMenu';
+import { PaneContextMenu } from './PaneContextMenu';
+import { NoteBindingLines } from './NoteBindingLines';
 import { useTabStore } from '../../store/tabStore';
 import { useUIStore } from '../../store/uiStore';
 import { useDragAndDrop } from '../../hooks/useDragAndDrop';
@@ -42,6 +46,7 @@ const nodeTypes: NodeTypes = {
   baseNode: BaseNode,
   presetNode: PresetNode,
   start: StartNode,
+  noteNode: NoteNode,
 };
 
 const edgeTypes: EdgeTypes = {
@@ -49,6 +54,7 @@ const edgeTypes: EdgeTypes = {
 };
 
 const minimapNodeColor = (node: any) => {
+  if (node.type === 'noteNode') return '#FFD700';
   const data = node.data as any;
   if (data?.isPreset) return '#D4A017';
   const category = data?.definition?.category ?? 'Utility';
@@ -101,6 +107,10 @@ export function FlowCanvas() {
   } | null>(null);
 
   const [contextMenu, setContextMenu] = useState<ContextMenuPosition | null>(null);
+  const [paneMenu, setPaneMenu] = useState<{
+    screen: { x: number; y: number };
+    flow: { x: number; y: number };
+  } | null>(null);
   const [edgeTooltip, setEdgeTooltip] = useState<{
     x: number; y: number;
     sourceLabel: string; targetLabel: string;
@@ -183,15 +193,18 @@ export function FlowCanvas() {
       if (!source || !target) return false;
       if (source === target) return false;
 
+      // Notes cannot be connected
+      const { tabs, activeTabId } = useTabStore.getState();
+      const tab = tabs.find((t) => t.id === activeTabId)!;
+      const sourceNode = tab.nodes.find((n) => n.id === source);
+      const targetNode = tab.nodes.find((n) => n.id === target);
+      if (sourceNode?.type === 'noteNode' || targetNode?.type === 'noteNode') return false;
+
       // Trigger connections (from Start node) are control-flow markers,
       // not data — they connect only to the __trigger handle on target nodes.
       if (sourceHandle === 'trigger') return targetHandle === '__trigger';
 
       if (sourceHandle && targetHandle) {
-        const { tabs, activeTabId } = useTabStore.getState();
-        const tab = tabs.find((t) => t.id === activeTabId)!;
-        const sourceNode = tab.nodes.find((n) => n.id === source);
-        const targetNode = tab.nodes.find((n) => n.id === target);
         if (!sourceNode || !targetNode) return true;
 
         const sourceDef = sourceNode.data.definition;
@@ -316,6 +329,8 @@ export function FlowCanvas() {
     if (!container) return;
 
     const handler = (e: MouseEvent) => {
+      // Ignore if the double-click originated inside a node (e.g. NoteNode editing)
+      if ((e.target as HTMLElement).closest('.react-flow__node')) return;
       const flowPos = screenToFlowRef.current({ x: e.clientX, y: e.clientY });
       setQuickSearchRef.current({ screen: { x: e.clientX, y: e.clientY }, flow: flowPos });
     };
@@ -336,9 +351,19 @@ export function FlowCanvas() {
   const handlePaneClick = useCallback(() => {
     setSelectedNodeId(null);
     setContextMenu(null);
+    setPaneMenu(null);
     setEdgeTooltip(null);
     // quickSearch is closed by QuickNodeSearch's own outside-click handler
   }, [setSelectedNodeId]);
+
+  const handlePaneContextMenu = useCallback(
+    (event: React.MouseEvent) => {
+      event.preventDefault();
+      const flowPos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
+      setPaneMenu({ screen: { x: event.clientX, y: event.clientY }, flow: flowPos });
+    },
+    [screenToFlowPosition],
+  );
 
   const handleNodeContextMenu = useCallback(
     (event: React.MouseEvent, node: { id: string }) => {
@@ -361,11 +386,19 @@ export function FlowCanvas() {
     [activeTab.nodes, renameNode, t]
   );
 
-  const menuItems = useNodeContextMenuItems(contextMenu?.nodeId ?? '', {
+  const nodeMenuItems = useNodeContextMenuItems(contextMenu?.nodeId ?? '', {
     onDelete: deleteNode,
     onRename: handleRename,
     onDuplicate: duplicateNode,
   });
+
+  const noteMenuItems = useNoteContextMenuItems(contextMenu?.nodeId ?? '', {
+    onDelete: deleteNode,
+  });
+
+  // Pick the right menu items based on node type
+  const contextNode = activeTab.nodes.find((n) => n.id === contextMenu?.nodeId);
+  const menuItems = contextNode?.type === 'noteNode' ? noteMenuItems : nodeMenuItems;
 
   const proOptions = useMemo(() => ({ hideAttribution: true }), []);
   const isEmpty = activeTab.nodes.length === 0;
@@ -390,6 +423,7 @@ export function FlowCanvas() {
         onNodeClick={handleNodeClick}
         onEdgeClick={handleEdgeClick}
         onNodeContextMenu={handleNodeContextMenu}
+        onPaneContextMenu={handlePaneContextMenu}
         onPaneClick={handlePaneClick}
         onDragOver={onDragOver}
         onDrop={onDrop}
@@ -417,6 +451,7 @@ export function FlowCanvas() {
           gap={24}
           size={1.5}
         />
+        <NoteBindingLines />
         <Controls />
         <MiniMap
           pannable
@@ -433,6 +468,14 @@ export function FlowCanvas() {
           position={contextMenu}
           items={menuItems}
           onClose={() => setContextMenu(null)}
+        />
+      )}
+
+      {paneMenu && (
+        <PaneContextMenu
+          screen={paneMenu.screen}
+          flow={paneMenu.flow}
+          onClose={() => setPaneMenu(null)}
         />
       )}
 

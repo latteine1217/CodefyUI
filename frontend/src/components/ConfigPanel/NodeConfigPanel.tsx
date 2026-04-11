@@ -25,6 +25,9 @@ export function NodeConfigPanel() {
 
   if (!selectedNode) return null;
 
+  // Note nodes have no config panel
+  if (selectedNode.type === 'noteNode') return null;
+
   const isPreset = selectedNode.data.isPreset;
   const category = def?.category ?? 'Utility';
   const accentColor = isPreset ? '#D4A017' : (CATEGORY_COLORS[category] ?? '#607D8B');

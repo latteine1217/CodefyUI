@@ -70,6 +70,14 @@ export interface NodeData {
   isPreset?: boolean;
   presetDefinition?: PresetDefinition;
   internalParams?: Record<string, Record<string, any>>;
+  // Note-specific fields (present only when node.type === 'noteNode')
+  noteKind?: 'text' | 'image';
+  noteContent?: string;
+  noteColor?: string;
+  boundToNodeId?: string | null;
+  boundOffset?: { x: number; y: number } | null;
+  noteWidth?: number;
+  noteHeight?: number;
   [key: string]: unknown;
 }
 

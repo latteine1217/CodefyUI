@@ -111,6 +111,16 @@ const en = {
   'contextMenu.duplicate': 'Duplicate',
   'contextMenu.delete': 'Delete',
   'contextMenu.rename.prompt': 'Enter a new name for this node:',
+  'contextMenu.addTextNote': 'Add Text Note',
+  'contextMenu.addImageNote': 'Add Image Note',
+
+  // Notes
+  'note.placeholder': 'Click to edit...',
+  'note.imagePlaceholder': 'Click to upload image',
+  'note.bind': 'Bind to Nearest Node',
+  'note.unbind': 'Unbind Note',
+  'note.changeColor': 'Change Color',
+  'note.layoutWarning': 'Unbound notes were not repositioned by auto-layout.',
 
   // Tabs
   'tabs.add': 'New tab',
@@ -132,6 +142,8 @@ const en = {
   'subgraph.deleteLayer': 'Delete',
   'subgraph.hint': 'Double-click to edit architecture',
   'subgraph.import.fail': 'Import failed: {error}',
+  'subgraph.import.selectModel': 'Select SequentialModel to Import',
+  'subgraph.import.noContent': 'No importable layers or SequentialModel nodes found in this file.',
   'subgraph.searchLayers': 'Search layers...',
   'subgraph.snapOn': 'Snap: ON',
   'subgraph.snapOff': 'Snap: OFF',
