@@ -52,7 +52,7 @@
       "data": {
         "params": {
           "path": "test_digit.png",
-          "mode": "grayscale",
+          "mode": "L",
           "resize": 28
         }
       }

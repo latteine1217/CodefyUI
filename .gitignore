@@ -41,6 +41,8 @@ Thumbs.db
 # Data
 backend/data/graphs/*.json
 !backend/data/graphs/.gitkeep
+backend/data/images/*
+!backend/data/images/.gitkeep
 
 # PyTorch
 *.pt

@@ -24,9 +24,9 @@ class ImageReaderNode(BaseNode):
         return [
             ParamDefinition(
                 name="path",
-                param_type=ParamType.STRING,
+                param_type=ParamType.IMAGE_FILE,
                 default="",
-                description="Path to an image file (PNG, JPEG, BMP, etc.)",
+                description="Image file — select an uploaded file or upload a new one",
             ),
             ParamDefinition(
                 name="mode",
@@ -39,7 +39,7 @@ class ImageReaderNode(BaseNode):
                 name="resize",
                 param_type=ParamType.INT,
                 default=0,
-                description="Resize the shorter side to this value (0 = no resize)",
+                description="Resize image to a (resize, resize) square (0 = no resize)",
                 min_value=0,
             ),
         ]
@@ -50,6 +50,8 @@ class ImageReaderNode(BaseNode):
         from PIL import Image, ImageFile
         from torchvision import transforms
 
+        from ...config import settings
+
         ImageFile.LOAD_TRUNCATED_IMAGES = True
 
         path = params.get("path", "")
@@ -59,7 +61,12 @@ class ImageReaderNode(BaseNode):
         if not path:
             raise ValueError("Image path is required")
 
+        # Relative paths resolve against IMAGES_DIR so filenames picked from
+        # the uploaded-files dropdown work without the user typing a full path.
         p = Path(path)
+        if not p.is_absolute():
+            p = settings.IMAGES_DIR / p
+
         if not p.exists():
             raise FileNotFoundError(f"Image not found: {path}")
 
@@ -76,7 +83,9 @@ class ImageReaderNode(BaseNode):
 
         transform_list = []
         if resize > 0:
-            transform_list.append(transforms.Resize(resize))
+            # Resize to (resize, resize) square — required by downstream
+            # convolutional models that expect a fixed input shape.
+            transform_list.append(transforms.Resize((resize, resize)))
         transform_list.append(transforms.ToTensor())
         transform = transforms.Compose(transform_list)
 
