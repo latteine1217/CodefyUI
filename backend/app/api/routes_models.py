@@ -1,9 +1,10 @@
-"""API routes for managing model weight files (list, upload, delete)."""
+"""API routes for managing model weight files (list, upload, download, delete)."""
 
 import logging
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 
 from ..config import settings
 
@@ -65,6 +66,32 @@ async def upload_model_file(file: UploadFile):
 
     logger.info("Uploaded model file: %s (%d bytes)", safe_name, len(content))
     return {"filename": safe_name, "size": len(content)}
+
+
+@router.get("/download/{filename:path}")
+async def download_model_file(filename: str):
+    """Download a model weight file as an attachment.
+
+    Supports nested paths (e.g. ``runs/exp1/model.pt``) so weights saved to
+    sub-directories by ``ModelSaverNode`` can be retrieved — useful when the
+    backend runs inside a container and files are otherwise hard to reach.
+    """
+    models_dir = settings.MODELS_DIR
+    filepath = _safe_path(models_dir, filename)
+
+    if not filepath.exists():
+        raise HTTPException(status_code=404, detail=f"File not found: {filename}")
+    if not filepath.is_file():
+        raise HTTPException(status_code=400, detail="Not a file")
+    if filepath.suffix not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Not a model file")
+
+    logger.info("Downloading model file: %s (%d bytes)", filename, filepath.stat().st_size)
+    return FileResponse(
+        path=filepath,
+        filename=filepath.name,
+        media_type="application/octet-stream",
+    )
 
 
 @router.delete("/{filename}")

@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+from pathlib import Path
 from typing import Any
 
 from urllib.parse import urlparse
@@ -49,8 +50,29 @@ def _summarize_single(value: Any) -> dict[str, Any]:
     if isinstance(value, (int, float, bool)):
         return {"type": "scalar", "value": value}
     if isinstance(value, str):
-        return {"type": "string", "value": value[:200]}
+        summary: dict[str, Any] = {"type": "string", "value": value[:200]}
+        rel = _models_dir_relative(value)
+        if rel is not None:
+            summary["download_path"] = rel
+        return summary
     return {"type": type(value).__name__, "repr": repr(value)[:200]}
+
+
+def _models_dir_relative(value: str) -> str | None:
+    """If *value* points to an existing file under ``MODELS_DIR``, return
+    the relative path (POSIX-style) so the frontend can build a download URL.
+    Returns ``None`` otherwise — keeps the check silent on any unexpected input.
+    """
+    try:
+        p = Path(value).resolve()
+        if not p.is_file():
+            return None
+        models_dir = settings.MODELS_DIR.resolve()
+        if not p.is_relative_to(models_dir):
+            return None
+        return p.relative_to(models_dir).as_posix()
+    except (OSError, ValueError):
+        return None
 
 
 def _summarize_outputs(result: dict[str, Any]) -> dict[str, Any]:
