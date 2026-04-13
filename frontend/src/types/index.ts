@@ -7,7 +7,7 @@ export interface PortDefinition {
 
 export interface ParamDefinition {
   name: string;
-  param_type: 'int' | 'float' | 'string' | 'bool' | 'select' | 'model_file';
+  param_type: 'int' | 'float' | 'string' | 'bool' | 'select' | 'model_file' | 'image_file';
   default: any;
   description: string;
   options: string[];
@@ -57,6 +57,9 @@ export interface OutputSummary {
   params?: number;
   trainable?: number;
   repr?: string;
+  // Set by the backend when the string value is a file under MODELS_DIR;
+  // holds the path relative to MODELS_DIR so the frontend can download it.
+  download_path?: string;
 }
 
 export interface NodeData {

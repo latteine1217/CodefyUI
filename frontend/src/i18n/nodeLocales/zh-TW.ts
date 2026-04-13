@@ -262,9 +262,9 @@ const zhTW: NodeTranslations = {
   ImageReader: {
     description: '從磁碟讀取影像檔案，輸出為張量 (C, H, W)，值域 [0, 1]',
     params: {
-      path: '影像檔案路徑（PNG、JPEG、BMP 等）',
-      mode: '載入影像的色彩模式',
-      resize: '將短邊調整為此值（0 = 不調整）',
+      path: '選擇已上傳的影像，或上傳新檔案',
+      mode: '載入影像的色彩模式（L = 灰階）',
+      resize: '縮放為 (resize, resize) 正方形（0 = 不縮放）',
     },
   },
   ImageWriter: {

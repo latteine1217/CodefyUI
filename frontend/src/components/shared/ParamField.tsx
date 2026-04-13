@@ -1,6 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { ParamDefinition } from '../../types';
-import { listModelFiles, uploadModelFile } from '../../api/rest';
+import {
+  downloadImageFile,
+  downloadModelFile,
+  listImageFiles,
+  listModelFiles,
+  uploadImageFile,
+  uploadModelFile,
+} from '../../api/rest';
 import { useToastStore } from '../../store/toastStore';
 import styles from './ParamField.module.css';
 
@@ -11,24 +18,51 @@ interface ParamFieldProps {
   label?: string;
 }
 
-function ModelFileField({
+interface FileFieldBackend {
+  list: () => Promise<{ filename: string }[]>;
+  upload: (file: File) => Promise<{ filename: string }>;
+  download: (filename: string) => Promise<void>;
+  accept: string;
+  uploadTitle: string;
+}
+
+const MODEL_FILE_BACKEND: FileFieldBackend = {
+  list: listModelFiles,
+  upload: uploadModelFile,
+  download: downloadModelFile,
+  accept: '.pt,.pth,.safetensors,.ckpt,.bin',
+  uploadTitle: 'Upload model file',
+};
+
+const IMAGE_FILE_BACKEND: FileFieldBackend = {
+  list: listImageFiles,
+  upload: uploadImageFile,
+  download: downloadImageFile,
+  accept: '.png,.jpg,.jpeg,.bmp,.webp,.gif,.tiff',
+  uploadTitle: 'Upload image file',
+};
+
+function FileField({
   param,
   value,
   onChange,
   displayLabel,
+  backend,
 }: {
   param: ParamDefinition;
   value: any;
   onChange: (name: string, value: any) => void;
   displayLabel: string;
+  backend: FileFieldBackend;
 }) {
   const [files, setFiles] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const refresh = useCallback(() => {
-    listModelFiles().then((list) => setFiles(list.map((f) => f.filename)));
-  }, []);
+    backend.list().then((list) => setFiles(list.map((f) => f.filename)));
+  }, [backend]);
 
   useEffect(() => {
     refresh();
@@ -39,7 +73,7 @@ function ModelFileField({
     if (!file) return;
     setUploading(true);
     try {
-      const result = await uploadModelFile(file);
+      const result = await backend.upload(file);
       refresh();
       onChange(param.name, result.filename);
     } catch (err: any) {
@@ -47,6 +81,18 @@ function ModelFileField({
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!value) return;
+    setDownloading(true);
+    try {
+      await backend.download(String(value));
+    } catch (err: any) {
+      useToastStore.getState().addToast(err.message ?? 'Download failed', 'error');
+    } finally {
+      setDownloading(false);
     }
   };
 
@@ -73,8 +119,18 @@ function ModelFileField({
           className={styles.modelFileBtn}
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
+          title={backend.uploadTitle}
         >
           {uploading ? '...' : '↑'}
+        </button>
+        <button
+          type="button"
+          className={styles.modelFileBtn}
+          onClick={handleDownload}
+          disabled={!value || downloading}
+          title="Download selected file"
+        >
+          {downloading ? '...' : '↓'}
         </button>
         <button
           type="button"
@@ -87,7 +143,7 @@ function ModelFileField({
         <input
           ref={fileInputRef}
           type="file"
-          accept=".pt,.pth,.safetensors,.ckpt,.bin"
+          accept={backend.accept}
           style={{ display: 'none' }}
           onChange={handleUpload}
         />
@@ -101,11 +157,24 @@ export function ParamField({ param, value, onChange, label }: ParamFieldProps) {
 
   if (param.param_type === 'model_file') {
     return (
-      <ModelFileField
+      <FileField
         param={param}
         value={value}
         onChange={onChange}
         displayLabel={displayLabel}
+        backend={MODEL_FILE_BACKEND}
+      />
+    );
+  }
+
+  if (param.param_type === 'image_file') {
+    return (
+      <FileField
+        param={param}
+        value={value}
+        onChange={onChange}
+        displayLabel={displayLabel}
+        backend={IMAGE_FILE_BACKEND}
       />
     );
   }

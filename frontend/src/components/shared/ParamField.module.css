@@ -74,9 +74,14 @@
   white-space: nowrap;
 }
 
-.modelFileBtn:hover {
+.modelFileBtn:hover:not(:disabled) {
   background: #444;
   color: #fff;
+}
+
+.modelFileBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
 /* Validation error styling */

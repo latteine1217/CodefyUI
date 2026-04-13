@@ -182,3 +182,76 @@ export async function deleteModelFile(filename: string) {
   if (!res.ok) throw new Error(`Delete failed: ${res.statusText}`);
   return res.json();
 }
+
+export async function downloadModelFile(filename: string) {
+  // Preserve slashes for nested paths (e.g. runs/exp1/model.pt)
+  const urlPath = filename.split('/').map(encodeURIComponent).join('/');
+  const res = await fetch(`${BASE_URL}/models/download/${urlPath}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail ?? `Download failed: ${res.statusText}`);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  // Only the basename — the browser shouldn't recreate sub-directories locally
+  a.download = filename.split('/').pop() ?? filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+// ── Image Files ──
+
+export interface ImageFileInfo {
+  filename: string;
+  size: number;
+}
+
+export async function listImageFiles(): Promise<ImageFileInfo[]> {
+  const res = await fetch(`${BASE_URL}/images`);
+  if (!res.ok) throw new Error(`Failed to list image files: ${res.statusText}`);
+  return res.json();
+}
+
+export async function uploadImageFile(file: File): Promise<ImageFileInfo> {
+  const form = new FormData();
+  form.append('file', file);
+  const res = await fetch(`${BASE_URL}/images/upload`, {
+    method: 'POST',
+    body: form,
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail ?? `Upload failed: ${res.statusText}`);
+  }
+  return res.json();
+}
+
+export async function deleteImageFile(filename: string) {
+  const res = await fetch(`${BASE_URL}/images/${encodeURIComponent(filename)}`, {
+    method: 'DELETE',
+  });
+  if (!res.ok) throw new Error(`Delete failed: ${res.statusText}`);
+  return res.json();
+}
+
+export async function downloadImageFile(filename: string) {
+  const urlPath = filename.split('/').map(encodeURIComponent).join('/');
+  const res = await fetch(`${BASE_URL}/images/download/${urlPath}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail ?? `Download failed: ${res.statusText}`);
+  }
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename.split('/').pop() ?? filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
