@@ -5,6 +5,8 @@ import type { NodeData } from '../../types';
 import { getPortColor, isValidConnection } from '../../utils';
 import { useUIStore } from '../../store/uiStore';
 import { useTabStore } from '../../store/tabStore';
+import { useToastStore } from '../../store/toastStore';
+import { downloadModelFile } from '../../api/rest';
 import { useI18n } from '../../i18n';
 import { CATEGORY_COLORS, STATUS_COLORS } from '../../styles/theme';
 import styles from './BaseNode.module.css';
@@ -13,7 +15,12 @@ function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
   const openSubgraphModal = useTabStore((s) => s.openSubgraphModal);
   const tooltipsEnabled = useUIStore((s) => s.tooltipsEnabled);
   const draggingSourceType = useUIStore((s) => s.draggingSourceType);
+  const nodeOutputs = useTabStore((s) => {
+    const tab = s.tabs.find((t) => t.id === s.activeTabId);
+    return tab?.outputSummaries?.[id];
+  });
   const [hovered, setHovered] = useState(false);
+  const [downloading, setDownloading] = useState(false);
   const { getEdges } = useReactFlow();
   const def = data.definition;
   const category = def?.category ?? 'Utility';
@@ -53,6 +60,25 @@ function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
       : '#444444';
 
   const description = def ? tn(def.node_name, 'description', def.description) : '';
+
+  // Any output that points to a downloadable file (set by the backend for
+  // string values under MODELS_DIR). Currently ModelSaver/CheckpointSaver.
+  const downloadablePath = nodeOutputs
+    ? Object.values(nodeOutputs).find((s) => s?.download_path)?.download_path
+    : undefined;
+
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!downloadablePath) return;
+    setDownloading(true);
+    try {
+      await downloadModelFile(downloadablePath);
+    } catch (err: any) {
+      useToastStore.getState().addToast(err.message ?? 'Download failed', 'error');
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <div
@@ -241,7 +267,19 @@ function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
       {/* Status footer — completed */}
       {data.executionStatus === 'completed' && (
         <div className={`${styles.statusFooter} ${styles.statusCompleted}`}>
-          {t('node.completed')}
+          <div>{t('node.completed')}</div>
+          {downloadablePath && (
+            <button
+              type="button"
+              className={styles.downloadBtn}
+              onClick={handleDownload}
+              disabled={downloading}
+              title={downloadablePath}
+            >
+              {downloading ? '... ' : '↓ '}
+              {downloadablePath.split('/').pop()}
+            </button>
+          )}
         </div>
       )}
 

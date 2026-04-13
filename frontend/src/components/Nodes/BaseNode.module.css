@@ -229,6 +229,35 @@
 .statusCompleted {
   color: #4CAF50;
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.downloadBtn {
+  background: #2e3d2e;
+  border: 1px solid #4CAF50;
+  border-radius: 4px;
+  color: #9fe0a1;
+  font-size: 0.6875rem;
+  padding: 3px 8px;
+  cursor: pointer;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.downloadBtn:hover:not(:disabled) {
+  background: #3c533d;
+  color: #fff;
+}
+
+.downloadBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .statusCached {
