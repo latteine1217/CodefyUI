@@ -8,6 +8,15 @@ const NODE_H = 80;
 const NODESEP = 40;
 const RANKSEP = 80;
 const LANE_GAP = 60;
+const TARGET_ROW_WIDTH = 2400;
+const ROW_GAP = 120;
+const MIN_NODES_FOR_WRAP = 4;
+
+function getLayoutConfig(nodeCount: number): { nodesep: number; ranksep: number } {
+  if (nodeCount > 50) return { nodesep: 28, ranksep: 56 };
+  if (nodeCount > 25) return { nodesep: 32, ranksep: 64 };
+  return { nodesep: NODESEP, ranksep: RANKSEP };
+}
 
 function isEntryPointOrStart(node: Node): boolean {
   return node.type === 'start' || (node.data as any)?.type === 'Start';
@@ -53,7 +62,8 @@ function layoutComponentWithDagre(
   allEdges: Edge[],
 ): Map<string, { x: number; y: number; width: number; height: number }> {
   const g = new dagre.graphlib.Graph();
-  g.setGraph({ rankdir: 'LR', nodesep: NODESEP, ranksep: RANKSEP, ranker: 'network-simplex' });
+  const cfg = getLayoutConfig(componentNodeIds.length);
+  g.setGraph({ rankdir: 'LR', nodesep: cfg.nodesep, ranksep: cfg.ranksep, ranker: 'network-simplex' });
   g.setDefaultEdgeLabel(() => ({}));
 
   const idSet = new Set(componentNodeIds);
@@ -89,6 +99,79 @@ interface LaidOutComponent {
   positions: Map<string, { x: number; y: number; width: number; height: number }>;
   hasEntryPoint: boolean;
   bounds: { minY: number; maxY: number };
+}
+
+/**
+ * If a component's trunk exceeds TARGET_ROW_WIDTH, split its ranks into multiple
+ * rows and shift each row downward. Keeps intra-rank lane layout intact (nodes
+ * sharing a rank stay vertically aligned).
+ */
+function wrapIntoGrid(
+  positions: Map<string, { x: number; y: number; width: number; height: number }>,
+): Map<string, { x: number; y: number; width: number; height: number }> {
+  if (positions.size < MIN_NODES_FOR_WRAP) return positions;
+
+  const values = Array.from(positions.values());
+  let minX = Infinity;
+  let maxX = -Infinity;
+  for (const p of values) {
+    if (p.x < minX) minX = p.x;
+    if (p.x + p.width > maxX) maxX = p.x + p.width;
+  }
+  const width = maxX - minX;
+  if (width <= TARGET_ROW_WIDTH) return positions;
+
+  const rankUnit = NODE_W + RANKSEP;
+  const rankSet = new Set<number>();
+  const rankOf = new Map<string, number>();
+  for (const [id, p] of positions) {
+    const rank = Math.round((p.x - minX) / rankUnit);
+    rankOf.set(id, rank);
+    rankSet.add(rank);
+  }
+  const totalRanks = rankSet.size || 1;
+  const maxRanksPerRow = Math.max(1, Math.floor(TARGET_ROW_WIDTH / rankUnit));
+  if (totalRanks <= maxRanksPerRow) return positions;
+
+  const rowCount = Math.ceil(totalRanks / maxRanksPerRow);
+  const ranksPerRow = Math.ceil(totalRanks / rowCount);
+  const rowWidth = ranksPerRow * rankUnit;
+
+  const rowOf = new Map<string, number>();
+  for (const [id, rank] of rankOf) {
+    const row = Math.min(rowCount - 1, Math.floor(rank / ranksPerRow));
+    rowOf.set(id, row);
+  }
+
+  const rowYOffset: number[] = new Array(rowCount).fill(0);
+  let cumY = 0;
+  for (let r = 0; r < rowCount; r++) {
+    let rMinY = Infinity;
+    let rMaxY = -Infinity;
+    for (const [id, p] of positions) {
+      if (rowOf.get(id) !== r) continue;
+      if (p.y < rMinY) rMinY = p.y;
+      if (p.y + p.height > rMaxY) rMaxY = p.y + p.height;
+    }
+    if (rMinY === Infinity) {
+      rMinY = 0;
+      rMaxY = 0;
+    }
+    rowYOffset[r] = cumY - rMinY;
+    cumY += rMaxY - rMinY + ROW_GAP;
+  }
+
+  const result = new Map<string, { x: number; y: number; width: number; height: number }>();
+  for (const [id, p] of positions) {
+    const row = rowOf.get(id)!;
+    result.set(id, {
+      x: p.x - row * rowWidth,
+      y: p.y + rowYOffset[row],
+      width: p.width,
+      height: p.height,
+    });
+  }
+  return result;
 }
 
 function packIntoSwimLanes(
@@ -179,7 +262,8 @@ export function autoLayout(
 
   // Lay out each component independently
   const laidOut: LaidOutComponent[] = componentIds.map((ids) => {
-    const positions = layoutComponentWithDagre(ids, nodes, edges);
+    const rawPositions = layoutComponentWithDagre(ids, nodes, edges);
+    const positions = wrapIntoGrid(rawPositions);
     const ys = Array.from(positions.values()).map((p) => p.y);
     const heights = Array.from(positions.values()).map((p) => p.height);
     const minY = Math.min(...ys);

@@ -252,6 +252,90 @@ const SUBGRAPH_NODE_H = 40;
 const SUBGRAPH_NODESEP = 40;
 const SUBGRAPH_RANKSEP = 60;
 const LAYOUT_Y_STEP = 100;
+const SUBGRAPH_TARGET_COL_HEIGHT = 700;
+const SUBGRAPH_COL_GAP = 120;
+const SUBGRAPH_MIN_NODES_FOR_WRAP = 4;
+
+function getSubgraphLayoutConfig(
+  nodeCount: number,
+): { nodesep: number; ranksep: number } {
+  if (nodeCount > 50) return { nodesep: 28, ranksep: 42 };
+  if (nodeCount > 25) return { nodesep: 32, ranksep: 50 };
+  return { nodesep: SUBGRAPH_NODESEP, ranksep: SUBGRAPH_RANKSEP };
+}
+
+type SubgraphPos = { x: number; y: number; width: number; height: number };
+
+/**
+ * Transposed wrap: if the TB layout exceeds SUBGRAPH_TARGET_COL_HEIGHT, split
+ * its vertical ranks into multiple columns and shift each column rightward.
+ * Mirror of wrapIntoGrid in autoLayout.ts.
+ */
+function wrapIntoColumns(positions: Map<string, SubgraphPos>): Map<string, SubgraphPos> {
+  if (positions.size < SUBGRAPH_MIN_NODES_FOR_WRAP) return positions;
+
+  const values = Array.from(positions.values());
+  let minY = Infinity;
+  let maxY = -Infinity;
+  for (const p of values) {
+    if (p.y < minY) minY = p.y;
+    if (p.y + p.height > maxY) maxY = p.y + p.height;
+  }
+  const height = maxY - minY;
+  if (height <= SUBGRAPH_TARGET_COL_HEIGHT) return positions;
+
+  const rankUnit = SUBGRAPH_NODE_H + SUBGRAPH_RANKSEP;
+  const rankSet = new Set<number>();
+  const rankOf = new Map<string, number>();
+  for (const [id, p] of positions) {
+    const rank = Math.round((p.y - minY) / rankUnit);
+    rankOf.set(id, rank);
+    rankSet.add(rank);
+  }
+  const totalRanks = rankSet.size || 1;
+  const maxRanksPerCol = Math.max(1, Math.floor(SUBGRAPH_TARGET_COL_HEIGHT / rankUnit));
+  if (totalRanks <= maxRanksPerCol) return positions;
+
+  const colCount = Math.ceil(totalRanks / maxRanksPerCol);
+  const ranksPerCol = Math.ceil(totalRanks / colCount);
+  const colHeight = ranksPerCol * rankUnit;
+
+  const colOf = new Map<string, number>();
+  for (const [id, rank] of rankOf) {
+    const col = Math.min(colCount - 1, Math.floor(rank / ranksPerCol));
+    colOf.set(id, col);
+  }
+
+  const colXOffset: number[] = new Array(colCount).fill(0);
+  let cumX = 0;
+  for (let c = 0; c < colCount; c++) {
+    let cMinX = Infinity;
+    let cMaxX = -Infinity;
+    for (const [id, p] of positions) {
+      if (colOf.get(id) !== c) continue;
+      if (p.x < cMinX) cMinX = p.x;
+      if (p.x + p.width > cMaxX) cMaxX = p.x + p.width;
+    }
+    if (cMinX === Infinity) {
+      cMinX = 0;
+      cMaxX = 0;
+    }
+    colXOffset[c] = cumX - cMinX;
+    cumX += cMaxX - cMinX + SUBGRAPH_COL_GAP;
+  }
+
+  const result = new Map<string, SubgraphPos>();
+  for (const [id, p] of positions) {
+    const col = colOf.get(id)!;
+    result.set(id, {
+      x: p.x + colXOffset[col],
+      y: p.y - col * colHeight,
+      width: p.width,
+      height: p.height,
+    });
+  }
+  return result;
+}
 
 /**
  * Topological-sort ids and return the order.
@@ -298,10 +382,11 @@ function assignPositionsFromTopology(spec: GraphSpec): void {
   if (spec.nodes.length === 0) return;
 
   const g = new dagre.graphlib.Graph();
+  const cfg = getSubgraphLayoutConfig(spec.nodes.length);
   g.setGraph({
     rankdir: 'TB',
-    nodesep: SUBGRAPH_NODESEP,
-    ranksep: SUBGRAPH_RANKSEP,
+    nodesep: cfg.nodesep,
+    ranksep: cfg.ranksep,
   });
   g.setDefaultEdgeLabel(() => ({}));
 
@@ -317,13 +402,22 @@ function assignPositionsFromTopology(spec: GraphSpec): void {
 
   dagre.layout(g);
 
+  const raw = new Map<string, SubgraphPos>();
   for (const n of spec.nodes) {
     const pos = g.node(n.id);
-    if (pos) {
-      n.position = {
-        x: pos.x - SUBGRAPH_NODE_W / 2,
-        y: pos.y - SUBGRAPH_NODE_H / 2,
-      };
+    if (!pos) continue;
+    raw.set(n.id, {
+      x: pos.x - SUBGRAPH_NODE_W / 2,
+      y: pos.y - SUBGRAPH_NODE_H / 2,
+      width: SUBGRAPH_NODE_W,
+      height: SUBGRAPH_NODE_H,
+    });
+  }
+  const wrapped = wrapIntoColumns(raw);
+  for (const n of spec.nodes) {
+    const p = wrapped.get(n.id);
+    if (p) {
+      n.position = { x: p.x, y: p.y };
     }
   }
 }
@@ -339,10 +433,11 @@ export function autoLayoutSubgraph(
   if (nodes.length === 0) return nodes;
 
   const g = new dagre.graphlib.Graph();
+  const cfg = getSubgraphLayoutConfig(nodes.length);
   g.setGraph({
     rankdir: 'TB',
-    nodesep: SUBGRAPH_NODESEP,
-    ranksep: SUBGRAPH_RANKSEP,
+    nodesep: cfg.nodesep,
+    ranksep: cfg.ranksep,
   });
   g.setDefaultEdgeLabel(() => ({}));
 
@@ -361,18 +456,27 @@ export function autoLayoutSubgraph(
 
   dagre.layout(g);
 
-  return nodes.map((n) => {
+  const raw = new Map<string, SubgraphPos>();
+  for (const n of nodes) {
     const pos = g.node(n.id);
-    if (!pos) return n;
-    // dagre returns center coordinates; convert to top-left for React Flow
+    if (!pos) continue;
     const w = n.measured?.width ?? n.width ?? SUBGRAPH_NODE_W;
     const h = n.measured?.height ?? n.height ?? SUBGRAPH_NODE_H;
+    raw.set(n.id, {
+      x: pos.x - w / 2,
+      y: pos.y - h / 2,
+      width: w,
+      height: h,
+    });
+  }
+  const wrapped = wrapIntoColumns(raw);
+
+  return nodes.map((n) => {
+    const p = wrapped.get(n.id);
+    if (!p) return n;
     return {
       ...n,
-      position: {
-        x: pos.x - w / 2,
-        y: pos.y - h / 2,
-      },
+      position: { x: p.x, y: p.y },
     };
   });
 }
