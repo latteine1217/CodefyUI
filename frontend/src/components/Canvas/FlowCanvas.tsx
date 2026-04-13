@@ -21,6 +21,7 @@ import PresetNode from '../Nodes/PresetNode';
 import { StartNode } from '../Nodes/StartNode';
 import NoteNode from '../Nodes/NoteNode';
 import { CustomConnectionLine } from './CustomConnectionLine';
+import { SmartDataEdge } from './SmartDataEdge';
 import { TriggerEdge } from './TriggerEdge';
 import { EmptyCanvasOverlay } from './EmptyCanvasOverlay';
 import { EdgeDataTooltip } from './EdgeDataTooltip';
@@ -50,6 +51,7 @@ const nodeTypes: NodeTypes = {
 };
 
 const edgeTypes: EdgeTypes = {
+  default: SmartDataEdge,
   triggerEdge: TriggerEdge,
 };
 

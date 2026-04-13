@@ -13,6 +13,7 @@ import {
   type NodeChange,
   type EdgeChange,
   type NodeTypes,
+  type EdgeTypes,
   type Connection,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
@@ -21,6 +22,7 @@ import { useTabStore } from '../../store/tabStore';
 import { useToastStore } from '../../store/toastStore';
 import { useI18n } from '../../i18n';
 import { generateId } from '../../utils';
+import { SmartDataEdge } from '../Canvas/SmartDataEdge';
 import { LayerNode } from './LayerNode';
 import { InputNode } from './InputNode';
 import { OutputNode } from './OutputNode';
@@ -416,6 +418,10 @@ function SequentialModelSelector({
 }
 
 // ── Inner Flow (needs ReactFlowProvider wrapping) ──
+
+const edgeTypes: EdgeTypes = {
+  default: SmartDataEdge,
+};
 
 const nodeTypes: NodeTypes = {
   layerNode: LayerNode,
@@ -959,6 +965,7 @@ function SubgraphFlowInner({
               onConnect={onConnect}
               isValidConnection={isValidConnection}
               nodeTypes={nodeTypes}
+              edgeTypes={edgeTypes}
               fitView
               snapToGrid={snapEnabled}
               snapGrid={[20, 20]}
