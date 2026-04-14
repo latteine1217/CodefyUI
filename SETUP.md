@@ -41,6 +41,18 @@ iwr https://get.pnpm.io/install.ps1 -useb | iex
 curl -fsSL https://get.pnpm.io/install.sh | sh -
 ```
 
+Then let pnpm install a Node.js runtime (required before `pnpm install` can run project scripts):
+
+```bash
+pnpm env use --global lts
+```
+
+Restart your terminal so the updated PATH takes effect, then verify:
+
+```bash
+node -v
+```
+
 ## Base Setup (Required for Everyone)
 
 ```bash
@@ -59,22 +71,25 @@ source .venv/bin/activate
 uv pip install -e ".[dev]"
 ```
 
-The backend will start at this point, but executing graphs will fail with `No module named 'torch'` until you install one of the PyTorch options below.
+The backend will start at this point, but executing graphs will fail with `No module named 'torch'` until PyTorch is installed.
 
-## Choose Your PyTorch Backend
+## Install PyTorch
 
-Pick the one that matches your hardware.
-
-### Option A: CPU (Simplest)
-
-Works everywhere. Slower for training but fine for testing and small models.
+Default install — works on every platform:
 
 ```bash
-uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+uv pip install torch torchvision
 uv pip install gymnasium safetensors
 ```
 
-### Option B: NVIDIA CUDA (Recommended for NVIDIA GPUs)
+This is enough to run the app and test models. macOS gets an MPS-capable build, Linux/Windows get the default PyPI build. Skip to **Start the Backend and Frontend** unless you need a specific GPU configuration.
+
+<details>
+<summary><b>GPU Acceleration (NVIDIA CUDA / AMD / MPS verification)</b> — click to expand</summary>
+
+Expand this only if you need a specific CUDA version, AMD ROCm/DirectML, or want to verify GPU detection.
+
+### NVIDIA CUDA (specific version)
 
 First, check your installed CUDA version:
 
@@ -82,9 +97,11 @@ First, check your installed CUDA version:
 nvidia-smi
 ```
 
-Look at the `CUDA Version:` field in the top-right. Then pick the matching install command:
+Look at the `CUDA Version:` field in the top-right. Then reinstall the matching wheel:
 
 ```bash
+uv pip uninstall torch torchvision
+
 # CUDA 12.4 (RTX 40 series, latest drivers)
 uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
 
@@ -93,9 +110,6 @@ uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu
 
 # CUDA 11.8 (GTX 10 / RTX 20 series, older drivers)
 uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
-
-# Common ML extras
-uv pip install gymnasium safetensors
 ```
 
 Verify CUDA is working:
@@ -104,30 +118,23 @@ Verify CUDA is working:
 python -c "import torch; print('CUDA:', torch.cuda.is_available(), '| Device:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'N/A')"
 ```
 
-### Option C: Apple Silicon (MPS)
+### Apple Silicon (MPS) verification
 
-For M1/M2/M3/M4 Macs. PyTorch will use the Metal Performance Shaders backend automatically.
-
-```bash
-uv pip install torch torchvision
-uv pip install gymnasium safetensors
-```
-
-Verify MPS is working:
+The default install already uses the Metal Performance Shaders backend on M1/M2/M3/M4 Macs. Verify:
 
 ```bash
 python -c "import torch; print('MPS:', torch.backends.mps.is_available())"
 ```
 
-### Option D: AMD GPU
+### AMD GPU
 
 AMD support depends heavily on your OS.
 
-#### D-1. Linux + AMD (ROCm, officially supported)
+#### Linux + AMD (ROCm, officially supported)
 
 ```bash
+uv pip uninstall torch torchvision
 uv pip install torch torchvision --index-url https://download.pytorch.org/whl/rocm6.1
-uv pip install gymnasium safetensors
 ```
 
 Verify:
@@ -138,19 +145,19 @@ python -c "import torch; print('CUDA (ROCm):', torch.cuda.is_available())"
 
 Note: On ROCm, `torch.cuda.is_available()` returns True because ROCm presents itself as a CUDA-compatible backend.
 
-#### D-2. Windows + AMD (limited)
+#### Windows + AMD (limited)
 
 PyTorch does NOT ship an official Windows ROCm build. Your options:
 
 **(a) DirectML** — uses the AMD GPU but with reduced performance and requires code changes (the built-in nodes default to `cuda`/`cpu`):
 
 ```bash
-uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 uv pip install torch-directml
-uv pip install gymnasium safetensors
 ```
 
-**(b) CPU mode** — use Option A above. Recommended for learning/prototyping on Windows with AMD.
+**(b) CPU mode** — the default install above already works. Recommended for learning/prototyping on Windows with AMD.
+
+</details>
 
 ## Start the Backend and Frontend
 
@@ -202,7 +209,7 @@ uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu
 
 ### `uv pip install -e ".[ml]"` installs the wrong PyTorch version
 
-The `[ml]` optional group in `pyproject.toml` does NOT specify an index URL, so uv installs whatever PyPI has as default — usually the CPU build on Windows, or a version that might not match your CUDA runtime. Always use the explicit `--index-url` command from the option that matches your hardware.
+The `[ml]` optional group in `pyproject.toml` does NOT specify an index URL, so uv installs whatever PyPI has as default — usually the CPU build on Windows, or a version that might not match your CUDA runtime. Always use the explicit `--index-url` command from the **GPU Acceleration** section above.
 
 ### CUDA version mismatch
 

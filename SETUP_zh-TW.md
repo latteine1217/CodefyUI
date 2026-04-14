@@ -41,6 +41,18 @@ iwr https://get.pnpm.io/install.ps1 -useb | iex
 curl -fsSL https://get.pnpm.io/install.sh | sh -
 ```
 
+接著請 pnpm 安裝 Node.js runtime（`pnpm install` 後執行專案 script 會用到）：
+
+```bash
+pnpm env use --global lts
+```
+
+安裝完後請重新開啟 terminal，讓 PATH 生效，然後驗證：
+
+```bash
+node -v
+```
+
 ## 基本設定（所有人都需要）
 
 ```bash
@@ -59,22 +71,25 @@ source .venv/bin/activate
 uv pip install -e ".[dev]"
 ```
 
-此時後端已可啟動，但執行 graph 時會出現 `No module named 'torch'` 錯誤。請從下方選一個 PyTorch 版本安裝。
+此時後端已可啟動，但執行 graph 時會出現 `No module named 'torch'` 錯誤，需要先安裝 PyTorch。
 
-## 選擇適合的 PyTorch 後端
+## 安裝 PyTorch
 
-根據你的硬體選擇其中一項。
-
-### 選項 A：CPU（最簡單）
-
-跨平台都能用。訓練較慢，但足以用來測試與跑小型模型。
+預設安裝 —— 全平台通用：
 
 ```bash
-uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+uv pip install torch torchvision
 uv pip install gymnasium safetensors
 ```
 
-### 選項 B：NVIDIA CUDA（有 NVIDIA 顯卡時推薦）
+這樣就夠跑這個應用、測試模型。macOS 會拿到支援 MPS 的版本，Linux/Windows 會拿到 PyPI 預設版本。除非你需要特定 GPU 設定，否則直接跳到 **啟動後端與前端**。
+
+<details>
+<summary><b>GPU 加速（NVIDIA CUDA / AMD / MPS 驗證）</b> —— 點擊展開</summary>
+
+只有在需要特定 CUDA 版本、AMD ROCm/DirectML、或想驗證 GPU 偵測時才需要展開。
+
+### NVIDIA CUDA（特定版本）
 
 先確認你的 CUDA 版本：
 
@@ -82,9 +97,11 @@ uv pip install gymnasium safetensors
 nvidia-smi
 ```
 
-看右上角的 `CUDA Version:` 欄位，然後依版本選擇：
+看右上角 `CUDA Version:` 欄位，然後重裝對應的 wheel：
 
 ```bash
+uv pip uninstall torch torchvision
+
 # CUDA 12.4（RTX 40 系列 + 最新驅動）
 uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
 
@@ -93,9 +110,6 @@ uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu
 
 # CUDA 11.8（GTX 10 / RTX 20 系列，或舊驅動）
 uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
-
-# 其他 ML 套件
-uv pip install gymnasium safetensors
 ```
 
 驗證 CUDA 可用：
@@ -104,30 +118,23 @@ uv pip install gymnasium safetensors
 python -c "import torch; print('CUDA:', torch.cuda.is_available(), '| Device:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'N/A')"
 ```
 
-### 選項 C：Apple Silicon (MPS)
+### Apple Silicon (MPS) 驗證
 
-適用 M1/M2/M3/M4 Mac。PyTorch 會自動使用 Metal Performance Shaders 後端。
-
-```bash
-uv pip install torch torchvision
-uv pip install gymnasium safetensors
-```
-
-驗證 MPS 可用：
+M1/M2/M3/M4 Mac 上預設安裝就已經使用 Metal Performance Shaders 後端。驗證：
 
 ```bash
 python -c "import torch; print('MPS:', torch.backends.mps.is_available())"
 ```
 
-### 選項 D：AMD 顯卡
+### AMD 顯卡
 
 AMD 的支援度高度取決於你的作業系統。
 
-#### D-1. Linux + AMD（ROCm，官方支援）
+#### Linux + AMD（ROCm，官方支援）
 
 ```bash
+uv pip uninstall torch torchvision
 uv pip install torch torchvision --index-url https://download.pytorch.org/whl/rocm6.1
-uv pip install gymnasium safetensors
 ```
 
 驗證：
@@ -138,19 +145,19 @@ python -c "import torch; print('CUDA (ROCm):', torch.cuda.is_available())"
 
 註：ROCm 環境下 `torch.cuda.is_available()` 會回傳 True，因為 ROCm 對外以相容於 CUDA 的介面呈現。
 
-#### D-2. Windows + AMD（支援有限）
+#### Windows + AMD（支援有限）
 
 PyTorch 官方沒有提供 Windows ROCm 版本。可行選項：
 
 **(a) DirectML** — 可使用 AMD 顯卡，但效能較差，而且節點程式碼預設使用 `cuda`/`cpu`，使用時需要改程式：
 
 ```bash
-uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 uv pip install torch-directml
-uv pip install gymnasium safetensors
 ```
 
-**(b) CPU 模式** — 直接用選項 A，建議 Windows + AMD 用戶採用，適合學習與原型開發。
+**(b) CPU 模式** — 上方的預設安裝已經可用，建議 Windows + AMD 用戶採用，適合學習與原型開發。
+
+</details>
 
 ## 啟動後端與前端
 
@@ -202,7 +209,7 @@ uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu
 
 ### `uv pip install -e ".[ml]"` 裝到錯的 PyTorch 版本
 
-`pyproject.toml` 中的 `[ml]` 選項群組沒有指定 index URL，所以 uv 會安裝 PyPI 的預設版本——通常 Windows 上是 CPU 版，或是版本不一定符合你的 CUDA runtime。請務必使用上面對應硬體的 `--index-url` 指令。
+`pyproject.toml` 中的 `[ml]` 選項群組沒有指定 index URL，所以 uv 會安裝 PyPI 的預設版本——通常 Windows 上是 CPU 版，或是版本不一定符合你的 CUDA runtime。請務必使用上方 **GPU 加速** 區塊裡對應硬體的 `--index-url` 指令。
 
 ### CUDA 版本不匹配
 
