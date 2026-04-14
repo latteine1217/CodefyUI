@@ -25,7 +25,21 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 pip install uv
 ```
 
-Frontend also requires [pnpm](https://pnpm.io/installation).
+Verify pnpm is installed:
+
+```bash
+pnpm --version
+```
+
+Install pnpm if needed:
+
+```bash
+# Windows (PowerShell)
+iwr https://get.pnpm.io/install.ps1 -useb | iex
+
+# macOS / Linux
+curl -fsSL https://get.pnpm.io/install.sh | sh -
+```
 
 ## Base Setup (Required for Everyone)
 
@@ -206,7 +220,7 @@ The frontend dynamically reads the available devices from the backend. If you do
 
 ### `pnpm: command not found`
 
-Install pnpm: `npm install -g pnpm` (requires Node.js).
+See the [Prerequisites](#prerequisites) section above for the pnpm standalone installer.
 
 ## Running Tests
 

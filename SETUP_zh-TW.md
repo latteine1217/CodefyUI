@@ -25,7 +25,21 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 pip install uv
 ```
 
-前端還需要安裝 [pnpm](https://pnpm.io/installation)。
+確認已安裝 pnpm：
+
+```bash
+pnpm --version
+```
+
+若未安裝：
+
+```bash
+# Windows (PowerShell)
+iwr https://get.pnpm.io/install.ps1 -useb | iex
+
+# macOS / Linux
+curl -fsSL https://get.pnpm.io/install.sh | sh -
+```
 
 ## 基本設定（所有人都需要）
 
@@ -206,7 +220,7 @@ uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu
 
 ### `pnpm: command not found`
 
-安裝 pnpm：`npm install -g pnpm`（需要先安裝 Node.js）。
+請參考上方 [前置需求](#前置需求) 章節的 pnpm 獨立安裝方式。
 
 ## 執行測試
 
