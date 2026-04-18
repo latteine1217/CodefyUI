@@ -82,7 +82,14 @@ def _ensure_uv() -> None:
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
 def run(cmd: list, cwd: Path = ROOT) -> None:
-    subprocess.run(cmd, cwd=cwd, check=True)
+    # On Windows, subprocess doesn't search PATHEXT for relative commands,
+    # so tools that ship as .cmd (e.g. pnpm.cmd) raise FileNotFoundError.
+    # Delegating to cmd.exe via shell=True lets Windows resolve them, and
+    # list2cmdline quotes our args safely.
+    if sys.platform == "win32":
+        subprocess.run(subprocess.list2cmdline(cmd), cwd=cwd, check=True, shell=True)
+    else:
+        subprocess.run(cmd, cwd=cwd, check=True)
 
 
 def _stream(proc: subprocess.Popen, prefix: str) -> None:
