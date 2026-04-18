@@ -1,0 +1,144 @@
+name: Install Check
+
+# Smoke-test the install flow on every GitHub Release (stable & pre-release).
+# Also runnable manually via "Run workflow".
+on:
+  release:
+    types: [published, prereleased]
+  workflow_dispatch:
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Linux / macOS: run the real install.sh end-to-end (the one users pipe to bash)
+  # ─────────────────────────────────────────────────────────────────────────────
+  install-sh:
+    name: install.sh (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run install.sh (fresh-machine simulation — no pre-installed uv/Python)
+        shell: bash
+        run: |
+          export CODEFYUI_DIR="$RUNNER_TEMP/CodefyUI"
+          # install.sh installs uv, asks uv to provide Python, clones the repo,
+          # and runs `python scripts/dev.py install`.
+          bash ./install.sh
+          echo "INSTALL_DIR=$CODEFYUI_DIR" >> "$GITHUB_ENV"
+
+      - name: Start backend & health check
+        shell: bash
+        run: |
+          cd "$INSTALL_DIR/backend"
+          source .venv/bin/activate
+          nohup uvicorn app.main:app --host 127.0.0.1 --port 8000 \
+            > "$RUNNER_TEMP/backend.log" 2>&1 &
+          echo "BACKEND_PID=$!" >> "$GITHUB_ENV"
+
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/api/health > "$RUNNER_TEMP/health.json"; then
+              echo "Backend is up:"
+              cat "$RUNNER_TEMP/health.json"
+              python -c "import json,sys; d=json.load(open('$RUNNER_TEMP/health.json')); assert d['status']=='ok' and d['nodes_loaded']>0, d"
+              exit 0
+            fi
+            sleep 2
+          done
+
+          echo "::error::Backend failed to respond after 60s"
+          echo "--- backend.log ---"
+          cat "$RUNNER_TEMP/backend.log"
+          exit 1
+
+      - name: Build frontend
+        shell: bash
+        run: |
+          cd "$INSTALL_DIR/frontend"
+          pnpm build
+
+      - name: Stop backend
+        if: always() && env.BACKEND_PID != ''
+        shell: bash
+        run: kill "$BACKEND_PID" 2>/dev/null || true
+
+      - name: Upload backend log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-log-${{ matrix.os }}
+          path: ${{ runner.temp }}/backend.log
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Windows: run install.ps1 end-to-end (the one users pipe to `iex`).
+  # ─────────────────────────────────────────────────────────────────────────────
+  install-ps1:
+    name: install.ps1 (windows-latest)
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run install.ps1 (fresh-machine simulation — no pre-installed uv/Python)
+        shell: pwsh
+        run: |
+          $env:CODEFYUI_DIR = Join-Path $env:RUNNER_TEMP 'CodefyUI'
+          .\install.ps1
+          "INSTALL_DIR=$env:CODEFYUI_DIR" | Out-File -Append -FilePath $env:GITHUB_ENV
+
+      - name: Start backend & health check
+        shell: pwsh
+        run: |
+          Set-Location (Join-Path $env:INSTALL_DIR 'backend')
+          $env:Path = "$PWD\.venv\Scripts;$env:Path"
+          $logPath = Join-Path $env:RUNNER_TEMP 'backend.log'
+          $errPath = Join-Path $env:RUNNER_TEMP 'backend.err'
+          $proc = Start-Process -FilePath "uvicorn" `
+            -ArgumentList "app.main:app", "--host", "127.0.0.1", "--port", "8000" `
+            -NoNewWindow -PassThru -RedirectStandardOutput $logPath -RedirectStandardError $errPath
+          "BACKEND_PID=$($proc.Id)" | Out-File -Append -FilePath $env:GITHUB_ENV
+
+          for ($i = 1; $i -le 30; $i++) {
+            try {
+              $resp = Invoke-RestMethod -Uri http://127.0.0.1:8000/api/health -TimeoutSec 5
+              if ($resp.status -eq 'ok' -and $resp.nodes_loaded -gt 0) {
+                Write-Host "Backend is up:"
+                $resp | ConvertTo-Json
+                exit 0
+              }
+            } catch {}
+            Start-Sleep -Seconds 2
+          }
+
+          Write-Host "::error::Backend failed to respond after 60s"
+          Write-Host "--- backend.log ---"
+          if (Test-Path $logPath) { Get-Content $logPath }
+          Write-Host "--- backend.err ---"
+          if (Test-Path $errPath) { Get-Content $errPath }
+          exit 1
+
+      - name: Build frontend
+        shell: pwsh
+        run: |
+          # install.ps1 installed pnpm into the user's persistent PATH; pick it
+          # up here since a fresh step shell won't have inherited the update.
+          $env:Path = [System.Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path', 'User')
+          Set-Location (Join-Path $env:INSTALL_DIR 'frontend')
+          pnpm build
+
+      - name: Stop backend
+        if: always() && env.BACKEND_PID != ''
+        shell: pwsh
+        run: |
+          try { Stop-Process -Id $env:BACKEND_PID -Force -ErrorAction SilentlyContinue } catch {}
+
+      - name: Upload backend log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-log-windows
+          path: ${{ runner.temp }}/backend.log
