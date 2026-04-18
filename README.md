@@ -1,6 +1,6 @@
 # CodefyUI
 
-[![zh-TW](https://img.shields.io/badge/語言-繁體中文-blue)](./README_zh-TW.md)
+[![zh-TW](https://img.shields.io/badge/語言-繁體中文-blue)](./docs/README_zh-TW.md)
 
 A visual, node-based deep learning pipeline builder. Design CNN, RNN, Transformer, and RL architectures by dragging nodes onto a canvas, connecting them into a DAG, and executing the pipeline — all from the browser.
 
@@ -25,29 +25,39 @@ A visual, node-based deep learning pipeline builder. Design CNN, RNN, Transforme
 
 ## Quick Start
 
-**One-liner install** (macOS / Linux):
+**One-liner install**:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/latteine1217/CodefyUI/main/install.sh | bash
+# macOS / Linux
+curl -fsSL https://raw.githubusercontent.com/treeleaves30760/CodefyUI/main/install.sh | bash
 ```
 
-Automatically installs git, Python 3, Node.js, pnpm, and uv if missing. After install:
+```powershell
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://raw.githubusercontent.com/treeleaves30760/CodefyUI/main/install.ps1 | iex"
+```
+
+Automatically installs git, Node.js, pnpm, uv if missing (Python is provided by uv — no separate install needed), and puts a `cdui` launcher on your PATH. After install, **open a new terminal** and run from anywhere:
 
 ```bash
-cd ~/CodefyUI && python dev.py dev
+cdui dev
 ```
 
 Open [http://localhost:5173](http://localhost:5173). The frontend proxies API/WS requests to the backend at `:8000`.
 
-| 指令 | 說明 |
-|------|------|
-| `python dev.py install` | 安裝 backend + frontend 依賴 |
-| `python dev.py dev` | 啟動 backend :8000 + frontend :5173 |
-| `python dev.py stop` | 停止所有服務 |
-| `python dev.py test` | 執行 backend 測試 |
-| `python dev.py clean` | 移除虛擬環境與 node_modules |
+| Command | Description |
+|---------|-------------|
+| `cdui install` | Install backend + frontend dependencies |
+| `cdui update` | Pull latest `main` and reinstall dependencies |
+| `cdui dev` | Start backend :8000 + frontend :5173 |
+| `cdui stop` | Stop all services |
+| `cdui test` | Run backend tests |
+| `cdui clean` | Remove virtualenv and `node_modules` |
+| `cdui uninstall` | Clean + remove the PATH launcher |
 
-> This quick start assumes an **NVIDIA GPU with CUDA 12.4**. For CPU, Apple Silicon, AMD, or detailed troubleshooting, see the [full setup guide](./SETUP.md).
+> `cdui` is a thin launcher (`cdui.cmd` on Windows) placed at `~/.local/bin/cdui` by the installer. If you didn't restart your terminal yet, invoke the absolute path: `~/CodefyUI/cdui dev`. `python scripts/dev.py <cmd>` still works too — `dev.py` re-execs into the venv's Python automatically.
+
+> This quick start assumes an **NVIDIA GPU with CUDA 12.4**. For CPU, Apple Silicon, AMD, or detailed troubleshooting, see the [full setup guide](./docs/SETUP.md).
 
 ### CLI Execution
 

@@ -1,6 +1,6 @@
 # CodefyUI
 
-[![en](https://img.shields.io/badge/Language-English-blue)](./README.md)
+[![en](https://img.shields.io/badge/Language-English-blue)](../README.md)
 
 視覺化、節點式的深度學習管線建構工具。透過拖曳節點到畫布上，連接成 DAG，直接在瀏覽器中設計 CNN、RNN、Transformer 和 RL 架構並執行管線。
 
@@ -25,27 +25,37 @@
 
 ## 快速開始
 
-**一行指令安裝**（macOS / Linux）：
+**一行指令安裝**：
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/latteine1217/CodefyUI/main/install.sh | bash
+# macOS / Linux
+curl -fsSL https://raw.githubusercontent.com/treeleaves30760/CodefyUI/main/install.sh | bash
 ```
 
-自動安裝所有缺少的依賴（git、Python 3、Node.js、pnpm、uv）。安裝完成後：
+```powershell
+# Windows (PowerShell)
+powershell -ExecutionPolicy ByPass -c "irm https://raw.githubusercontent.com/treeleaves30760/CodefyUI/main/install.ps1 | iex"
+```
+
+自動安裝缺少的依賴（git、Node.js、pnpm、uv；Python 由 uv 提供，不需要額外安裝），並把 `cdui` launcher 加到你的 PATH。安裝完成後，**請重新開啟 terminal**，然後在任何目錄執行：
 
 ```bash
-cd ~/CodefyUI && python dev.py dev
+cdui dev
 ```
 
 開啟 [http://localhost:5173](http://localhost:5173)。前端會將 API/WS 請求代理到後端的 `:8000` 埠。
 
 | 指令 | 說明 |
 |------|------|
-| `python dev.py install` | 安裝 backend + frontend 依賴 |
-| `python dev.py dev` | 啟動 backend :8000 + frontend :5173 |
-| `python dev.py stop` | 停止所有服務 |
-| `python dev.py test` | 執行 backend 測試 |
-| `python dev.py clean` | 移除虛擬環境與 node_modules |
+| `cdui install` | 安裝 backend + frontend 依賴 |
+| `cdui update` | 拉取最新 `main` 並重新安裝依賴 |
+| `cdui dev` | 啟動 backend :8000 + frontend :5173 |
+| `cdui stop` | 停止所有服務 |
+| `cdui test` | 執行 backend 測試 |
+| `cdui clean` | 移除虛擬環境與 node_modules |
+| `cdui uninstall` | clean + 移除 PATH 上的 launcher |
+
+> `cdui` 是 install 腳本放到 `~/.local/bin/cdui` 的輕量 launcher（Windows 為 `cdui.cmd`）。若你還沒重開 terminal，可改用絕對路徑：`~/CodefyUI/cdui dev`。`python scripts/dev.py <cmd>` 也一樣能用——`dev.py` 會自動切換到 venv 的 Python。
 
 > 以上快速開始假設使用 **NVIDIA 顯卡 + CUDA 12.4**。若使用 CPU、Apple Silicon、AMD 或需要更詳細的疑難排解，請參考[完整安裝指南](./SETUP_zh-TW.md)。
 
