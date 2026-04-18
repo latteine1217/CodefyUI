@@ -25,30 +25,24 @@
 
 ## 快速開始
 
-以下快速開始假設使用 **NVIDIA 顯卡 + CUDA 12.4**。若使用 CPU、Apple Silicon、AMD 或需要更詳細的疑難排解，請參考[完整安裝指南](./SETUP_zh-TW.md)。
+只需要 **Python 3.11+** 與 **pnpm**，三個平台（macOS / Linux / Windows）指令完全相同：
 
 ```bash
-# ── 後端（終端機 1）──────────────────────
-cd backend
-uv venv --python 3.11
-.venv\Scripts\activate                              # Windows
-# source .venv/bin/activate                         # macOS / Linux
-
-uv pip install -e ".[dev]"
-uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
-uv pip install gymnasium safetensors
-
-uvicorn app.main:app --reload
-
-# ── 前端（終端機 2）──────────────────────
-cd frontend
-pnpm install
-pnpm dev
+python dev.py install   # 安裝所有依賴（首次執行自動安裝 uv）
+python dev.py dev       # 啟動開發伺服器
 ```
 
 開啟 [http://localhost:5173](http://localhost:5173)。前端會將 API/WS 請求代理到後端的 `:8000` 埠。
 
-> **沒有 NVIDIA 顯卡？** 請參考 [SETUP_zh-TW.md](./SETUP_zh-TW.md) 查看 CPU、Apple Silicon (MPS) 與 AMD 的安裝方式。
+| 指令 | 說明 |
+|------|------|
+| `python dev.py install` | 安裝 backend + frontend 依賴 |
+| `python dev.py dev` | 啟動 backend :8000 + frontend :5173 |
+| `python dev.py stop` | 停止所有服務 |
+| `python dev.py test` | 執行 backend 測試 |
+| `python dev.py clean` | 移除虛擬環境與 node_modules |
+
+> 以上快速開始假設使用 **NVIDIA 顯卡 + CUDA 12.4**。若使用 CPU、Apple Silicon、AMD 或需要更詳細的疑難排解，請參考[完整安裝指南](./SETUP_zh-TW.md)。
 
 ### CLI 執行
 

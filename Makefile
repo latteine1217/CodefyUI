@@ -1,4 +1,4 @@
-RUNNER := uv run python scripts/dev.py
+RUNNER := python dev.py
 
 .DEFAULT_GOAL := help
 
@@ -12,8 +12,8 @@ help:
 	@echo "  make test      執行 backend 測試"
 	@echo "  make clean     移除虛擬環境與 node_modules"
 	@echo ""
-	@echo "Windows 使用者（不需要 make）："
-	@echo "  uv run python scripts/dev.py <command>"
+	@echo "或直接（全平台通用）："
+	@echo "  python dev.py <command>"
 	@echo ""
 
 .PHONY: install

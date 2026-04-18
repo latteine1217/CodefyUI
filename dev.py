@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Cross-platform task runner for CodefyUI.
+"""CodefyUI 跨平台任務執行器。
 
-Usage:
-    uv run python scripts/dev.py <command>
+用法：
+    python dev.py <command>
 
-Commands:
+指令：
     install   安裝所有依賴（backend + frontend）
     dev       啟動開發伺服器（Ctrl+C 停止）
     stop      停止所有服務
@@ -18,11 +18,33 @@ import sys
 import threading
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parent
 BACKEND_DIR = ROOT / "backend"
 FRONTEND_DIR = ROOT / "frontend"
 VENV = BACKEND_DIR / ".venv"
 VENV_BIN = VENV / ("Scripts" if sys.platform == "win32" else "bin")
+
+
+# ── Bootstrap ─────────────────────────────────────────────────────────────────
+
+def _ensure_uv() -> None:
+    if shutil.which("uv"):
+        return
+    print("=== uv 未安裝，正在自動安裝 ===")
+    if sys.platform == "win32":
+        subprocess.run(
+            ["powershell", "-c", "irm https://astral.sh/uv/install.ps1 | iex"],
+            check=True,
+        )
+    else:
+        subprocess.run(
+            "curl -LsSf https://astral.sh/uv/install.sh | sh",
+            shell=True,
+            check=True,
+        )
+    # 安裝後重新啟動自身，讓新 PATH 生效
+    import os
+    os.execv(sys.executable, [sys.executable] + sys.argv)
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -61,7 +83,6 @@ def dev() -> None:
     backend_cmd = [uvicorn, "app.main:app", "--reload"]
     frontend_cmd = ["pnpm", "dev"]
 
-    # Windows 需要 shell=True 才能找到 pnpm（非 .exe 的指令）
     shell = sys.platform == "win32"
 
     print("=== 啟動 CodefyUI（Ctrl+C 停止）===")
@@ -135,4 +156,5 @@ if __name__ == "__main__":
     if len(sys.argv) < 2 or sys.argv[1] not in COMMANDS:
         print(__doc__)
         sys.exit(1)
+    _ensure_uv()
     COMMANDS[sys.argv[1]]()
