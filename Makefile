@@ -1,4 +1,4 @@
-RUNNER := python dev.py
+RUNNER := ./cdui
 
 .DEFAULT_GOAL := help
 
@@ -12,8 +12,9 @@ help:
 	@echo "  make test      執行 backend 測試"
 	@echo "  make clean     移除虛擬環境與 node_modules"
 	@echo ""
-	@echo "或直接（全平台通用）："
-	@echo "  python dev.py <command>"
+	@echo "或直接："
+	@echo "  ./cdui <command>       # macOS / Linux"
+	@echo "  .\\cdui.cmd <command>   # Windows"
 	@echo ""
 
 .PHONY: install
