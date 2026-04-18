@@ -25,11 +25,16 @@ A visual, node-based deep learning pipeline builder. Design CNN, RNN, Transforme
 
 ## Quick Start
 
-只需要 **Python 3.11+** 與 **pnpm**，三個平台（macOS / Linux / Windows）指令完全相同：
+**One-liner install** (macOS / Linux):
 
 ```bash
-python dev.py install   # 安裝所有依賴（首次執行自動安裝 uv）
-python dev.py dev       # 啟動開發伺服器
+curl -fsSL https://raw.githubusercontent.com/latteine1217/CodefyUI/main/install.sh | bash
+```
+
+Automatically installs git, Python 3, Node.js, pnpm, and uv if missing. After install:
+
+```bash
+cd ~/CodefyUI && python dev.py dev
 ```
 
 Open [http://localhost:5173](http://localhost:5173). The frontend proxies API/WS requests to the backend at `:8000`.

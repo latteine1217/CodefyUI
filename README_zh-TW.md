@@ -25,11 +25,16 @@
 
 ## 快速開始
 
-只需要 **Python 3.11+** 與 **pnpm**，三個平台（macOS / Linux / Windows）指令完全相同：
+**一行指令安裝**（macOS / Linux）：
 
 ```bash
-python dev.py install   # 安裝所有依賴（首次執行自動安裝 uv）
-python dev.py dev       # 啟動開發伺服器
+curl -fsSL https://raw.githubusercontent.com/latteine1217/CodefyUI/main/install.sh | bash
+```
+
+自動安裝所有缺少的依賴（git、Python 3、Node.js、pnpm、uv）。安裝完成後：
+
+```bash
+cd ~/CodefyUI && python dev.py dev
 ```
 
 開啟 [http://localhost:5173](http://localhost:5173)。前端會將 API/WS 請求代理到後端的 `:8000` 埠。
