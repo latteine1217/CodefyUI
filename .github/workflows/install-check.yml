@@ -4,7 +4,10 @@ name: Install Check
 # Also runnable manually via "Run workflow".
 on:
   release:
-    types: [published, prereleased]
+    # `published` fires for both stable releases and pre-releases, so a
+    # single trigger covers everything. (Adding `prereleased` would fire
+    # a redundant second run for pre-releases.)
+    types: [published]
   workflow_dispatch:
 
 jobs:
