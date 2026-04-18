@@ -25,30 +25,29 @@ A visual, node-based deep learning pipeline builder. Design CNN, RNN, Transforme
 
 ## Quick Start
 
-This quick start assumes an **NVIDIA GPU with CUDA 12.4**. For CPU, Apple Silicon, AMD, or detailed troubleshooting, see the [full setup guide](./SETUP.md).
+**One-liner install** (macOS / Linux):
 
 ```bash
-# ── Backend (terminal 1) ──────────────────────
-cd backend
-uv venv --python 3.11
-.venv\Scripts\activate                              # Windows
-# source .venv/bin/activate                         # macOS / Linux
+curl -fsSL https://raw.githubusercontent.com/latteine1217/CodefyUI/main/install.sh | bash
+```
 
-uv pip install -e ".[dev]"
-uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cu124
-uv pip install gymnasium safetensors
+Automatically installs git, Python 3, Node.js, pnpm, and uv if missing. After install:
 
-uvicorn app.main:app --reload
-
-# ── Frontend (terminal 2) ─────────────────────
-cd frontend
-pnpm install
-pnpm dev
+```bash
+cd ~/CodefyUI && python dev.py dev
 ```
 
 Open [http://localhost:5173](http://localhost:5173). The frontend proxies API/WS requests to the backend at `:8000`.
 
-> **No NVIDIA GPU?** See [SETUP.md](./SETUP.md) for CPU, Apple Silicon (MPS), and AMD instructions.
+| 指令 | 說明 |
+|------|------|
+| `python dev.py install` | 安裝 backend + frontend 依賴 |
+| `python dev.py dev` | 啟動 backend :8000 + frontend :5173 |
+| `python dev.py stop` | 停止所有服務 |
+| `python dev.py test` | 執行 backend 測試 |
+| `python dev.py clean` | 移除虛擬環境與 node_modules |
+
+> This quick start assumes an **NVIDIA GPU with CUDA 12.4**. For CPU, Apple Silicon, AMD, or detailed troubleshooting, see the [full setup guide](./SETUP.md).
 
 ### CLI Execution
 
