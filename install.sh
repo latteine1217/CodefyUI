@@ -83,15 +83,25 @@ PYTHON="$(uv python find 3.11)"
 ok "$("$PYTHON" --version) ($PYTHON)"
 
 # ── Node.js ───────────────────────────────────────────────────────────
+# 需要 Node 24+，舊版會升級。
 step "Node.js"
-if ! command -v node &>/dev/null; then
-  warn "未安裝，透過 nvm 安裝 LTS..."
+NODE_MIN=24
+node_ok=false
+if command -v node &>/dev/null; then
+  current_major="$(node --version | sed 's/^v//' | cut -d. -f1)"
+  [[ "$current_major" =~ ^[0-9]+$ ]] && (( current_major >= NODE_MIN )) && node_ok=true
+fi
+if [[ "$node_ok" != "true" ]]; then
+  warn "未安裝或版本 < ${NODE_MIN}，透過 nvm 安裝 Node ${NODE_MIN}..."
   export NVM_DIR="$HOME/.nvm"
-  curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+  if [[ ! -s "$NVM_DIR/nvm.sh" ]]; then
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+  fi
   # 在目前 shell 載入 nvm（不依賴 .bashrc）
+  # shellcheck disable=SC1091
   [[ -s "$NVM_DIR/nvm.sh" ]] && source "$NVM_DIR/nvm.sh"
-  nvm install --lts --no-progress
-  nvm use --lts
+  nvm install "$NODE_MIN" --no-progress
+  nvm use "$NODE_MIN"
 fi
 ok "Node.js $(node --version)"
 

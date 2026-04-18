@@ -84,11 +84,21 @@ if (-not (Test-Cmd pnpm)) {
 Ok "pnpm $(pnpm --version)"
 
 # ── Node.js (let pnpm manage it) ──────────────────────────────────────────────
+# Require Node 24+; older versions are upgraded via pnpm-managed runtime.
 Step "Node.js"
-if (-not (Test-Cmd node)) {
-    Warn "Not installed, installing LTS via 'pnpm env use --global lts'..."
-    pnpm env use --global lts
-    if ($LASTEXITCODE -ne 0) { Die "pnpm env use --global lts failed" }
+$NodeMin = 24
+$NodeOk = $false
+if (Test-Cmd node) {
+    $currentMajor = ((node --version) -replace '^v','' -split '\.')[0]
+    if ($currentMajor -match '^\d+$' -and [int]$currentMajor -ge $NodeMin) {
+        $NodeOk = $true
+    }
+}
+if (-not $NodeOk) {
+    Warn "Not installed or version < $NodeMin, installing Node $NodeMin via 'pnpm env use --global $NodeMin'..."
+    pnpm env use --global $NodeMin
+    if ($LASTEXITCODE -ne 0) { Die "pnpm env use --global $NodeMin failed" }
+    Refresh-Path
     if (-not (Test-Cmd node)) { Die "node not found on PATH after install. Open a new shell and re-run." }
 }
 Ok "Node.js $(node --version)"

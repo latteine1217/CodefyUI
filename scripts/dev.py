@@ -22,6 +22,15 @@ import sys
 import threading
 from pathlib import Path
 
+# Force UTF-8 on Windows so we can print non-ASCII (Chinese headings etc.)
+# without hitting cp1252 UnicodeEncodeError in CI / default consoles.
+if sys.platform == "win32":
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except (AttributeError, OSError):
+        pass
+
 ROOT = Path(__file__).resolve().parent.parent  # dev.py lives in <root>/scripts/
 BACKEND_DIR = ROOT / "backend"
 FRONTEND_DIR = ROOT / "frontend"
