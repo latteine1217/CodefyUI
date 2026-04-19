@@ -61,6 +61,15 @@ jobs:
       - name: Build frontend
         shell: bash
         run: |
+          # install.sh may have installed Node/pnpm via nvm; that path isn't
+          # on the next step's default PATH because GH CI runs non-interactive
+          # bash (no .bashrc sourcing). Source nvm.sh manually.
+          export NVM_DIR="$HOME/.nvm"
+          if [ -s "$NVM_DIR/nvm.sh" ]; then
+            # shellcheck disable=SC1091
+            . "$NVM_DIR/nvm.sh"
+            nvm use 24 2>/dev/null || true
+          fi
           cd "$INSTALL_DIR/frontend"
           pnpm build
 
@@ -127,8 +136,14 @@ jobs:
       - name: Build frontend
         shell: pwsh
         run: |
-          # install.ps1 wrote pnpm to user PATH; refresh for this step.
-          $env:Path = [System.Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path', 'User')
+          # install.ps1 wrote pnpm to user PATH, but the entry contains a
+          # literal `%PNPM_HOME%` reference that GetEnvironmentVariable
+          # does not expand. ExpandEnvironmentVariables resolves it.
+          $machine = [System.Environment]::GetEnvironmentVariable('Path', 'Machine')
+          $user    = [System.Environment]::ExpandEnvironmentVariables(
+            [System.Environment]::GetEnvironmentVariable('Path', 'User')
+          )
+          $env:Path = "$machine;$user"
           Set-Location (Join-Path $env:INSTALL_DIR 'frontend')
           pnpm build
 

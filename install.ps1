@@ -23,6 +23,13 @@ function Test-Cmd($name) {
 function Refresh-Path {
     $machine = [System.Environment]::GetEnvironmentVariable('Path', 'Machine')
     $user    = [System.Environment]::GetEnvironmentVariable('Path', 'User')
+    # User PATH entries added by installers often contain literal
+    # `%VAR%` references (e.g. pnpm adds `%PNPM_HOME%;…`). These are
+    # resolved automatically on shell start, but not when we read via
+    # GetEnvironmentVariable — expand manually so Test-Cmd / Get-Command
+    # can actually find the binaries.
+    if ($user)    { $user    = [System.Environment]::ExpandEnvironmentVariables($user) }
+    if ($machine) { $machine = [System.Environment]::ExpandEnvironmentVariables($machine) }
     $env:Path = ($machine, $user, $env:Path | Where-Object { $_ }) -join ';'
 }
 
