@@ -190,8 +190,11 @@ export function FlowCanvas() {
   );
 
   const handleIsValidConnection: IsValidConnection = useCallback(
-    (connection: Connection) => {
-      const { source, target, sourceHandle, targetHandle } = connection;
+    (edgeOrConnection) => {
+      // `IsValidConnection` now receives `Edge | Connection`; both expose
+      // source / target / sourceHandle / targetHandle, so we don't need to
+      // narrow for the checks below.
+      const { source, target, sourceHandle, targetHandle } = edgeOrConnection;
       if (!source || !target) return false;
       if (source === target) return false;
 
@@ -359,7 +362,7 @@ export function FlowCanvas() {
   }, [setSelectedNodeId]);
 
   const handlePaneContextMenu = useCallback(
-    (event: React.MouseEvent) => {
+    (event: MouseEvent | React.MouseEvent) => {
       event.preventDefault();
       const flowPos = screenToFlowPosition({ x: event.clientX, y: event.clientY });
       setPaneMenu({ screen: { x: event.clientX, y: event.clientY }, flow: flowPos });

@@ -269,8 +269,11 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
         let updatedNodes = applyNodeChanges(changes, tab.nodes) as Node<NodeData>[];
 
         // Collect IDs of nodes that had position changes (not notes)
+        // Narrow via type predicate so `id` is safely accessible — the
+        // `NodeChange` union includes `NodeAddChange` which lacks `id`.
         const posChanges = changes.filter(
-          (c) => c.type === 'position' && (c as any).position
+          (c): c is Extract<NodeChange, { type: 'position' }> =>
+            c.type === 'position' && (c as { position?: unknown }).position != null,
         );
         if (posChanges.length > 0) {
           const movedIds = new Set(posChanges.map((c) => c.id));

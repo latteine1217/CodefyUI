@@ -1,15 +1,9 @@
 import { memo } from 'react';
-import { Handle, Position } from '@xyflow/react';
+import { Handle, Node, Position } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
+import type { LayerNodeData } from './graphSerialization';
 
-interface LayerNodeData {
-  layerType: string;
-  params: Record<string, any>;
-  color: string;
-  [key: string]: unknown;
-}
-
-function LayerNodeComponent({ data, selected }: NodeProps<LayerNodeData>) {
+function LayerNodeComponent({ data, selected }: NodeProps<Node<LayerNodeData>>) {
   const paramEntries = Object.entries(data.params);
   const hasParams = paramEntries.length > 0;
 

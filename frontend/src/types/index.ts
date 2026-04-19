@@ -1,3 +1,5 @@
+import type { Node as FlowNode } from '@xyflow/react';
+
 export interface PortDefinition {
   name: string;
   data_type: string;
@@ -85,6 +87,11 @@ export interface NodeData {
 }
 
 export type ExecutionStatus = 'idle' | 'running' | 'completed' | 'error' | 'skipped' | 'cached';
+
+// @xyflow/react v12 expects the generic to be a full Node type (not the data
+// payload). Use this alias wherever a component types its props or a store
+// holds nodes. The empty string fallback keeps the `type` slot string-assignable.
+export type AppNode = FlowNode<NodeData, string | undefined>;
 
 export interface GraphSaveData {
   nodes: any[];

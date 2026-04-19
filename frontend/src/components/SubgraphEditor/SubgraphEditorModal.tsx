@@ -15,6 +15,7 @@ import {
   type NodeTypes,
   type EdgeTypes,
   type Connection,
+  type IsValidConnection,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -496,9 +497,10 @@ function SubgraphFlowInner({
     []
   );
 
-  const isValidConnection = useCallback(
-    (conn: Connection) => {
-      // Plain layer input handle: reject if already has incoming
+  const isValidConnection = useCallback<IsValidConnection<Edge>>(
+    (conn) => {
+      // `IsValidConnection<Edge>` receives `Edge | Connection`; both expose
+      // the same source / target / *Handle fields used below.
       const targetNode = nodes.find((n) => n.id === conn.target);
       if (!targetNode) return false;
       if (!targetNode.data.isMerge && !targetNode.data.isBoundary) {

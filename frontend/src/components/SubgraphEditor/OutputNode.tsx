@@ -1,10 +1,10 @@
 // frontend/src/components/SubgraphEditor/OutputNode.tsx
 import { memo } from 'react';
-import { Handle, Position } from '@xyflow/react';
+import { Handle, Node, Position } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import type { LayerNodeData } from './graphSerialization';
 
-function OutputNodeComponent({ data, selected }: NodeProps<LayerNodeData>) {
+function OutputNodeComponent({ data, selected }: NodeProps<Node<LayerNodeData>>) {
   const ports = data.ports ?? [];
   return (
     <div

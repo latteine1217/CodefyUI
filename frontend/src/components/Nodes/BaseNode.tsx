@@ -1,7 +1,7 @@
 import { memo, useState } from 'react';
 import { Handle, Position, useReactFlow } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import type { NodeData } from '../../types';
+import type { AppNode } from '../../types';
 import { getPortColor, isValidConnection } from '../../utils';
 import { useUIStore } from '../../store/uiStore';
 import { useTabStore } from '../../store/tabStore';
@@ -11,7 +11,7 @@ import { useI18n } from '../../i18n';
 import { CATEGORY_COLORS, STATUS_COLORS } from '../../styles/theme';
 import styles from './BaseNode.module.css';
 
-function BaseNode({ id, data, selected }: NodeProps<NodeData>) {
+function BaseNode({ id, data, selected }: NodeProps<AppNode>) {
   const openSubgraphModal = useTabStore((s) => s.openSubgraphModal);
   const tooltipsEnabled = useUIStore((s) => s.tooltipsEnabled);
   const draggingSourceType = useUIStore((s) => s.draggingSourceType);

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { autoLayout, type LayoutMode } from './autoLayout';
+import { autoLayout } from './autoLayout';
 import type { Node, Edge } from '@xyflow/react';
 
 function makeStartNode(id: string, x = 0, y = 0): Node {

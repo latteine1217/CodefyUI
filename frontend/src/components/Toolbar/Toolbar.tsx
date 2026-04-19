@@ -5,6 +5,7 @@ import { useNodeDefStore } from '../../store/nodeDefStore';
 import { useUIStore } from '../../store/uiStore';
 import { saveGraph, loadGraph, listGraphs, createPreset, exportGraph } from '../../api/rest';
 import { useI18n, SUPPORTED_LOCALES } from '../../i18n';
+import type { TranslationKey } from '../../i18n';
 import { resolveSerializedNodes, resolveSerializedEdges } from '../../utils';
 import { SURFACE, TEXT, BRAND, STATUS_COLORS } from '../../styles/theme';
 import { CustomNodeManager } from '../CustomNodeManager/CustomNodeManager';
@@ -91,7 +92,7 @@ function LoadSubMenu({
   onClose: () => void;
   onLoadGraph: (name: string) => void;
   onImport: () => void;
-  t: (key: string) => string;
+  t: (key: TranslationKey, vars?: Record<string, string | number>) => string;
 }) {
   const [graphs, setGraphs] = useState<{ name: string; file: string }[]>([]);
   const [loading, setLoading] = useState(false);

@@ -1,7 +1,7 @@
 import { memo } from 'react';
 import { Handle, Position, useReactFlow } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
-import type { NodeData } from '../../types';
+import type { AppNode } from '../../types';
 import { getPortColor } from '../../utils';
 import { useTabStore } from '../../store/tabStore';
 import { useUIStore } from '../../store/uiStore';
@@ -10,7 +10,7 @@ import { STATUS_COLORS } from '../../styles/theme';
 import styles from './PresetNode.module.css';
 import baseStyles from './BaseNode.module.css';
 
-function PresetNode({ id, data, selected }: NodeProps<NodeData>) {
+function PresetNode({ id, data, selected }: NodeProps<AppNode>) {
   const openPresetModal = useTabStore((s) => s.openPresetModal);
   const draggingSourceType = useUIStore((s) => s.draggingSourceType);
   const { getEdges } = useReactFlow();
