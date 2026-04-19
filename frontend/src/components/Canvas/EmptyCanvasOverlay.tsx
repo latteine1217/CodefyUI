@@ -8,17 +8,56 @@ import type { ExampleSummary } from '../../api/rest';
 import { useToastStore } from '../../store/toastStore';
 import styles from './EmptyCanvasOverlay.module.css';
 
-const CURATED_PATHS = [
-  'Usage_Example/CNN-MNIST/TrainCNN-MNIST',
-  'Usage_Example/CNN-MNIST/InferenceCNN-MNIST',
-  'Model_Architecture/ResNet-SkipConnection-CNN',
-  'Model_Architecture/GPT-DecoderOnly-Transformer',
-];
-
 const EXAMPLE_CATEGORY_COLORS: Record<string, string> = {
   Usage_Example: '#4CAF50',
   Model_Architecture: '#2196F3',
 };
+
+const SECTION_ORDER: { category: string; titleKey: 'empty.section.trainable' | 'empty.section.architecture' }[] = [
+  { category: 'Usage_Example', titleKey: 'empty.section.trainable' },
+  { category: 'Model_Architecture', titleKey: 'empty.section.architecture' },
+];
+
+function renderCard(
+  example: ExampleSummary,
+  onClick: (e: ExampleSummary) => void,
+) {
+  const catColor = EXAMPLE_CATEGORY_COLORS[example.category] ?? '#FF9800';
+  const catLabel = example.category.replace(/_/g, ' ');
+  return (
+    <button
+      key={example.path}
+      onClick={() => onClick(example)}
+      className={styles.presetCard}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.borderColor = '#D4A017';
+        e.currentTarget.style.boxShadow = '0 4px 16px rgba(212,160,23,0.15)';
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.borderColor = '#3a3a3a';
+        e.currentTarget.style.boxShadow = 'none';
+      }}
+    >
+      <div className={styles.presetCardHeader}>
+        <span className={styles.presetCardName}>{example.name}</span>
+      </div>
+      <div className={styles.presetCardDesc}>
+        {example.description.length > 80
+          ? example.description.slice(0, 80) + '...'
+          : example.description}
+      </div>
+      <div className={styles.presetCardFooter}>
+        <span
+          className={styles.difficultyBadge}
+          style={{ background: `${catColor}22`, color: catColor }}
+        >
+          {catLabel}
+        </span>
+        <span className={styles.nodeCount}>{example.node_count} nodes</span>
+      </div>
+    </button>
+  );
+}
 
 export function EmptyCanvasOverlay() {
   const setNodes = useTabStore((s) => s.setNodes);
@@ -31,18 +70,19 @@ export function EmptyCanvasOverlay() {
 
   useEffect(() => {
     listExamples()
-      .then((all) => {
-        // Pick curated examples in order, fallback to first 3
-        const curated: ExampleSummary[] = [];
-        for (const path of CURATED_PATHS) {
-          const found = all.find((e) => e.path.replace(/\\/g, '/') === path);
-          if (found) curated.push(found);
-        }
-        setExamples(curated.length > 0 ? curated : all.slice(0, 3));
-      })
+      .then((all) => setExamples(all))
       .catch(() => setExamples([]))
       .finally(() => setLoading(false));
   }, []);
+
+  const grouped = SECTION_ORDER.map((s) => ({
+    ...s,
+    items: examples.filter((e) => e.category === s.category),
+  })).filter((s) => s.items.length > 0);
+
+  const uncategorized = examples.filter(
+    (e) => !SECTION_ORDER.some((s) => s.category === e.category),
+  );
 
   const handleClick = useCallback(
     async (example: ExampleSummary) => {
@@ -85,50 +125,20 @@ export function EmptyCanvasOverlay() {
           <div className={styles.hint}>{t('empty.loading')}</div>
         )}
 
-        {!loading && examples.length > 0 && (
-          <div className={styles.quickStartGrid}>
-            {examples.map((example) => {
-              const catColor = EXAMPLE_CATEGORY_COLORS[example.category] ?? '#FF9800';
-              const catLabel = example.category.replace(/_/g, ' ');
-              return (
-                <button
-                  key={example.path}
-                  onClick={() => handleClick(example)}
-                  className={styles.presetCard}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = '#D4A017';
-                    e.currentTarget.style.boxShadow = '0 4px 16px rgba(212,160,23,0.15)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = '#3a3a3a';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                >
-                  <div className={styles.presetCardHeader}>
-                    <span className={styles.presetCardName}>{example.name}</span>
-                  </div>
-                  <div className={styles.presetCardDesc}>
-                    {example.description.length > 80
-                      ? example.description.slice(0, 80) + '...'
-                      : example.description}
-                  </div>
-                  <div className={styles.presetCardFooter}>
-                    <span
-                      className={styles.difficultyBadge}
-                      style={{
-                        background: `${catColor}22`,
-                        color: catColor,
-                      }}
-                    >
-                      {catLabel}
-                    </span>
-                    <span className={styles.nodeCount}>
-                      {example.node_count} nodes
-                    </span>
-                  </div>
-                </button>
-              );
-            })}
+        {!loading && grouped.map((section) => (
+          <div key={section.category} className={styles.section}>
+            <div className={styles.sectionTitle}>{t(section.titleKey)}</div>
+            <div className={styles.quickStartGrid}>
+              {section.items.map((example) => renderCard(example, handleClick))}
+            </div>
+          </div>
+        ))}
+
+        {!loading && uncategorized.length > 0 && (
+          <div className={styles.section}>
+            <div className={styles.quickStartGrid}>
+              {uncategorized.map((example) => renderCard(example, handleClick))}
+            </div>
           </div>
         )}
 
