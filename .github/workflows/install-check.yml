@@ -58,15 +58,11 @@ jobs:
           cat "$RUNNER_TEMP/backend.log"
           exit 1
 
-      - name: Verify frontend deps installed
+      - name: Build frontend
         shell: bash
         run: |
-          # dev.py install already ran `pnpm install`; just confirm key deps
-          # landed. We intentionally do NOT run `pnpm build` here — the build
-          # is a product concern, not an install concern.
-          test -d "$INSTALL_DIR/frontend/node_modules/@xyflow/react"
-          test -d "$INSTALL_DIR/frontend/node_modules/react"
-          test -d "$INSTALL_DIR/frontend/node_modules/vite"
+          cd "$INSTALL_DIR/frontend"
+          pnpm build
 
       - name: Stop backend
         if: always() && env.BACKEND_PID != ''
@@ -128,17 +124,13 @@ jobs:
           if (Test-Path $errPath) { Get-Content $errPath }
           exit 1
 
-      - name: Verify frontend deps installed
+      - name: Build frontend
         shell: pwsh
         run: |
-          # install.ps1 already ran `pnpm install` via dev.py; just confirm
-          # key deps landed. We intentionally do NOT run `pnpm build` here —
-          # the build is a product concern, not an install concern.
-          $modules = Join-Path $env:INSTALL_DIR 'frontend\node_modules'
-          foreach ($dep in @('@xyflow\react', 'react', 'vite')) {
-            $p = Join-Path $modules $dep
-            if (-not (Test-Path $p)) { throw "missing dep: $p" }
-          }
+          # install.ps1 wrote pnpm to user PATH; refresh for this step.
+          $env:Path = [System.Environment]::GetEnvironmentVariable('Path', 'Machine') + ';' + [System.Environment]::GetEnvironmentVariable('Path', 'User')
+          Set-Location (Join-Path $env:INSTALL_DIR 'frontend')
+          pnpm build
 
       - name: Stop backend
         if: always() && env.BACKEND_PID != ''
