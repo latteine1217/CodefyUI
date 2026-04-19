@@ -136,9 +136,16 @@ jobs:
       - name: Build frontend
         shell: pwsh
         run: |
-          # install.ps1 wrote pnpm to user PATH, but the entry contains a
-          # literal `%PNPM_HOME%` reference that GetEnvironmentVariable
-          # does not expand. ExpandEnvironmentVariables resolves it.
+          # install.ps1 wrote pnpm to the *user* PATH as a literal
+          # `%PNPM_HOME%` reference. ExpandEnvironmentVariables resolves
+          # against the *current process* env, but pwsh started before
+          # pnpm's installer ran so PNPM_HOME isn't in the process env
+          # block. Copy user-scope installer vars into the process env
+          # first, then expand.
+          foreach ($var in @('PNPM_HOME', 'UV_INSTALL_DIR')) {
+            $val = [System.Environment]::GetEnvironmentVariable($var, 'User')
+            if ($val) { Set-Item -Path "env:$var" -Value $val }
+          }
           $machine = [System.Environment]::GetEnvironmentVariable('Path', 'Machine')
           $user    = [System.Environment]::ExpandEnvironmentVariables(
             [System.Environment]::GetEnvironmentVariable('Path', 'User')
