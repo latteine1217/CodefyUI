@@ -23,7 +23,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Run install.sh (fresh-machine simulation — no pre-installed uv/Python)
         shell: bash
@@ -80,7 +80,7 @@ jobs:
 
       - name: Upload backend log on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: backend-log-${{ matrix.os }}
           path: ${{ runner.temp }}/backend.log
@@ -93,7 +93,7 @@ jobs:
     runs-on: windows-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Run install.ps1 (fresh-machine simulation — no pre-installed uv/Python)
         shell: pwsh
@@ -162,7 +162,7 @@ jobs:
 
       - name: Upload backend log on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: backend-log-windows
           path: ${{ runner.temp }}/backend.log
