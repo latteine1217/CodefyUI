@@ -4,6 +4,7 @@ import { TabBar } from './components/TabBar/TabBar';
 import { NodePalette } from './components/Sidebar/NodePalette';
 import { FlowCanvas } from './components/Canvas/FlowCanvas';
 import { NodeConfigPanel } from './components/ConfigPanel/NodeConfigPanel';
+import { InspectorPanel } from './components/InspectorPanel/InspectorPanel';
 import { ResultsPanel } from './components/ResultsPanel/ResultsPanel';
 import { PresetConfigModal } from './components/PresetModal/PresetConfigModal';
 import { SubgraphEditorModal } from './components/SubgraphEditor/SubgraphEditorModal';
@@ -17,13 +18,18 @@ function RightColumn() {
   const selectedNodeId = useTabStore(
     (s) => s.tabs.find((t) => t.id === s.activeTabId)?.selectedNodeId ?? null,
   );
+  const activeSegment = useTabStore(
+    (s) => s.tabs.find((t) => t.id === s.activeTabId)?.activeSegment ?? null,
+  );
   const hasSelection = selectedNodeId !== null;
+  const hasSegment = activeSegment !== null;
 
-  if (!hasSelection) return null;
+  if (!hasSelection && !hasSegment) return null;
 
   return (
     <div className={styles.rightColumn}>
-      <NodeConfigPanel />
+      {hasSelection && <NodeConfigPanel />}
+      <InspectorPanel />
     </div>
   );
 }

@@ -228,6 +228,27 @@ const zhTW: Record<TranslationKey, string> = {
 
   // Language
   'lang.label': '中',
+
+  // Teaching Inspector — Record toggle
+  'toolbar.record.on': '錄製 ON',
+  'toolbar.record.off': '錄製 OFF',
+  'toolbar.record.title': '記錄節點輸出（關閉後已捕獲的資料仍會保留）',
+
+  // Teaching Inspector — Compare Segment
+  'toolbar.compareSegment': '段落比較',
+  'toolbar.clearSegment': '取消段落',
+  'toolbar.compareSegment.title': '選取兩個節點後按下，比較頭節點的輸入與尾節點的輸出',
+  'toolbar.compareSegment.needTwo': '請先選取恰好兩個節點',
+  'segment.noPath': '段落：頭節點與尾節點之間沒有資料連線',
+
+  // Inspector panel
+  'inspector.title': '檢視器',
+  'inspector.collapse': '收合檢視器',
+  'inspector.expand': '展開檢視器',
+  'inspector.empty.notRun': '執行圖以捕獲資料',
+  'inspector.empty.notRunHint': '確認「錄製」已開啟，然後按下「執行」',
+  'inspector.empty.noSelection': '選取節點或段落以檢視',
+  'inspector.empty.noSelectionHint': '點擊任一節點，或 Shift 選兩個後按「段落比較」',
 };
 
 export default zhTW;

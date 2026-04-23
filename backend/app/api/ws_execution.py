@@ -119,6 +119,9 @@ async def websocket_execution(ws: WebSocket):
                 error_mode = data.get("error_mode", "fail_fast")
                 max_retries = data.get("max_retries", 0)
                 changed_nodes = data.get("changed_nodes")  # partial re-execution hint
+                run_id = data.get("run_id")
+                record_outputs = bool(data.get("record_outputs", False))
+                output_store = getattr(ws.app.state, "run_output_store", None)
 
                 current_context = ExecutionContext()
 
@@ -149,7 +152,10 @@ async def websocket_execution(ws: WebSocket):
 
                 async def _run() -> None:
                     try:
-                        await ws.send_text(json.dumps({"type": "execution_start"}))
+                        start_msg: dict[str, Any] = {"type": "execution_start"}
+                        if run_id:
+                            start_msg["run_id"] = run_id
+                        await ws.send_text(json.dumps(start_msg))
                         await execute_graph(
                             nodes,
                             edges,
@@ -159,6 +165,9 @@ async def websocket_execution(ws: WebSocket):
                             max_retries=max_retries,
                             cache=cache,
                             changed_nodes=changed_nodes,
+                            run_id=run_id,
+                            output_store=output_store,
+                            record_outputs=record_outputs,
                         )
                         await ws.send_text(json.dumps({"type": "execution_complete"}))
                     except CancellationError:

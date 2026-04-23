@@ -9,7 +9,8 @@ A visual, node-based deep learning pipeline builder. Design CNN, RNN, Transforme
 ## Features
 
 - **Visual Graph Editor** — Drag-and-drop nodes, connect ports with type-safe edges, real-time validation
-- **62 Built-in Nodes** across 12 categories (CNN, RNN, Transformer, RL, Data, Data Flow, Training, IO, Control, Utility, Normalization, Tensor Operations)
+- **63 Built-in Nodes** across 12 categories (CNN, RNN, Transformer, RL, Data, Data Flow, Training, IO, Control, Utility, Normalization, Tensor Operations)
+- **Teaching Inspector** — Record full per-node outputs, inspect input→output tensor diffs side-by-side, and wrap a subgraph with the **Compare Segment** bubble to focus on just head-input vs tail-output. Drop in a `TensorInput` node with an inline grid editor to feed the pipeline and watch each transformation
 - **Preset System** — Pre-built model templates for quick start; export your own subgraphs as reusable presets
 - **Multi-Tab Workspace** — Multiple independent canvases, each with its own execution context
 - **WebSocket Execution** — Real-time per-node progress, Print node output displayed in the Execution Log panel
@@ -91,7 +92,7 @@ backend/    Python 3.10+ · FastAPI · PyTorch
 | **RNN** | LSTM, GRU | 2 |
 | **Transformer** | MultiHeadAttention, TransformerEncoder, TransformerDecoder | 3 |
 | **RL** | DQN, PPO, EnvWrapper | 3 |
-| **Data** | Dataset, DataLoader, Transform, HuggingFaceDataset, KaggleDataset | 5 |
+| **Data** | Dataset, DataLoader, Transform, HuggingFaceDataset, KaggleDataset, TensorInput | 6 |
 | **Data Flow** | Map, Reduce, Switch | 3 |
 | **Training** | Optimizer, Loss, TrainingLoop, LRScheduler, SequentialModel | 5 |
 | **IO** | ImageReader, ImageWriter, ImageBatchReader, FileReader, CheckpointSaver, CheckpointLoader, ModelLoader, ModelSaver, Inference | 9 |
@@ -108,6 +109,20 @@ Pre-built example workflows organized in `examples/`:
 |----------|----------|
 | **Model Architecture** | ResNet, ConvNeXt, EfficientNet, UNet, ViT, SwinTransformer, BERT, GPT, LLaMA, DiT, LSTM TimeSeries, BiGRU SpeechRecognition, Seq2Seq Attention, DQN Atari, PPO Robotics |
 | **Usage Example** | CNN-MNIST Training, CNN-MNIST Inference |
+
+## Teaching Inspector
+
+CodefyUI can be used as an interactive lesson — students see the exact tensor that flows through every node.
+
+1. Drag a **TensorInput** node onto the canvas (Data category). Set `value_mode: explicit` and fill the inline grid with the numbers you want the pipeline to see.
+2. Wire it through any chain of tensor-op nodes (e.g. `Reshape → Softmax → Print`).
+3. **Drag a `Start` node onto the canvas and connect its trigger output (the diamond handle on the right side of the Start node) to the first node you want executed — typically the `TensorInput`.** Without a Start → first-node trigger edge the graph is a draft and `Run` will reject it with a *"No start node defined"* toast. Only nodes reachable from a Start are executed.
+4. With the toolbar **Rec ON**, click **Run**. Every completed node's full output is captured in server memory, keyed by the run.
+5. Click any node — the right-hand **Inspector** panel fetches that node's input and output, showing shape, dtype, min/max/mean and the actual values stacked top-to-bottom. Cells that changed are heat-coloured.
+6. Shift-select two nodes and click **Compare Segment** to focus on just the head-input and tail-output; the canvas wraps them in a light-orange bubble with **HEAD** / **TAIL** badges so the scope is obvious.
+7. Turn **Rec OFF** before a heavy training run if you don't want each epoch captured — previously captured runs stay fetchable until the server restarts.
+
+Captured data is per-session RAM (LRU, last 20 runs). Segment markers are saved with the graph JSON.
 
 ## Custom Nodes
 
@@ -175,7 +190,10 @@ Hot-reload via `POST /api/nodes/reload` or the **Reload Nodes** button in the to
 | `/api/models` | GET | List uploaded model files |
 | `/api/models/upload` | POST | Upload a model weight file |
 | `/api/models/{filename}` | DELETE | Delete a model file |
-| `/ws/execution` | WebSocket | Real-time graph execution |
+| `/api/execution/outputs/{run_id}` | GET | List ports captured for a run |
+| `/api/execution/outputs/{run_id}/{node_id}/{port}` | GET | Fetch a captured tensor (supports `?slice=0,:,:`) |
+| `/api/execution/outputs/{run_id}` | DELETE | Clear a captured run |
+| `/ws/execution` | WebSocket | Real-time graph execution (accepts `run_id`, `record_outputs`) |
 
 ## Tests
 

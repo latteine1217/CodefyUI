@@ -4,11 +4,22 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from .api import routes_custom_nodes, routes_examples, routes_graph, routes_images, routes_models, routes_nodes, routes_presets, ws_execution
+from .api import (
+    routes_custom_nodes,
+    routes_examples,
+    routes_execution_outputs,
+    routes_graph,
+    routes_images,
+    routes_models,
+    routes_nodes,
+    routes_presets,
+    ws_execution,
+)
 from .config import settings
 from .core.logging_config import setup_logging
 from .core.node_registry import registry
 from .core.preset_registry import preset_registry
+from .core.run_output_store import RunOutputStore
 
 logger = logging.getLogger(__name__)
 
@@ -38,6 +49,9 @@ async def lifespan(app: FastAPI):
     for name in sorted(preset_registry.presets.keys()):
         logger.debug("  * %s", name)
 
+    # In-memory store for captured per-run node outputs (Teaching Inspector)
+    app.state.run_output_store = RunOutputStore(max_runs=20)
+
     yield
 
 
@@ -58,6 +72,7 @@ app.include_router(routes_presets.router)
 app.include_router(routes_custom_nodes.router)
 app.include_router(routes_models.router)
 app.include_router(routes_images.router)
+app.include_router(routes_execution_outputs.router)
 app.include_router(ws_execution.router)
 
 

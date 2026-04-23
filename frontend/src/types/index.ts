@@ -9,12 +9,18 @@ export interface PortDefinition {
 
 export interface ParamDefinition {
   name: string;
-  param_type: 'int' | 'float' | 'string' | 'bool' | 'select' | 'model_file' | 'image_file';
+  param_type: 'int' | 'float' | 'string' | 'bool' | 'select' | 'model_file' | 'image_file' | 'tensor_grid';
   default: any;
   description: string;
   options: string[];
   min_value: number | null;
   max_value: number | null;
+}
+
+export interface SegmentGroup {
+  id: string;
+  headNodeId: string;
+  tailNodeId: string;
 }
 
 export interface NodeDefinition {
@@ -99,4 +105,72 @@ export interface GraphSaveData {
   name: string;
   description: string;
   presets?: PresetDefinition[];
+  segmentGroups?: SegmentGroup[];
+}
+
+// Teaching Inspector: full-value responses from /api/execution/outputs
+export interface TensorOutput {
+  type: 'tensor';
+  run_id: string;
+  node_id: string;
+  port: string;
+  full_shape: number[];
+  dtype: string;
+  slice: string;
+  sliced_shape: number[];
+  values: unknown;
+  truncated: boolean;
+  min?: number;
+  max?: number;
+  mean?: number;
+}
+
+export interface ModelOutput {
+  type: 'model';
+  run_id: string;
+  node_id: string;
+  port: string;
+  class: string;
+  params: number;
+  trainable: number;
+  repr: string;
+}
+
+export interface ScalarOutput {
+  type: 'scalar';
+  run_id: string;
+  node_id: string;
+  port: string;
+  value: number | boolean;
+}
+
+export interface StringOutput {
+  type: 'string';
+  run_id: string;
+  node_id: string;
+  port: string;
+  value: string;
+}
+
+export interface GenericOutput {
+  type: string;
+  run_id: string;
+  node_id: string;
+  port: string;
+  repr?: string;
+  length?: number;
+}
+
+export type OutputData =
+  | TensorOutput
+  | ModelOutput
+  | ScalarOutput
+  | StringOutput
+  | GenericOutput;
+
+export interface RunOutputRef {
+  node_id: string;
+  port: string;
+  type: string;
+  full_shape: number[] | null;
 }

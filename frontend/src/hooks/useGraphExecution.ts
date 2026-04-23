@@ -17,6 +17,7 @@ export function useGraphExecution() {
   const clearOutputSummaries = useTabStore((s) => s.clearOutputSummaries);
   const addTabLog = useTabStore((s) => s.addTabLog);
   const clearLogs = useTabStore((s) => s.clearLogs);
+  const setLastRunId = useTabStore((s) => s.setLastRunId);
 
   // Track which tabs have had WS listeners attached
   const attachedTabs = useRef(new Set<string>());
@@ -95,8 +96,11 @@ export function useGraphExecution() {
       addTabLog(tabId, { message: `Execution error: ${data.error}`, type: 'error' });
     });
 
-    ws.on('execution_start', () => {
+    ws.on('execution_start', (data: any) => {
       setTabStatus(tabId, 'running');
+      if (data && typeof data.run_id === 'string') {
+        setLastRunId(tabId, data.run_id);
+      }
       addTabLog(tabId, { message: 'Execution started', type: 'info' });
     });
 
@@ -104,7 +108,7 @@ export function useGraphExecution() {
       setTabStatus(tabId, 'idle');
       addTabLog(tabId, { message: 'Execution cancelled', type: 'info' });
     });
-  }, [activeTabId, getActiveTab, setTabNodeExecutionStatus, setTabNodeProgress, setTabOutputSummary, setTabStatus, addTabLog]);
+  }, [activeTabId, getActiveTab, setTabNodeExecutionStatus, setTabNodeProgress, setTabOutputSummary, setTabStatus, setLastRunId, addTabLog]);
 
   const execute = useCallback(async () => {
     const tab = getActiveTab();
@@ -158,11 +162,20 @@ export function useGraphExecution() {
     const changedNodes = getDirtyWithDownstream();
     clearDirty();
 
+    // Teaching Inspector: generate a run id so the backend can key captured
+    // outputs, and pass the per-tab Record toggle state.
+    const runId =
+      typeof crypto !== 'undefined' && 'randomUUID' in crypto
+        ? crypto.randomUUID()
+        : `run-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
     ws.send({
       action: 'execute',
       nodes: execNodes,
       edges: graph.edges,
       presets: graph.presets,
+      run_id: runId,
+      record_outputs: tab.recordOutputs,
       ...(changedNodes.length > 0 ? { changed_nodes: changedNodes } : {}),
     });
   }, [getActiveTab, getSerializedGraph, clearLogs, clearExecutionStatus, clearOutputSummaries, setTabStatus, addTabLog]);

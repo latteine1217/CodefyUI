@@ -76,3 +76,63 @@ describe('applyLayout', () => {
     expect(tab.undoStack.length).toBe(1);
   });
 });
+
+describe('Teaching Inspector actions', () => {
+  beforeEach(() => {
+    useTabStore.setState({ tabs: [], activeTabId: null as unknown as string });
+    useTabStore.getState().addTab('test');
+  });
+
+  it('recordOutputs defaults to true', () => {
+    const tab = useTabStore.getState().getActiveTab();
+    expect(tab.recordOutputs).toBe(true);
+  });
+
+  it('toggleRecord flips the flag', () => {
+    useTabStore.getState().toggleRecord();
+    expect(useTabStore.getState().getActiveTab().recordOutputs).toBe(false);
+    useTabStore.getState().toggleRecord();
+    expect(useTabStore.getState().getActiveTab().recordOutputs).toBe(true);
+  });
+
+  it('setLastRunId stores per-tab run id', () => {
+    const tabId = useTabStore.getState().activeTabId!;
+    useTabStore.getState().setLastRunId(tabId, 'abc-123');
+    expect(useTabStore.getState().getActiveTab().lastRunId).toBe('abc-123');
+  });
+
+  it('setActiveSegment and addSegmentGroup work independently', () => {
+    const seg = { id: 'g1', headNodeId: 'n1', tailNodeId: 'n2' };
+    useTabStore.getState().addSegmentGroup(seg);
+    useTabStore.getState().setActiveSegment(seg);
+    const tab = useTabStore.getState().getActiveTab();
+    expect(tab.segmentGroups).toHaveLength(1);
+    expect(tab.segmentGroups[0]).toEqual(seg);
+    expect(tab.activeSegment).toEqual(seg);
+  });
+
+  it('removeSegmentGroup clears active segment when ids match', () => {
+    const seg = { id: 'g1', headNodeId: 'n1', tailNodeId: 'n2' };
+    useTabStore.getState().addSegmentGroup(seg);
+    useTabStore.getState().setActiveSegment(seg);
+    useTabStore.getState().removeSegmentGroup('g1');
+    const tab = useTabStore.getState().getActiveTab();
+    expect(tab.segmentGroups).toHaveLength(0);
+    expect(tab.activeSegment).toBeNull();
+  });
+
+  it('addSegmentGroup replaces existing group with the same id', () => {
+    useTabStore.getState().addSegmentGroup({ id: 'g1', headNodeId: 'a', tailNodeId: 'b' });
+    useTabStore.getState().addSegmentGroup({ id: 'g1', headNodeId: 'c', tailNodeId: 'd' });
+    const tab = useTabStore.getState().getActiveTab();
+    expect(tab.segmentGroups).toHaveLength(1);
+    expect(tab.segmentGroups[0].headNodeId).toBe('c');
+  });
+
+  it('getSerializedGraph includes segmentGroups', () => {
+    useTabStore.getState().addSegmentGroup({ id: 'g1', headNodeId: 'a', tailNodeId: 'b' });
+    const serialized = useTabStore.getState().getSerializedGraph();
+    expect(serialized.segmentGroups).toHaveLength(1);
+    expect(serialized.segmentGroups![0]).toEqual({ id: 'g1', headNodeId: 'a', tailNodeId: 'b' });
+  });
+});

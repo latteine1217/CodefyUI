@@ -9,7 +9,8 @@
 ## 功能特色
 
 - **視覺化圖形編輯器** — 拖放節點、型別安全的連線、即時驗證
-- **62 個內建節點**，涵蓋 12 大類別（CNN、RNN、Transformer、RL、資料、資料流、訓練、IO、控制、工具、正規化、張量運算）
+- **63 個內建節點**，涵蓋 12 大類別（CNN、RNN、Transformer、RL、資料、資料流、訓練、IO、控制、工具、正規化、張量運算）
+- **教學檢視器 (Teaching Inspector)** — 記錄每個節點的完整輸出，在右側面板對照輸入與輸出張量的差異；用 **段落比較** 功能以淺橘色泡泡包住一段子圖，只比較 head 的輸入與 tail 的輸出。搭配新的 `TensorInput` 節點（可在網頁直接編輯格子）餵入資料，看資料逐節點變化
 - **預設模組系統** — 內建模型模板快速開始；可將子圖匯出為可重用的預設模組
 - **多分頁工作區** — 多個獨立畫布，各自擁有獨立的執行環境
 - **WebSocket 即時執行** — 即時顯示每個節點的進度，Print 節點的輸出會顯示在執行紀錄面板
@@ -91,7 +92,7 @@ backend/    Python 3.10+ · FastAPI · PyTorch
 | **RNN** | LSTM、GRU | 2 |
 | **Transformer** | MultiHeadAttention、TransformerEncoder、TransformerDecoder | 3 |
 | **RL** | DQN、PPO、EnvWrapper | 3 |
-| **資料** | Dataset、DataLoader、Transform、HuggingFaceDataset、KaggleDataset | 5 |
+| **資料** | Dataset、DataLoader、Transform、HuggingFaceDataset、KaggleDataset、TensorInput | 6 |
 | **資料流** | Map、Reduce、Switch | 3 |
 | **訓練** | Optimizer、Loss、TrainingLoop、LRScheduler、SequentialModel | 5 |
 | **IO** | ImageReader、ImageWriter、ImageBatchReader、FileReader、CheckpointSaver、CheckpointLoader、ModelLoader、ModelSaver、Inference | 9 |
@@ -108,6 +109,20 @@ backend/    Python 3.10+ · FastAPI · PyTorch
 |------|------|
 | **模型架構** | ResNet、ConvNeXt、EfficientNet、UNet、ViT、SwinTransformer、BERT、GPT、LLaMA、DiT、LSTM TimeSeries、BiGRU SpeechRecognition、Seq2Seq Attention、DQN Atari、PPO Robotics |
 | **使用範例** | CNN-MNIST 訓練、CNN-MNIST 推論 |
+
+## 教學檢視器（Teaching Inspector）
+
+CodefyUI 可作為互動式教材 — 讓學生看到資料流過每一個節點的真實張量變化。
+
+1. 把 **TensorInput** 節點（資料類別）拖進畫布。把 `value_mode` 設成 `explicit`，直接在內嵌格子編輯器裡填入想餵給管線的數值。
+2. 用任意張量運算節點串起來（例如 `Reshape → Softmax → Print`）。
+3. **從節點面板拖一個 `Start` 節點到畫布，把它右邊的 trigger 輸出（菱形 handle）連到你想要開始執行的第一個節點（通常就是 `TensorInput`）。** 少了 Start → 起始節點的 trigger 連線，圖會被當作草稿，按「執行」會出現「尚未定義開始節點」的錯誤提示。只有從 Start 可到達的節點才會被執行。
+4. 確認工具列的 **錄製 ON**，然後按 **執行**。每個完成的節點的完整輸出會被保存在伺服器記憶體中，以該次執行的 run id 當作索引。
+5. 點任一節點 — 右側 **檢視器** 面板會抓取該節點的輸入與輸出，上下堆疊顯示 shape、dtype、min/max/mean 與實際值。數值變動的格子會以熱力色標示。
+6. Shift 選兩個節點 → 按 **段落比較**，畫布上會以淺橘色泡泡把這段包起來並加上 **HEAD** / **TAIL** 標籤，檢視器切換成只顯示頭部輸入與尾部輸出。
+7. 跑重度訓練前想省資源可以先按 **錄製 OFF** — 已經記錄過的 run id 仍然可以查閱，直到伺服器重啟。
+
+被保存的資料是伺服器當下記憶體（LRU，最近 20 次 run）。段落標記會跟著 graph JSON 一起儲存。
 
 ## 自訂節點
 
@@ -172,6 +187,9 @@ class MyNode(BaseNode):
 | `/api/custom-nodes/upload` | POST | 上傳自訂節點 |
 | `/api/custom-nodes/toggle` | POST | 啟用/停用自訂節點 |
 | `/api/custom-nodes/{filename}` | DELETE | 刪除自訂節點 |
+| `/api/execution/outputs/{run_id}` | GET | 列出該次 run 捕獲的所有埠口 |
+| `/api/execution/outputs/{run_id}/{node_id}/{port}` | GET | 取得該節點某埠口的完整張量（可用 `?slice=0,:,:` 切片） |
+| `/api/execution/outputs/{run_id}` | DELETE | 清除該次 run 的捕獲資料 |
 | `/api/models` | GET | 列出已上傳的模型檔案 |
 | `/api/models/upload` | POST | 上傳模型權重檔 |
 | `/api/models/{filename}` | DELETE | 刪除模型檔案 |

@@ -34,6 +34,7 @@ import {
 } from '../ContextMenu/NodeContextMenu';
 import { PaneContextMenu } from './PaneContextMenu';
 import { NoteBindingLines } from './NoteBindingLines';
+import { SegmentBubble } from './SegmentBubble';
 import { useTabStore } from '../../store/tabStore';
 import { useUIStore } from '../../store/uiStore';
 import { useDragAndDrop } from '../../hooks/useDragAndDrop';
@@ -456,6 +457,7 @@ export function FlowCanvas() {
           gap={24}
           size={1.5}
         />
+        <SegmentBubble />
         <NoteBindingLines />
         <Controls />
         <MiniMap

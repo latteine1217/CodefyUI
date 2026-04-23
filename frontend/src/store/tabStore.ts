@@ -3,7 +3,7 @@ import { applyNodeChanges, applyEdgeChanges } from '@xyflow/react';
 import type { Node, Edge, NodeChange, EdgeChange, Connection } from '@xyflow/react';
 import { generateId } from '../utils';
 import { autoLayout, type LayoutMode } from '../utils/autoLayout';
-import type { NodeData, NodeDefinition, PresetDefinition, ExecutionStatus, OutputSummary, NodeProgress } from '../types';
+import type { NodeData, NodeDefinition, PresetDefinition, ExecutionStatus, OutputSummary, NodeProgress, SegmentGroup } from '../types';
 import { ExecutionWebSocket } from '../api/ws';
 import { useToastStore } from './toastStore';
 import { useI18n } from '../i18n';
@@ -44,6 +44,11 @@ export interface TabState {
   ws: ExecutionWebSocket;
   // output summaries per node (for edge inspection)
   outputSummaries: Record<string, Record<string, OutputSummary>>;
+  // Teaching Inspector state
+  recordOutputs: boolean;
+  lastRunId: string | null;
+  activeSegment: SegmentGroup | null;
+  segmentGroups: SegmentGroup[];
 }
 
 function createTabState(id: string, name: string): TabState {
@@ -62,6 +67,10 @@ function createTabState(id: string, name: string): TabState {
     logs: [],
     ws: new ExecutionWebSocket(),
     outputSummaries: {},
+    recordOutputs: true,
+    lastRunId: null,
+    activeSegment: null,
+    segmentGroups: [],
   };
 }
 
@@ -96,7 +105,12 @@ interface TabStoreState {
   setNodeExecutionStatus: (nodeId: string, status: NodeData['executionStatus'], error?: string) => void;
   clearExecutionStatus: () => void;
   clear: () => void;
-  getSerializedGraph: () => { nodes: any[]; edges: any[]; presets?: import('../types').PresetDefinition[] };
+  getSerializedGraph: () => {
+    nodes: any[];
+    edges: any[];
+    presets?: import('../types').PresetDefinition[];
+    segmentGroups?: SegmentGroup[];
+  };
   deleteNode: (nodeId: string) => void;
   duplicateNode: (nodeId: string) => void;
   renameNode: (nodeId: string, newLabel: string) => void;
@@ -140,6 +154,13 @@ interface TabStoreState {
   clearOutputSummaries: () => void;
   setTabStatus: (tabId: string, s: ExecutionStatus) => void;
   addTabLog: (tabId: string, entry: Omit<LogEntry, 'timestamp'>) => void;
+
+  // Teaching Inspector actions
+  toggleRecord: () => void;
+  setLastRunId: (tabId: string, runId: string) => void;
+  setActiveSegment: (segment: SegmentGroup | null) => void;
+  addSegmentGroup: (segment: SegmentGroup) => void;
+  removeSegmentGroup: (id: string) => void;
 }
 
 function updateTab(tabs: TabState[], tabId: string, updater: (tab: TabState) => Partial<TabState>): TabState[] {
@@ -155,13 +176,22 @@ interface PersistedTab {
   name: string;
   nodes: Node<NodeData>[];
   edges: Edge[];
+  segmentGroups?: SegmentGroup[];
+  recordOutputs?: boolean;
 }
 
 function saveTabs(tabs: TabState[], activeTabId: string) {
   try {
     const data: { tabs: PersistedTab[]; activeTabId: string } = {
       activeTabId,
-      tabs: tabs.map((t) => ({ id: t.id, name: t.name, nodes: t.nodes, edges: t.edges })),
+      tabs: tabs.map((t) => ({
+        id: t.id,
+        name: t.name,
+        nodes: t.nodes,
+        edges: t.edges,
+        segmentGroups: t.segmentGroups,
+        recordOutputs: t.recordOutputs,
+      })),
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   } catch {
@@ -179,6 +209,8 @@ function loadTabs(): { tabs: TabState[]; activeTabId: string } {
           ...createTabState(t.id, t.name),
           nodes: t.nodes ?? [],
           edges: t.edges ?? [],
+          segmentGroups: Array.isArray(t.segmentGroups) ? t.segmentGroups : [],
+          recordOutputs: t.recordOutputs ?? true,
         }));
         const activeTabId = tabs.some((t) => t.id === data.activeTabId)
           ? data.activeTabId
@@ -594,6 +626,7 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
         };
       }),
       presets,
+      segmentGroups: tab.segmentGroups,
     };
   },
 
@@ -984,6 +1017,40 @@ export const useTabStore = create<TabStoreState>((set, get) => ({
     set({
       tabs: updateTab(get().tabs, tabId, (tab) => ({
         logs: [...tab.logs, { ...entry, timestamp: Date.now() }],
+      })),
+    }),
+
+  // ── Teaching Inspector actions ──
+
+  toggleRecord: () =>
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
+        recordOutputs: !tab.recordOutputs,
+      })),
+    }),
+
+  setLastRunId: (tabId, runId) =>
+    set({
+      tabs: updateTab(get().tabs, tabId, () => ({ lastRunId: runId })),
+    }),
+
+  setActiveSegment: (segment) =>
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, () => ({ activeSegment: segment })),
+    }),
+
+  addSegmentGroup: (segment) =>
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
+        segmentGroups: [...tab.segmentGroups.filter((s) => s.id !== segment.id), segment],
+      })),
+    }),
+
+  removeSegmentGroup: (id) =>
+    set({
+      tabs: updateTab(get().tabs, get().activeTabId, (tab) => ({
+        segmentGroups: tab.segmentGroups.filter((s) => s.id !== id),
+        activeSegment: tab.activeSegment?.id === id ? null : tab.activeSegment,
       })),
     }),
 }));

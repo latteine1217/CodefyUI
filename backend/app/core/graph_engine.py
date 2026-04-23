@@ -389,6 +389,9 @@ async def execute_graph(
     max_retries: int = 0,
     cache: "ExecutionCache | None" = None,
     changed_nodes: list[str] | None = None,
+    run_id: str | None = None,
+    output_store: "RunOutputStore | None" = None,
+    record_outputs: bool = False,
 ) -> dict[str, Any]:
     """Execute the graph with parallel levels, cancellation, error recovery, and caching.
 
@@ -401,6 +404,12 @@ async def execute_graph(
         max_retries: Number of retries when error_mode is 'retry'.
         cache: Optional ExecutionCache for skipping unchanged nodes.
         changed_nodes: Optional list of node IDs that changed — force re-execute these (bypass cache).
+        run_id: Run identifier used as the key for ``output_store``. Required
+            when ``record_outputs`` is True.
+        output_store: Optional per-run in-memory store. When ``record_outputs``
+            is True, each node's full output is written under ``run_id``.
+        record_outputs: When True, capture every node's output into
+            ``output_store`` for later retrieval via the REST endpoint.
     """
     from .execution_context import CancellationError
 
@@ -611,6 +620,11 @@ async def execute_graph(
                 outputs[node_id] = result
                 if cache is not None and node_id in node_cache_keys:
                     cache.put(node_cache_keys[node_id], result)
+                if record_outputs and output_store is not None and run_id:
+                    for port, value in result.items():
+                        if port.startswith("__"):
+                            continue
+                        await output_store.put(run_id, node_id, port, value)
                 await _emit_preset_aware(node_id, "completed", result)
                 return
             except Exception as e:
@@ -665,3 +679,4 @@ async def _maybe_await(val: Any) -> Any:
 if False:  # TYPE_CHECKING
     from .cache import ExecutionCache
     from .execution_context import ExecutionContext
+    from .run_output_store import RunOutputStore

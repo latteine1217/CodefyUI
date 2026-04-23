@@ -29,6 +29,7 @@ class ParamType(str, Enum):
     SELECT = "select"
     MODEL_FILE = "model_file"
     IMAGE_FILE = "image_file"
+    TENSOR_GRID = "tensor_grid"
 
 
 @dataclass

@@ -1,0 +1,139 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 0.75rem;
+  color: #aaa;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.hintDim {
+  font-size: 0.7rem;
+  color: #666;
+  background: #1a1a1a;
+  border: 1px dashed #2a2a2a;
+  padding: 6px 8px;
+  border-radius: 3px;
+  line-height: 1.4;
+}
+
+.hintDim code {
+  background: #222;
+  color: #aaa;
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 0.68rem;
+}
+
+.hintWarn {
+  font-size: 0.7rem;
+  color: #f5a623;
+  background: rgba(245, 166, 35, 0.06);
+  border: 1px solid rgba(245, 166, 35, 0.3);
+  padding: 6px 8px;
+  border-radius: 3px;
+  line-height: 1.4;
+}
+
+.hintWarn code {
+  color: #f5a623;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+}
+
+.toolbarBtn {
+  background: #222;
+  border: 1px solid #333;
+  color: #ccc;
+  font-size: 0.68rem;
+  padding: 2px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.toolbarBtn:hover {
+  background: #2a2a2a;
+  border-color: #444;
+}
+
+.shapeBadge {
+  margin-left: auto;
+  font-size: 0.65rem;
+  color: #888;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
+.leadingRow {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.leadingLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.65rem;
+  color: #888;
+}
+
+.leadingSelect {
+  background: #222;
+  color: #ddd;
+  border: 1px solid #333;
+  font-size: 0.7rem;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.gridScroll {
+  max-height: 220px;
+  overflow: auto;
+  background: #0f0f0f;
+  border: 1px solid #262626;
+  border-radius: 4px;
+}
+
+.table {
+  border-collapse: collapse;
+  font-family: ui-monospace, SFMono-Regular, monospace;
+}
+
+.cell {
+  padding: 0;
+  border: 1px solid #1c1c1c;
+}
+
+.cellInput {
+  background: transparent;
+  border: none;
+  color: #ddd;
+  font-size: 0.7rem;
+  font-family: inherit;
+  padding: 3px 5px;
+  width: 64px;
+  text-align: right;
+  outline: none;
+  -moz-appearance: textfield;
+}
+
+.cellInput::-webkit-outer-spin-button,
+.cellInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.cellInput:focus {
+  background: #1c1c1c;
+  box-shadow: inset 0 0 0 1px rgba(255, 140, 0, 0.5);
+}

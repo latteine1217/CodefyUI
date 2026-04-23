@@ -49,14 +49,14 @@
   height: 100%;
 }
 
-/* ----- Right column: config panel + minimap ----- */
+/* ----- Right column: config panel (+ optional Inspector side by side) ----- */
 .rightColumn {
-  width: 300px;
   flex-shrink: 0;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   background: #161616;
   border-left: 1px solid #2a2a2a;
   overflow: hidden;
+  min-height: 0;
 }
 

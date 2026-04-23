@@ -87,6 +87,7 @@ export function NodeConfigPanel() {
                     param={param}
                     value={selectedNode.data.params[param.name]}
                     onChange={handleChange}
+                    siblingParams={selectedNode.data.params}
                   />
                   {param.description && (
                     <div className={styles.paramHint}>

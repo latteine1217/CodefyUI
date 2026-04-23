@@ -11,6 +11,8 @@ import { SURFACE, TEXT, BRAND, STATUS_COLORS } from '../../styles/theme';
 import { CustomNodeManager } from '../CustomNodeManager/CustomNodeManager';
 import { useToastStore } from '../../store/toastStore';
 import type { LayoutMode } from '../../utils/autoLayout';
+import { RecordToggle } from './RecordToggle';
+import { CompareSegmentButton } from './CompareSegmentButton';
 import styles from './Toolbar.module.css';
 
 /* ── Shared dropdown menu component ─────────────────────────────── */
@@ -532,6 +534,10 @@ export function Toolbar() {
 
       {/* Right side: toggles + status + language */}
       <div className={styles.rightCluster}>
+        {/* Teaching Inspector group */}
+        <RecordToggle />
+        <CompareSegmentButton />
+        <div className={styles.divider} />
         <GridSnapToggle />
         <TooltipToggle />
         <BeginnerModeToggle />

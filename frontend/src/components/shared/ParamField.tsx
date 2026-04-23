@@ -9,6 +9,7 @@ import {
   uploadModelFile,
 } from '../../api/rest';
 import { useToastStore } from '../../store/toastStore';
+import { TensorGridEditor } from '../ConfigPanel/TensorGridEditor';
 import styles from './ParamField.module.css';
 
 interface ParamFieldProps {
@@ -16,6 +17,11 @@ interface ParamFieldProps {
   value: any;
   onChange: (name: string, value: any) => void;
   label?: string;
+  /**
+   * Other params on the same node — only consumed by the tensor_grid editor,
+   * which needs the sibling `shape` and `value_mode` to know what to render.
+   */
+  siblingParams?: Record<string, any>;
 }
 
 interface FileFieldBackend {
@@ -152,8 +158,20 @@ function FileField({
   );
 }
 
-export function ParamField({ param, value, onChange, label }: ParamFieldProps) {
+export function ParamField({ param, value, onChange, label, siblingParams }: ParamFieldProps) {
   const displayLabel = label ?? param.name;
+
+  if (param.param_type === 'tensor_grid') {
+    return (
+      <TensorGridEditor
+        param={param}
+        value={value}
+        onChange={onChange}
+        displayLabel={displayLabel}
+        siblingParams={siblingParams}
+      />
+    );
+  }
 
   if (param.param_type === 'model_file') {
     return (

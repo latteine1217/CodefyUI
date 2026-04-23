@@ -226,6 +226,27 @@ const en = {
 
   // Language
   'lang.label': 'EN',
+
+  // Teaching Inspector — Record toggle
+  'toolbar.record.on': 'Rec ON',
+  'toolbar.record.off': 'Rec OFF',
+  'toolbar.record.title': 'Record node outputs (captured data is kept even when turned off)',
+
+  // Teaching Inspector — Compare Segment
+  'toolbar.compareSegment': 'Compare',
+  'toolbar.clearSegment': 'Clear Segment',
+  'toolbar.compareSegment.title': 'Select two nodes, then click to compare head-input with tail-output',
+  'toolbar.compareSegment.needTwo': 'Select exactly two nodes first',
+  'segment.noPath': 'Segment: no path from head to tail',
+
+  // Inspector panel
+  'inspector.title': 'Inspector',
+  'inspector.collapse': 'Collapse inspector',
+  'inspector.expand': 'Expand inspector',
+  'inspector.empty.notRun': 'Run the graph to capture data',
+  'inspector.empty.notRunHint': 'Make sure Rec is ON, then click ▶ Run',
+  'inspector.empty.noSelection': 'Select a node or segment to inspect',
+  'inspector.empty.noSelectionHint': 'Click any node, or shift-select two and press Compare',
 } as const;
 
 export type TranslationKey = keyof typeof en;
